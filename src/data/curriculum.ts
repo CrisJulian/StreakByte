@@ -1,0 +1,96 @@
+import type { CurriculumTrack, TrackId } from '../types/streakbyte';
+
+export const TRACKS: Record<TrackId, CurriculumTrack> = {
+  hw: {
+    id: 'hw',
+    heading: 'Hardware Basics',
+    description: 'Build and understand a computer, one short lesson at a time.',
+    done: 2,
+    total: 12,
+    badge: 'RAM master',
+    defaultTarget: 'pc',
+    lessons: [
+      {
+        title: 'Inside the PC',
+        subtitle: 'Case, motherboard, CPU and cooling',
+        minutes: 5,
+        xp: 110,
+        status: 'done',
+      },
+      {
+        title: 'The motherboard',
+        subtitle: 'Sockets, slots and ports',
+        minutes: 6,
+        xp: 110,
+        status: 'done',
+      },
+      {
+        title: 'Memory (RAM)',
+        subtitle: 'DIMM slots, DDR4 vs DDR5, dual-channel',
+        minutes: 5,
+        xp: 120,
+        status: 'cur',
+      },
+      {
+        title: 'Storage',
+        subtitle: 'HDD, SSD and M.2',
+        minutes: 6,
+        xp: 120,
+        status: 'lock',
+      },
+      {
+        title: 'Power supply',
+        subtitle: 'Wattage, cables and connectors',
+        minutes: 6,
+        xp: 120,
+        status: 'lock',
+      },
+    ],
+  },
+  net: {
+    id: 'net',
+    heading: 'Networking Basics',
+    description: 'Connect devices and understand how they talk, one short lesson at a time.',
+    done: 1,
+    total: 12,
+    badge: 'Network ninja',
+    defaultTarget: 'network',
+    lessons: [
+      {
+        title: 'What is a network?',
+        subtitle: 'Devices, links and the internet',
+        minutes: 5,
+        xp: 110,
+        status: 'done',
+      },
+      {
+        title: 'IP address basics',
+        subtitle: 'Addresses, masks and gateways',
+        minutes: 6,
+        xp: 120,
+        status: 'cur',
+      },
+      {
+        title: 'Subnet masks',
+        subtitle: 'Split one network into parts',
+        minutes: 6,
+        xp: 120,
+        status: 'lock',
+      },
+      {
+        title: 'Routers and switches',
+        subtitle: 'How traffic finds its way',
+        minutes: 6,
+        xp: 120,
+        status: 'lock',
+      },
+      {
+        title: 'Build a network',
+        subtitle: 'Final level: wire up a small LAN',
+        minutes: 8,
+        xp: 150,
+        status: 'cur',
+      },
+    ],
+  },
+};
