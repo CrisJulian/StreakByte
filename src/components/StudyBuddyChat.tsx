@@ -53,7 +53,7 @@ export function StudyBuddyChat() {
           chat.open ? 'max-[760px]:hidden' : ''
         }`}
       >
-        <span className="hog w-12 h-12 max-[760px]:w-11 max-[760px]:h-11 block" aria-hidden="true" />
+        <span className="buddy-logo w-12 h-12 max-[760px]:w-11 max-[760px]:h-11 block" aria-hidden="true" />
       </button>
 
       {chat.open && (
@@ -64,7 +64,7 @@ export function StudyBuddyChat() {
           className="sb-pop fixed right-5 bottom-[calc(96px+env(safe-area-inset-bottom,0px))] z-40 flex flex-col w-[380px] max-w-[calc(100vw-24px)] h-[min(540px,calc(100dvh-140px))] bg-panel border border-line rounded-2xl overflow-hidden max-[760px]:left-3 max-[760px]:right-3 max-[760px]:w-auto max-[760px]:max-w-none max-[760px]:bottom-[calc(76px+env(safe-area-inset-bottom,0px))] max-[760px]:h-[min(70dvh,calc(100dvh-150px))]"
         >
           <header className="flex items-center gap-3 px-3.5 py-3 border-b border-line">
-            <span className="hog w-10 h-10 flex-none block" aria-hidden="true" />
+            <span className="buddy-logo w-10 h-10 flex-none block" aria-hidden="true" />
             <div>
               <b className="block leading-tight">Study buddy</b>
               <small className="text-muted text-[0.8125rem]">Ask about your lessons</small>
@@ -96,7 +96,7 @@ export function StudyBuddyChat() {
                 }`}
               >
                 {msg.role === 'bot' && (
-                  <span className="hog w-[30px] h-[30px] flex-none block" aria-hidden="true" />
+                  <span className="buddy-logo w-[30px] h-[30px] flex-none block" aria-hidden="true" />
                 )}
                 <p
                   className={`m-0 px-3.5 py-2.5 rounded-[14px] whitespace-pre-wrap break-words text-[0.9375rem] leading-[1.45] ${

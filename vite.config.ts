@@ -21,7 +21,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['mascot.png', 'apple-touch-icon.png'],
+      includeAssets: ['mascot.png', 'buddy-logo.png', 'welcome-pose.mp4', 'apple-touch-icon.png'],
       manifest: {
         name: 'StreakByte',
         short_name: 'StreakByte',
@@ -51,6 +51,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {

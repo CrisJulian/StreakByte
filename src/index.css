@@ -22,6 +22,7 @@
 :root {
   color-scheme: dark;
   --hog: url('/mascot.png');
+  --buddy: url('/buddy-logo.png');
   --bg: #0b1020;
   --panel: #121935;
   --panel2: #18214a;
@@ -138,6 +139,10 @@
 .hog {
   background: var(--hog) center / contain no-repeat;
   image-rendering: pixelated;
+}
+
+.buddy-logo {
+  background: var(--buddy) center / contain no-repeat;
 }
 
 .sb-enter {

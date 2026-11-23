@@ -30,7 +30,7 @@ export function TopBar() {
         }}
         className="inline-flex items-center gap-2.5 font-bold text-[1.1875rem] tracking-[-0.01em] text-ink no-underline justify-self-start whitespace-nowrap"
       >
-        <i className="hog block w-10 h-10" aria-hidden="true" />
+        <i className="buddy-logo block w-10 h-10" aria-hidden="true" />
         <span className="max-[760px]:hidden">StreakByte</span>
       </a>
 

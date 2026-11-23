@@ -1,5 +1,6 @@
 import { Icon } from '../components/Icon';
 import { WeekStrip } from '../components/WeekStrip';
+import { WelcomeMascot } from '../components/WelcomeMascot';
 import { DASHBOARD_BOARD_PREVIEW } from '../data/leaderboard';
 import { useStreakByteStore } from '../store/useStreakByteStore';
 
@@ -11,11 +12,7 @@ export function DashboardView() {
   return (
     <div>
       <div className="sb-enter flex items-center gap-5 max-[760px]:gap-3.5 mb-6">
-        <div
-          className="hog w-[88px] h-[88px] flex-none"
-          role="img"
-          aria-label="Your study buddy, a pixel-art hedgehog"
-        />
+        <WelcomeMascot />
         <div>
           <h1 className="m-0 text-[2.125rem] font-bold leading-[1.15] tracking-[-0.025em] text-balance">
             Welcome back, Mika
