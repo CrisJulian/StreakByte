@@ -4,8 +4,13 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const realRoot = realpathSync(process.cwd());
+if (realRoot !== process.cwd()) {
+  process.chdir(realRoot);
+}
+
 export default defineConfig({
-  root: realpathSync(process.cwd()),
+  root: realRoot,
   server: {
     fs: {
       strict: false,
