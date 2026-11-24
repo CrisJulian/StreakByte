@@ -8,7 +8,7 @@ import type {
 import { localAuth } from './adapters/local/localAuth';
 import { localProgress } from './adapters/local/localProgress';
 import { localReminders } from './adapters/local/localReminders';
-import { localStudyBuddy } from './adapters/local/localStudyBuddy';
+import { geminiStudyBuddy } from './adapters/gemini/geminiStudyBuddy';
 import { localSyncQueue } from './adapters/local/localSyncQueue';
 
 export interface Services {
@@ -26,7 +26,7 @@ export interface Services {
 export const services: Services = {
   auth: localAuth,
   progress: localProgress,
-  studyBuddy: localStudyBuddy,
+  studyBuddy: geminiStudyBuddy,
   reminders: localReminders,
   syncQueue: localSyncQueue,
 };

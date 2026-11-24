@@ -31,7 +31,7 @@ export function StudyBuddyChat() {
     if (logRef.current) {
       logRef.current.scrollTop = logRef.current.scrollHeight;
     }
-  }, [chat.messages.length, chat.open]);
+  }, [chat.messages.length, chat.open, chat.isLoading]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,6 +109,21 @@ export function StudyBuddyChat() {
                 </p>
               </div>
             ))}
+
+            {chat.isLoading && (
+              <div
+                className="flex gap-2 items-end max-w-[92%]"
+                role="status"
+                aria-label="BYTE is typing"
+              >
+                <span className="buddy-logo w-[30px] h-[30px] flex-none block" aria-hidden="true" />
+                <div className="flex items-center gap-1.5 px-4 py-3 rounded-[14px] rounded-bl-[4px] bg-panel2 text-muted">
+                  <span className="w-2 h-2 rounded-full bg-cyan animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-cyan animate-pulse [animation-delay:200ms]" />
+                  <span className="w-2 h-2 rounded-full bg-cyan animate-pulse [animation-delay:400ms]" />
+                </div>
+              </div>
+            )}
           </div>
 
           {chat.showSuggestions && (
@@ -117,8 +132,9 @@ export function StudyBuddyChat() {
                 <button
                   key={prompt}
                   type="button"
+                  disabled={chat.isLoading}
                   onClick={() => sendChatMessage(prompt)}
-                  className="min-h-10 px-3 border border-line rounded-full bg-transparent text-ink font-medium text-[0.8125rem] cursor-pointer transition-colors hover:bg-panel2"
+                  className="min-h-10 px-3 border border-line rounded-full bg-transparent text-ink font-medium text-[0.8125rem] cursor-pointer transition-colors hover:bg-panel2 disabled:opacity-50"
                 >
                   {prompt}
                 </button>
@@ -131,16 +147,18 @@ export function StudyBuddyChat() {
               ref={inputRef}
               type="text"
               value={draft}
+              disabled={chat.isLoading}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder="Ask a question…"
+              placeholder={chat.isLoading ? 'BYTE is thinking…' : 'Ask a question…'}
               autoComplete="off"
               aria-label="Message"
-              className="flex-1 min-w-0 min-h-11 px-3.5 border border-line rounded-[10px] bg-bg text-ink text-base focus-visible:outline-none focus-visible:border-cyan"
+              className="flex-1 min-w-0 min-h-11 px-3.5 border border-line rounded-[10px] bg-bg text-ink text-base focus-visible:outline-none focus-visible:border-cyan disabled:opacity-70"
             />
             <button
               type="submit"
+              disabled={chat.isLoading || !draft.trim()}
               aria-label="Send"
-              className="inline-flex items-center justify-center w-[46px] min-h-11 p-0 border border-cyan rounded-[10px] bg-cyan text-cyan-ink cursor-pointer transition-all hover:brightness-110"
+              className="inline-flex items-center justify-center w-[46px] min-h-11 p-0 border border-cyan rounded-[10px] bg-cyan text-cyan-ink cursor-pointer transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Icon name="send" className="w-[18px] h-[18px]" />
             </button>

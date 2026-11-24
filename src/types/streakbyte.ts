@@ -171,6 +171,7 @@ export interface ProfileSettings {
   dailyReminder: boolean;
   soundEffects: boolean;
   hintsByDefault: boolean;
+  geminiApiKey?: string;
 }
 
 export interface ChatMessage {
@@ -183,5 +184,6 @@ export interface ChatState {
   open: boolean;
   hasOpened: boolean;
   showSuggestions: boolean;
+  isLoading?: boolean;
   messages: ChatMessage[];
 }

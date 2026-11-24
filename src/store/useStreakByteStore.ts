@@ -103,6 +103,7 @@ function createInitialProfileSettings(): ProfileSettings {
     dailyReminder: true,
     soundEffects: true,
     hintsByDefault: true,
+    geminiApiKey: '',
   };
 }
 
@@ -111,6 +112,7 @@ function createInitialChatState(): ChatState {
     open: false,
     hasOpened: false,
     showSuggestions: true,
+    isLoading: false,
     messages: [],
   };
 }
@@ -542,26 +544,46 @@ export const useStreakByteStore = create<StreakByteStore>()(
           set((state) => ({
             chat: {
               ...state.chat,
+              isLoading: false,
               messages: [...state.chat.messages, { id: nextMsgId(), role: 'bot', text: reply }],
             },
           }));
 
-        set((state) => ({
-          chat: {
-            ...state.chat,
-            showSuggestions: false,
-            messages: [...state.chat.messages, { id: nextMsgId(), role: 'me', text }],
-          },
+        const history = get().chat.messages.map((m) => ({
+          role: m.role === 'me' ? ('user' as const) : ('model' as const),
+          text: m.text,
         }));
 
-        // The port may answer synchronously (offline responder) or with a Promise (server-backed).
-        const reply = services.studyBuddy.reply(text);
+        const reply = services.studyBuddy.reply(text, {
+          history,
+          currentLesson: get().learnKey ?? undefined,
+          apiKey: get().profileSettings.geminiApiKey || undefined,
+        });
+
         if (typeof reply === 'string') {
+          set((state) => ({
+            chat: {
+              ...state.chat,
+              showSuggestions: false,
+              isLoading: false,
+              messages: [...state.chat.messages, { id: nextMsgId(), role: 'me', text }],
+            },
+          }));
           appendBot(reply);
         } else {
+          set((state) => ({
+            chat: {
+              ...state.chat,
+              showSuggestions: false,
+              isLoading: true,
+              messages: [...state.chat.messages, { id: nextMsgId(), role: 'me', text }],
+            },
+          }));
           reply
             .then(appendBot)
-            .catch(() => appendBot('I couldn’t reach the study buddy right now. Try again in a moment.'));
+            .catch(() => {
+              appendBot('I couldn’t reach the study buddy right now. Try again in a moment.');
+            });
         }
       },
 

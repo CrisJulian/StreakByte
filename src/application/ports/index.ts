@@ -29,13 +29,24 @@ export interface ProgressRepository {
   saveLessonCompletion(completion: LessonCompletion): Promise<void>;
 }
 
+export interface StudyBuddyMessage {
+  role: 'user' | 'model';
+  text: string;
+}
+
+export interface StudyBuddyContext {
+  history?: StudyBuddyMessage[];
+  currentLesson?: string;
+  apiKey?: string;
+}
+
 /**
  * Study Buddy must only answer from StreakByte's own lesson content.
  * Sync return is allowed so the offline responder stays instant; a server-backed one returns a Promise.
  */
 export interface StudyBuddyService {
   greeting: string;
-  reply(question: string): string | Promise<string>;
+  reply(question: string, context?: StudyBuddyContext): string | Promise<string>;
 }
 
 export interface ReminderScheduler {

@@ -184,6 +184,22 @@ export function ProfileView() {
               className="w-full min-h-11 px-3 border border-line rounded-[10px] bg-bg text-ink text-[0.9375rem] font-sans focus-visible:outline-none focus-visible:border-cyan"
             />
 
+            <label htmlFor="s-gemini" className="block mt-3.5 mb-1.5 font-semibold text-sm">
+              Gemini API key <span className="text-muted font-normal">(optional)</span>
+            </label>
+            <input
+              id="s-gemini"
+              type="password"
+              placeholder="Leave blank for offline responder"
+              autoComplete="off"
+              value={settings.geminiApiKey ?? ''}
+              onChange={(e) => updateProfileSettings({ geminiApiKey: e.target.value })}
+              className="w-full min-h-11 px-3 border border-line rounded-[10px] bg-bg text-ink text-[0.9375rem] font-sans focus-visible:outline-none focus-visible:border-cyan"
+            />
+            <small className="block mt-1 text-muted text-xs">
+              Powers live Study Buddy responses via Google Gemini. If empty or offline, built-in curriculum answers are used.
+            </small>
+
             <span id="theme-l" className="block mt-4 mb-2 text-muted text-[0.8125rem] font-bold">
               Appearance
             </span>
