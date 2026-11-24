@@ -6,7 +6,8 @@ export type ViewId =
   | 'achievements'
   | 'leaderboard'
   | 'profile'
-  | 'complete';
+  | 'complete'
+  | 'login';
 
 export type TrackId = 'hw' | 'net';
 export type LabId = 'pc' | 'net';
@@ -52,8 +53,14 @@ export type IconName =
   | 'sun'
   | 'moon';
 
+export interface LessonReference {
+  title: string;
+  url: string;
+}
+
 export interface CurriculumLesson {
   title: string;
+  references?: LessonReference[];
   subtitle: string;
   minutes: number;
   xp: number;

@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
-import { getStudyBuddyReply, STUDY_BUDDY_GREETING } from '../data/studyBuddy';
+import { services } from '../composition';
+import { createInitialNetState, placeDevice, saveDeviceConfig, selectDevice } from '../domain/rules/network';
+import { createInitialPcState, nextHint, placePart, selectPart } from '../domain/rules/pcBuild';
+import { summarizeNetworkBuild, summarizePcBuild } from '../domain/rules/summaries';
 import type {
   AchievementFilter,
   CableType,
@@ -10,7 +13,6 @@ import type {
   LeaderboardPeriod,
   NetDeviceConfig,
   NetDeviceId,
-  NetFormErrors,
   NetworkLabState,
   PcBuildState,
   PcPartId,
@@ -34,37 +36,11 @@ const VALID_VIEWS: readonly ViewId[] = [
   'leaderboard',
   'profile',
   'complete',
+  'login',
 ];
 
-export const PC_SLOT_TO_PART: Record<PcSlotId, PcPartId> = {
-  A1: 'ram',
-  A2: 'ram',
-  B1: 'ram',
-  B2: 'ram',
-  M2: 'm2',
-  PCIE: 'gpu',
-  PWR: 'psu',
-};
-
-export const PC_HINTS: Record<PcPartId, string> = {
-  ram: 'RAM goes in the memory slots, the four tall slots at the top.',
-  m2: 'The M.2 SSD goes in the M.2 slot under the CPU.',
-  gpu: 'The graphics card goes in the long PCIe x16 slot.',
-  psu: 'Power connects at the 24-pin connector on the right.',
-};
-
-const PC_SUCCESS_COPY: Record<PcPartId, string> = {
-  ram: 'RAM seated. Match the notch and press until the clips click.',
-  m2: 'M.2 SSD installed and secured.',
-  gpu: 'Graphics card seated in the PCIe x16 slot.',
-  psu: '24-pin power cable connected.',
-};
-
-export const NET_DEVICE_NAMES: Record<NetDeviceId, string> = {
-  pc: 'PC',
-  laptop: 'Laptop',
-  hub: 'Hub',
-};
+export { PC_HINTS, PC_SLOT_TO_PART } from '../domain/rules/pcBuild';
+export { NET_DEVICE_NAMES } from '../domain/rules/network';
 
 export const CABLE_COLORS: Record<CableType, string> = {
   eth: '#22d3ee',
@@ -84,44 +60,6 @@ export function parseHash(hash: string): { view: ViewId; lab?: LabId } {
     return { view, lab: sub === 'network' ? 'net' : 'pc' };
   }
   return { view };
-}
-
-function isValidIpv4(value: string): boolean {
-  return (
-    /^(\d{1,3})(\.\d{1,3}){3}$/.test(value) &&
-    value.split('.').every((octet) => Number(octet) <= 255)
-  );
-}
-
-function createInitialPcState(): PcBuildState {
-  return {
-    selectedPart: null,
-    ram: {},
-    m2: false,
-    gpu: false,
-    psu: false,
-    ok: 0,
-    bad: 0,
-    message: 'Select a part in the tray, then tap its slot on the board.',
-    hintSlots: [],
-    hintTick: 0,
-  };
-}
-
-function createInitialNetState(): NetworkLabState {
-  return {
-    selectedDevice: null,
-    placed: { pc: true, laptop: true, hub: false },
-    cfg: {
-      pc: { ip: '192.168.1.10', mask: '255.255.255.0', gw: '192.168.1.1', cab: 'eth' },
-    },
-    savedDevices: {},
-    openDevice: 'laptop',
-    bad: 0,
-    issues: [],
-    message: 'Click PC or Laptop to configure its IP address, then test the connection.',
-    errors: {},
-  };
 }
 
 function createInitialSetupModal(): SetupModalState {
@@ -350,240 +288,28 @@ export const useStreakByteStore = create<StreakByteStore>()(
       tickLessonTimer: () =>
         set((state) => ({ lessonSeconds: state.lessonSeconds + 1 })),
 
-      selectPcPart: (part) =>
-        set((state) => {
-          const next = state.pc.selectedPart === part ? null : part;
-          return {
-            pc: {
-              ...state.pc,
-              selectedPart: next,
-              message: next
-                ? 'Now tap the matching slot on the board, or drag the part onto it.'
-                : state.pc.message,
-            },
-          };
-        }),
+      selectPcPart: (part) => set((state) => ({ pc: selectPart(state.pc, part) })),
 
       placePcPart: (slotId, draggedPart) => {
-        const state = get();
-        const part = draggedPart ?? state.pc.selectedPart;
-
-        if (!part) {
-          set({
-            pc: {
-              ...state.pc,
-              message: 'Select a part in the tray first, then tap a slot on the board.',
-            },
-          });
-          return false;
-        }
-
-        const want = PC_SLOT_TO_PART[slotId];
-        if (part !== want) {
-          set({
-            pc: {
-              ...state.pc,
-              bad: state.pc.bad + 1,
-              message: `Not there. ${PC_HINTS[part]}`,
-            },
-          });
-          return false;
-        }
-
-        const isRamSlot = slotId === 'A1' || slotId === 'A2' || slotId === 'B1' || slotId === 'B2';
-        const alreadyFilled = isRamSlot
-          ? Boolean(state.pc.ram[slotId])
-          : want === 'm2'
-            ? state.pc.m2
-            : want === 'gpu'
-              ? state.pc.gpu
-              : state.pc.psu;
-
-        if (alreadyFilled) {
-          set({
-            pc: {
-              ...state.pc,
-              message: 'That slot already has a part installed.',
-            },
-          });
-          return false;
-        }
-
-        if (want === 'ram' && Object.keys(state.pc.ram).length >= 2) {
-          set({
-            pc: {
-              ...state.pc,
-              selectedPart: null,
-              message: 'Both RAM sticks are already installed.',
-            },
-          });
-          return false;
-        }
-
-        const nextRam = isRamSlot ? { ...state.pc.ram, [slotId]: true } : state.pc.ram;
-        const nextM2 = want === 'm2' ? true : state.pc.m2;
-        const nextGpu = want === 'gpu' ? true : state.pc.gpu;
-        const nextPsu = want === 'psu' ? true : state.pc.psu;
-
-        const partExhausted =
-          (want === 'ram' && Object.keys(nextRam).length >= 2) ||
-          (want === 'm2' && nextM2) ||
-          (want === 'gpu' && nextGpu) ||
-          (want === 'psu' && nextPsu);
-
-        set({
-          pc: {
-            ...state.pc,
-            ram: nextRam,
-            m2: nextM2,
-            gpu: nextGpu,
-            psu: nextPsu,
-            ok: state.pc.ok + 1,
-            selectedPart: partExhausted && state.pc.selectedPart === want ? null : state.pc.selectedPart,
-            message: PC_SUCCESS_COPY[want],
-          },
-        });
-        return true;
+        const { state, placed } = placePart(get().pc, slotId, draggedPart);
+        set({ pc: state });
+        return placed;
       },
 
-      triggerPcHint: () => {
-        const { pc } = get();
-        const ramDone = Object.keys(pc.ram).length >= 2;
-        if (!ramDone) {
-          set({
-            pc: {
-              ...pc,
-              message: `Insert the RAM. ${PC_HINTS.ram} Use A2 and B2 for dual-channel.`,
-              hintSlots: ['A2', 'B2'],
-              hintTick: pc.hintTick + 1,
-            },
-          });
-          return;
-        }
-        if (!pc.m2) {
-          set({
-            pc: {
-              ...pc,
-              message: `Install the M.2 SSD. ${PC_HINTS.m2}`,
-              hintSlots: ['M2'],
-              hintTick: pc.hintTick + 1,
-            },
-          });
-          return;
-        }
-        if (!pc.gpu) {
-          set({
-            pc: {
-              ...pc,
-              message: `Install the graphics card. ${PC_HINTS.gpu}`,
-              hintSlots: ['PCIE'],
-              hintTick: pc.hintTick + 1,
-            },
-          });
-          return;
-        }
-        if (!pc.psu) {
-          set({
-            pc: {
-              ...pc,
-              message: `Connect the power cables. ${PC_HINTS.psu}`,
-              hintSlots: ['PWR'],
-              hintTick: pc.hintTick + 1,
-            },
-          });
-          return;
-        }
-        set({
-          pc: {
-            ...pc,
-            message: 'All parts are installed. Press Check build.',
-            hintSlots: [],
-          },
-        });
-      },
+      triggerPcHint: () => set((state) => ({ pc: nextHint(state.pc) })),
 
       completePcBuild: () => {
-        const { pc } = get();
-        const missedDual = !(pc.ram.A2 && pc.ram.B2);
-        const usedSlots = Object.keys(pc.ram).sort().join(' and ') || 'A1 and B1';
-        const acc =
-          pc.ok + pc.bad > 0
-            ? Math.round((pc.ok / (pc.ok + pc.bad + (missedDual ? 1 : 0))) * 100)
-            : 80;
-
-        set({
-          completion: {
-            title: 'Nice build, Mika!',
-            subtitle: 'You installed 5 of 5 parts and kept your streak alive.',
-            xp: '+120',
-            accuracy: `${acc}%`,
-            partsLabel: 'Parts',
-            partsValue: '5 / 5',
-            review: [
-              [
-                'Dual-channel RAM',
-                missedDual ? `You used slots ${usedSlots}` : 'Slots A2 and B2 matched',
-              ],
-              ['DDR4 vs DDR5', 'Not compatible'],
-              ['RAM notch', 'Check the orientation'],
-            ],
-            next: ['Lesson 4: Storage', 'HDD, SSD and M.2', '6 min · +120 XP'],
-          },
-        });
+        set({ completion: summarizePcBuild(get().pc) });
         get().navigate('complete');
       },
 
       selectNetworkDevice: (device) =>
-        set((state) => {
-          const next = state.net.selectedDevice === device ? null : device;
-          return {
-            net: {
-              ...state.net,
-              selectedDevice: next,
-              message: next
-                ? `Now tap the ${NET_DEVICE_NAMES[next]} spot on the diagram, or drag it onto the spot.`
-                : state.net.message,
-            },
-          };
-        }),
+        set((state) => ({ net: selectDevice(state.net, device) })),
 
       placeNetworkDevice: (spot, draggedDevice) => {
-        const state = get();
-        const dev = draggedDevice ?? state.net.selectedDevice;
-
-        if (!dev) {
-          set({
-            net: {
-              ...state.net,
-              message: 'Select a device in the tray first, then tap a dashed spot.',
-            },
-          });
-          return false;
-        }
-
-        if (dev !== spot) {
-          set({
-            net: {
-              ...state.net,
-              bad: state.net.bad + 1,
-              message: `${NET_DEVICE_NAMES[dev]} belongs on the ${NET_DEVICE_NAMES[dev]} spot.`,
-            },
-          });
-          return false;
-        }
-
-        set({
-          net: {
-            ...state.net,
-            placed: { ...state.net.placed, [dev]: true },
-            selectedDevice: state.net.selectedDevice === dev ? null : state.net.selectedDevice,
-            message:
-              dev === 'hub'
-                ? 'Hub placed. The router already has free ports, so the hub is optional.'
-                : `${NET_DEVICE_NAMES[dev]} placed. Click it to set it up.`,
-          },
-        });
-        return true;
+        const { state, placed } = placeDevice(get().net, spot, draggedDevice);
+        set({ net: state });
+        return placed;
       },
 
       openNetworkConfig: (device) => {
@@ -616,94 +342,13 @@ export const useStreakByteStore = create<StreakByteStore>()(
         })),
 
       saveNetworkConfig: (config) => {
-        const state = get();
-        const device = state.net.openDevice;
-        if (!device) return false;
-
-        const ip = config.ip.trim();
-        const mask = config.mask.trim();
-        const gw = config.gw.trim();
-        const cab = config.cab;
-        const errors: NetFormErrors = {};
-        const nextIssues = new Set(state.net.issues);
-
-        if (!isValidIpv4(ip)) {
-          errors.ip = 'Enter four numbers from 0 to 255, like 192.168.1.20.';
-        } else if (ip === '192.168.1.1') {
-          errors.ip = '192.168.1.1 belongs to the router. Pick 2 to 254.';
-        } else if (
-          !ip.startsWith('192.168.1.') ||
-          Number(ip.split('.')[3]) < 2 ||
-          Number(ip.split('.')[3]) > 254
-        ) {
-          errors.ip = 'Use 192.168.1.x with x from 2 to 254, on the router’s network.';
-          nextIssues.add('IP address basics');
-        } else if (
-          Object.entries(state.net.cfg).some(
-            ([key, existing]) => key !== device && existing?.ip === ip,
-          )
-        ) {
-          errors.ip = 'Another device on this network already uses that address.';
-        }
-
-        if (mask !== '255.255.255.0') {
-          errors.mask = 'Use 255.255.255.0 for this /24 local network.';
-          nextIssues.add('Subnet masks');
-        }
-
-        if (gw !== '192.168.1.1') {
-          errors.gw = 'Set the gateway to the router IP: 192.168.1.1.';
-          nextIssues.add('Gateways');
-        }
-
-        if (!cab) {
-          errors.cab = 'Choose a cable.';
-        }
-
-        if (Object.keys(errors).length > 0) {
-          set({
-            net: {
-              ...state.net,
-              bad: state.net.bad + 1,
-              issues: [...nextIssues],
-              errors,
-            },
-          });
-          return false;
-        }
-
-        set({
-          net: {
-            ...state.net,
-            cfg: { ...state.net.cfg, [device]: { ip, mask, gw, cab } },
-            savedDevices: { ...state.net.savedDevices, [device]: true },
-            openDevice: null,
-            errors: {},
-            message: `${NET_DEVICE_NAMES[device]} saved (${ip}). Press Test connection to verify the network.`,
-          },
-        });
-        return true;
+        const { state, saved } = saveDeviceConfig(get().net, config);
+        set({ net: state });
+        return saved;
       },
 
       completeNetworkBuild: () => {
-        const { net } = get();
-        const acc = Math.max(60, 100 - net.bad * 10);
-
-        set({
-          completion: {
-            title: 'Nice build, Mika!',
-            subtitle: 'Your PC and laptop reached the router and passed the connection check.',
-            xp: '+150',
-            accuracy: `${acc}%`,
-            partsLabel: 'Devices',
-            partsValue: '2 / 2',
-            review: [
-              ['IP address basics', 'Each host needs a unique address on 192.168.1.0/24'],
-              ['Subnet masks', '255.255.255.0 keeps both devices on the same LAN'],
-            ],
-            next: ['Subnet masks', 'Split one network into parts', '6 min · +120 XP'],
-          },
-        });
+        set({ completion: summarizeNetworkBuild(get().net) });
         get().navigate('complete');
       },
 
@@ -720,7 +365,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
                 ...state.chat,
                 open: true,
                 hasOpened: true,
-                messages: [{ id: nextMsgId(), role: 'bot', text: STUDY_BUDDY_GREETING }],
+                messages: [{ id: nextMsgId(), role: 'bot', text: services.studyBuddy.greeting }],
               },
             };
           }
@@ -730,18 +375,32 @@ export const useStreakByteStore = create<StreakByteStore>()(
       sendChatMessage: (raw) => {
         const text = raw.trim();
         if (!text) return;
-        const reply = getStudyBuddyReply(text);
+
+        const appendBot = (reply: string) =>
+          set((state) => ({
+            chat: {
+              ...state.chat,
+              messages: [...state.chat.messages, { id: nextMsgId(), role: 'bot', text: reply }],
+            },
+          }));
+
         set((state) => ({
           chat: {
             ...state.chat,
             showSuggestions: false,
-            messages: [
-              ...state.chat.messages,
-              { id: nextMsgId(), role: 'me', text },
-              { id: nextMsgId(), role: 'bot', text: reply },
-            ],
+            messages: [...state.chat.messages, { id: nextMsgId(), role: 'me', text }],
           },
         }));
+
+        // The port may answer synchronously (offline responder) or with a Promise (server-backed).
+        const reply = services.studyBuddy.reply(text);
+        if (typeof reply === 'string') {
+          appendBot(reply);
+        } else {
+          reply
+            .then(appendBot)
+            .catch(() => appendBot('I couldn’t reach the study buddy right now. Try again in a moment.'));
+        }
       },
 
       resetAll: () =>

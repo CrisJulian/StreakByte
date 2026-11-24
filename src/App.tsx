@@ -10,6 +10,7 @@ import { CurriculumView } from './views/CurriculumView';
 import { DashboardView } from './views/DashboardView';
 import { LeaderboardView } from './views/LeaderboardView';
 import { LessonPlayerView } from './views/LessonPlayerView';
+import { LoginView } from './views/LoginView';
 import { PracticeView } from './views/PracticeView';
 import { ProfileView } from './views/ProfileView';
 
@@ -51,7 +52,7 @@ export function App() {
         Skip to main content
       </a>
 
-      <TopBar />
+      {view !== 'login' && <TopBar />}
 
       <main
         id="main"
@@ -65,6 +66,7 @@ export function App() {
         {view === 'achievements' && <AchievementsView />}
         {view === 'leaderboard' && <LeaderboardView />}
         {view === 'profile' && <ProfileView />}
+        {view === 'login' && <LoginView />}
       </main>
 
       <SessionSetupModal />

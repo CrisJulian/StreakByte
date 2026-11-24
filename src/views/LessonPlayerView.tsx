@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Icon } from '../components/Icon';
+import { LAB_REFERENCES } from '../data/references';
 import { useStreakByteStore } from '../store/useStreakByteStore';
 import { NetworkBuildLab } from './labs/NetworkBuildLab';
 import { PcBuildLab } from './labs/PcBuildLab';
@@ -122,6 +123,29 @@ export function LessonPlayerView() {
       </div>
 
       {activeLab === 'pc' ? <PcBuildLab /> : <NetworkBuildLab />}
+
+      <section
+        aria-labelledby="lesson-references"
+        className="mt-8 pt-5 border-t border-line"
+      >
+        <h2 id="lesson-references" className="text-sm font-bold text-muted uppercase tracking-wide mb-2">
+          References
+        </h2>
+        <ul className="grid gap-1.5 text-[0.9375rem]">
+          {LAB_REFERENCES[activeLab].map((ref) => (
+            <li key={ref.url}>
+              <a
+                href={ref.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-cyan underline underline-offset-2"
+              >
+                {ref.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }
