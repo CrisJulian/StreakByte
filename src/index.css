@@ -1,0 +1,386 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel2: var(--panel2);
+  --color-line: var(--line);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-cyan: var(--cyan);
+  --color-cyan-ink: var(--cyan-ink);
+  --color-amber: var(--amber);
+  --color-amber-ink: var(--amber-ink);
+  --color-green: var(--green);
+  --color-green-ink: var(--green-ink);
+  --color-danger: var(--danger);
+  --color-you: var(--you);
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+:root {
+  color-scheme: dark;
+  --hog: url('/mascot.png');
+  --buddy: url('/buddy-logo.png');
+  --bg: #0b1020;
+  --panel: #121935;
+  --panel2: #18214a;
+  --line: #26305f;
+  --text: #eef2ff;
+  --muted: #a3add1;
+  --cyan: #22d3ee;
+  --cyan-ink: #04212a;
+  --amber: #38bdf8;
+  --amber-ink: #041e2e;
+  --green: #34d399;
+  --green-ink: #032218;
+  --danger: #f87171;
+  --you: #143a4a;
+  --scrim: rgba(6, 10, 22, 0.72);
+  --dimm-bg: #18214a;
+  --dimm-stroke: #3a4690;
+  --dimm-chip: #0b1020;
+  --sans: "Instrument Sans", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  scrollbar-color: var(--line) transparent;
+  caret-color: var(--cyan);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f1f5f9;
+  --panel: #ffffff;
+  --panel2: #e2e8f0;
+  --line: #cbd5e1;
+  --text: #0f172a;
+  --muted: #475569;
+  --cyan: #08708a;
+  --cyan-ink: #ffffff;
+  --amber: #0284c7;
+  --amber-ink: #ffffff;
+  --green: #047857;
+  --green-ink: #ffffff;
+  --danger: #b91c1c;
+  --you: #e0f2fe;
+  --scrim: rgba(15, 23, 42, 0.45);
+  --dimm-bg: #e2e8f0;
+  --dimm-stroke: #94a3b8;
+  --dimm-chip: #ffffff;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    height: 100%;
+    scroll-padding-top: 76px;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--text);
+    font: 400 1rem/1.5 var(--sans);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  ::selection {
+    background: var(--cyan);
+    color: var(--cyan-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  a,
+  button,
+  input,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+
+  a {
+    text-underline-offset: 3px;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  ol,
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.num {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.hog {
+  background: var(--hog) center / contain no-repeat;
+  image-rendering: pixelated;
+}
+
+.buddy-logo {
+  background: var(--buddy) center / contain no-repeat;
+}
+
+.sb-enter {
+  animation: sb-rise 0.36s var(--ease) both;
+}
+
+.sb-pop {
+  animation: sb-pop 0.2s var(--ease);
+}
+
+.sb-bar-fill {
+  transform-origin: left;
+  animation: sb-fill 0.7s var(--ease) both;
+}
+
+@keyframes sb-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes sb-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes sb-pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes sb-pulse {
+  50% {
+    stroke: #ffffff;
+    stroke-width: 4;
+  }
+}
+
+/* Interactive SVG: PC Build motherboard */
+svg.pcb {
+  width: 100%;
+  height: auto;
+  stroke: none;
+  stroke-width: 0;
+  display: block;
+}
+
+.pcb text {
+  font: 600 13px var(--sans);
+  fill: #f4f7ef;
+  paint-order: stroke;
+  stroke: #0f3a33;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.pcb .bd {
+  fill: #1e7a56;
+  stroke: #2fa376;
+  stroke-width: 2;
+}
+
+.pcb .hole {
+  fill: none;
+  stroke: #22d3ee;
+  stroke-width: 3;
+}
+
+.pcb .part {
+  fill: #151d36;
+  stroke: #0b1020;
+  stroke-width: 1.5;
+}
+
+.pcb .slot {
+  cursor: pointer;
+  outline: none;
+}
+
+.pcb .slot .sh {
+  fill: #0b1020;
+  stroke: #22d3ee;
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+  transition: fill 0.18s, stroke 0.18s;
+}
+
+.pcb .slot:hover .sh,
+.pcb .slot:focus-visible .sh,
+.pcb .slot.over .sh {
+  stroke: #ffffff;
+  fill: #16224a;
+}
+
+.pcb .slot.filled .sh {
+  stroke-dasharray: none;
+  stroke: #0b1020;
+}
+
+.pcb .slot[data-part="ram"].filled .sh {
+  fill: #34d399;
+}
+
+.pcb .slot[data-part="m2"].filled .sh {
+  fill: #cbd5e1;
+}
+
+.pcb .slot[data-part="gpu"].filled .sh {
+  fill: #94a3b8;
+}
+
+.pcb .slot[data-part="psu"].filled .sh {
+  fill: #22d3ee;
+}
+
+.pcb .slot.hint .sh {
+  animation: sb-pulse 1s ease-in-out 3;
+}
+
+.pcb .badge circle {
+  fill: #22d3ee;
+  stroke: #0b1020;
+  stroke-width: 1.5;
+}
+
+.pcb .badge text {
+  fill: #04212a;
+  stroke: none;
+  font: 700 13px var(--mono);
+  text-anchor: middle;
+}
+
+.pcb .badge.done circle {
+  fill: #0f3a33;
+  stroke: #ffffff;
+}
+
+.pcb .badge.done path {
+  stroke: #ffffff;
+  stroke-width: 2.5;
+  fill: none;
+}
+
+.pcb .lab {
+  text-anchor: middle;
+}
+
+/* Interactive SVG: Network build diagram */
+svg.net {
+  width: 100%;
+  height: auto;
+  display: block;
+  stroke: none;
+  stroke-width: 0;
+}
+
+.net .gridl {
+  stroke: var(--line);
+  stroke-width: 1;
+  opacity: 0.55;
+}
+
+.net text {
+  font: 600 14px var(--sans);
+  fill: var(--text);
+  text-anchor: middle;
+}
+
+.net .spot rect {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+  transition: stroke 0.18s, fill 0.18s;
+}
+
+.net .spot {
+  cursor: pointer;
+  outline: none;
+}
+
+.net .spot:hover rect,
+.net .spot:focus-visible rect,
+.net .spot.over rect {
+  stroke: var(--cyan);
+  fill: color-mix(in srgb, var(--cyan) 10%, transparent);
+}
+
+.net .spot text {
+  fill: var(--muted);
+  font-size: 13px;
+}
+
+.net .dev {
+  cursor: pointer;
+  outline: none;
+}
+
+.net .dev .ring {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 3;
+  transition: stroke 0.18s;
+}
+
+.net .dev:hover .ring,
+.net .dev:focus-visible .ring {
+  stroke: var(--cyan);
+}
+
+.net .dev.ready .ring {
+  stroke: var(--green);
+}
+
+.net .dev.pending .ring {
+  stroke: var(--amber);
+}
+
+.cab {
+  stroke-width: 6;
+}
+
+/* Safe mobile bottom nav spacing */
+@media (max-width: 760px) {
+  body {
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

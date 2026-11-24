@@ -1,0 +1,81 @@
+import type { AchievementItem } from '../types/streakbyte';
+
+export const ACHIEVEMENTS: AchievementItem[] = [
+  {
+    id: 'first-build',
+    title: 'First Build',
+    description: 'Assemble your first virtual PC.',
+    unlocked: true,
+    icon: 'wrench',
+    accent: 'cyan',
+  },
+  {
+    id: '5-day-run',
+    title: '5-Day Run',
+    description: 'Keep a 5-day streak.',
+    unlocked: true,
+    icon: 'flame',
+    accent: 'amber',
+  },
+  {
+    id: 'ram-master',
+    title: 'RAM Master',
+    description: 'Seat a memory module correctly in the PC build lesson.',
+    unlocked: true,
+    icon: 'cpu',
+    accent: 'cyan',
+  },
+  {
+    id: 'net-ninja',
+    title: 'Net Ninja',
+    description: 'Complete Networking Level 1.',
+    unlocked: false,
+    icon: 'lock',
+    progressPct: 8,
+    progressText: '8 / 100 XP',
+  },
+  {
+    id: '30-day-run',
+    title: '30-Day Run',
+    description: 'Keep a 30-day streak.',
+    unlocked: false,
+    icon: 'lock',
+    progressPct: 17,
+    progressText: '5 / 30 days',
+  },
+  {
+    id: 'top-of-board',
+    title: 'Top of the Board',
+    description: 'Reach rank 1 on the weekly leaderboard.',
+    unlocked: false,
+    icon: 'lock',
+    statusText: 'Currently #3',
+  },
+  {
+    id: 'clean-build',
+    title: 'Clean Build',
+    description: 'Finish a PC build lesson with no errors.',
+    unlocked: false,
+    icon: 'lock',
+    statusText: 'Locked',
+  },
+  {
+    id: 'subnet-sage',
+    title: 'Subnet Sage',
+    description: 'Ace a subnetting quiz.',
+    unlocked: false,
+    icon: 'lock',
+    statusText: 'Locked',
+  },
+];
+
+export const PROFILE_BADGES: { label: string; unlocked: boolean }[] = [
+  { label: 'First build', unlocked: true },
+  { label: '5-day streak', unlocked: true },
+  { label: 'RAM master', unlocked: true },
+  { label: 'Network ninja', unlocked: false },
+  { label: '7-day streak', unlocked: false },
+  { label: 'Perfect build', unlocked: false },
+  { label: 'Speed builder', unlocked: false },
+  { label: 'Cable pro', unlocked: false },
+];
