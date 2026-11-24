@@ -19,13 +19,19 @@ import { QuizView } from './views/QuizView';
 export function App() {
   const view = useStreakByteStore((s) => s.view);
   const theme = useStreakByteStore((s) => s.theme);
+  const authUser = useStreakByteStore((s) => s.authUser);
+  const isGuest = useStreakByteStore((s) => s.isGuest);
+  const loadAuthUser = useStreakByteStore((s) => s.loadAuthUser);
   const syncFromHash = useStreakByteStore((s) => s.syncFromHash);
   const loadCompletions = useStreakByteStore((s) => s.loadCompletions);
 
   // Saved lesson progress (works offline) decides which lessons are done and unlocked.
   useEffect(() => {
     void loadCompletions();
-  }, [loadCompletions]);
+    void loadAuthUser();
+  }, [loadCompletions, loadAuthUser]);
+
+  const isAuthed = Boolean(authUser || isGuest);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -60,27 +66,36 @@ export function App() {
         Skip to main content
       </a>
 
-      {view !== 'login' && <TopBar />}
+      {isAuthed && view !== 'login' && <TopBar />}
 
       <main
         id="main"
-        className="max-w-[1180px] mx-auto px-6 pt-7 pb-16 max-[760px]:px-4 max-[760px]:pt-5 max-[760px]:pb-8"
+        className={
+          !isAuthed || view === 'login'
+            ? 'max-w-[1040px] mx-auto px-6 py-6 min-h-screen flex items-center justify-center max-[760px]:px-4 max-[760px]:py-4'
+            : 'max-w-[1180px] mx-auto px-6 pt-7 pb-16 max-[760px]:px-4 max-[760px]:pt-5 max-[760px]:pb-8'
+        }
       >
-        {view === 'dashboard' && <DashboardView />}
-        {view === 'curriculum' && <CurriculumView />}
-        {view === 'lesson' && <LessonPlayerView />}
-        {view === 'complete' && <CompleteView />}
-        {view === 'practice' && <PracticeView />}
-        {view === 'achievements' && <AchievementsView />}
-        {view === 'leaderboard' && <LeaderboardView />}
-        {view === 'profile' && <ProfileView />}
-        {view === 'login' && <LoginView />}
-        {view === 'quiz' && <QuizView />}
-        {view === 'learn' && <LearnView />}
+        {!isAuthed || view === 'login' ? (
+          <LoginView />
+        ) : (
+          <>
+            {view === 'dashboard' && <DashboardView />}
+            {view === 'curriculum' && <CurriculumView />}
+            {view === 'lesson' && <LessonPlayerView />}
+            {view === 'complete' && <CompleteView />}
+            {view === 'practice' && <PracticeView />}
+            {view === 'achievements' && <AchievementsView />}
+            {view === 'leaderboard' && <LeaderboardView />}
+            {view === 'profile' && <ProfileView />}
+            {view === 'quiz' && <QuizView />}
+            {view === 'learn' && <LearnView />}
+          </>
+        )}
       </main>
 
       <SessionSetupModal />
-      <StudyBuddyChat />
+      {isAuthed && view !== 'login' && <StudyBuddyChat />}
       <Toast />
     </>
   );

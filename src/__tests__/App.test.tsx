@@ -16,6 +16,14 @@ describe('App integration', () => {
     const user = userEvent.setup();
     render(<App />);
 
+    // Login screen appears first when not logged in
+    expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeInTheDocument();
+    const guestBtn = screen.getByRole('button', { name: /Continue as Guest/i });
+    expect(guestBtn).toBeInTheDocument();
+
+    // Enter app via guest mode
+    await user.click(guestBtn);
+
     // Initial Dashboard (streak card hidden until top-bar pill is clicked)
     expect(screen.getByRole('heading', { name: 'Welcome back, Mika' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog', { name: 'Daily streak' })).not.toBeInTheDocument();

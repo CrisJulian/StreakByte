@@ -16,6 +16,7 @@ import {
   submitAnswer,
 } from '../domain/rules/quiz';
 import { services } from '../composition';
+import type { AuthUser } from '../application/ports';
 import { createInitialNetState, placeDevice, saveDeviceConfig, selectDevice } from '../domain/rules/network';
 import { createInitialPcState, nextHint, placePart, selectPart } from '../domain/rules/pcBuild';
 import { summarizeNetworkBuild, summarizePcBuild, summarizeQuiz } from '../domain/rules/summaries';
@@ -125,6 +126,8 @@ function nextMsgId(): string {
 
 export interface StreakByteStore {
   view: ViewId;
+  authUser: AuthUser | null;
+  isGuest: boolean;
   activeLab: LabId;
   theme: ThemeMode;
   track: TrackId;
@@ -146,6 +149,12 @@ export interface StreakByteStore {
   chat: ChatState;
   toastMessage: string | null;
   toastTick: number;
+
+  // Auth & session
+  setAuthUser: (user: AuthUser | null) => void;
+  loginAsGuest: () => void;
+  logout: () => Promise<void>;
+  loadAuthUser: () => Promise<AuthUser | null>;
 
   // Navigation & shell
   syncFromHash: (hash: string) => void;
@@ -239,7 +248,9 @@ const safeStorage: StateStorage = {
 export const useStreakByteStore = create<StreakByteStore>()(
   persist(
     (set, get) => ({
-      view: 'dashboard',
+      view: 'login',
+      authUser: null,
+      isGuest: false,
       activeLab: 'pc',
       theme: 'dark',
       track: 'hw',
@@ -259,6 +270,63 @@ export const useStreakByteStore = create<StreakByteStore>()(
       chat: createInitialChatState(),
       toastMessage: null,
       toastTick: 0,
+
+      setAuthUser: (user) => {
+        set({ authUser: user, isGuest: false });
+        if (user) {
+          set((state) => ({
+            profileSettings: {
+              ...state.profileSettings,
+              displayName: user.displayName || state.profileSettings.displayName,
+              email: user.email || state.profileSettings.email,
+            },
+          }));
+        }
+      },
+
+      loginAsGuest: () => {
+        const guestUser: AuthUser = {
+          id: 'local-guest',
+          email: 'guest@streakbyte.local',
+          displayName: 'Guest Learner',
+        };
+        set({
+          authUser: guestUser,
+          isGuest: true,
+          view: 'dashboard',
+          profileSettings: {
+            ...get().profileSettings,
+            displayName: 'Guest Learner',
+            email: 'guest@streakbyte.local',
+          },
+        });
+        get().showToast('Welcome, Guest! (Dev Mode)');
+        get().navigate('dashboard');
+      },
+
+      logout: async () => {
+        try {
+          await services.auth.signOut();
+        } catch {
+          // Ignore
+        }
+        set({ authUser: null, isGuest: false, view: 'login' });
+        get().showToast('Logged out.');
+        get().navigate('login');
+      },
+
+      loadAuthUser: async () => {
+        try {
+          const user = await services.auth.currentUser();
+          if (user) {
+            set({ authUser: user });
+            return user;
+          }
+        } catch {
+          // ignore
+        }
+        return null;
+      },
 
       syncFromHash: (hash) => {
         const parsed = parseHash(hash);
@@ -589,7 +657,9 @@ export const useStreakByteStore = create<StreakByteStore>()(
 
       resetAll: () =>
         set({
-          view: 'dashboard',
+          view: 'login',
+          authUser: null,
+          isGuest: false,
           activeLab: 'pc',
           theme: 'dark',
           track: 'hw',
@@ -617,6 +687,8 @@ export const useStreakByteStore = create<StreakByteStore>()(
       partialize: (state) => ({
         theme: state.theme,
         profileSettings: state.profileSettings,
+        authUser: state.authUser,
+        isGuest: state.isGuest,
       }),
     },
   ),

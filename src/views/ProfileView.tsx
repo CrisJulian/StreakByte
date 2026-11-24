@@ -18,6 +18,7 @@ export function ProfileView() {
   const settings = useStreakByteStore((s) => s.profileSettings);
   const updateProfileSettings = useStreakByteStore((s) => s.updateProfileSettings);
   const showToast = useStreakByteStore((s) => s.showToast);
+  const logout = useStreakByteStore((s) => s.logout);
 
   return (
     <div>
@@ -314,7 +315,7 @@ export function ProfileView() {
 
           <button
             type="button"
-            onClick={() => showToast('Preview mode: signed in as Mika Reyes.')}
+            onClick={logout}
             className="w-full inline-flex items-center justify-center min-h-11 px-[18px] border border-line rounded-[10px] bg-transparent text-ink font-semibold text-[0.9375rem] cursor-pointer transition-colors hover:bg-panel2 hover:border-muted"
           >
             Log out

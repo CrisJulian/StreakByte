@@ -153,6 +153,25 @@ describe('useStreakByteStore', () => {
     expect(getStudyBuddyReply('A2 and B2')).toContain('Spot on!');
     expect(getStudyBuddyReply('a2 b2')).toContain('Spot on!');
   });
+
+  it('supports guest login and logout flow', async () => {
+    const store = useStreakByteStore.getState();
+    expect(store.view).toBe('login');
+    expect(store.authUser).toBeNull();
+    expect(store.isGuest).toBe(false);
+
+    store.loginAsGuest();
+    const authedState = useStreakByteStore.getState();
+    expect(authedState.isGuest).toBe(true);
+    expect(authedState.authUser?.displayName).toBe('Guest Learner');
+    expect(authedState.view).toBe('dashboard');
+
+    await authedState.logout();
+    const loggedOutState = useStreakByteStore.getState();
+    expect(loggedOutState.isGuest).toBe(false);
+    expect(loggedOutState.authUser).toBeNull();
+    expect(loggedOutState.view).toBe('login');
+  });
 });
 
 describe('quiz flow in the store', () => {
