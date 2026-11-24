@@ -8,16 +8,24 @@ import { AchievementsView } from './views/AchievementsView';
 import { CompleteView } from './views/CompleteView';
 import { CurriculumView } from './views/CurriculumView';
 import { DashboardView } from './views/DashboardView';
+import { LearnView } from './views/LearnView';
 import { LeaderboardView } from './views/LeaderboardView';
 import { LessonPlayerView } from './views/LessonPlayerView';
 import { LoginView } from './views/LoginView';
 import { PracticeView } from './views/PracticeView';
 import { ProfileView } from './views/ProfileView';
+import { QuizView } from './views/QuizView';
 
 export function App() {
   const view = useStreakByteStore((s) => s.view);
   const theme = useStreakByteStore((s) => s.theme);
   const syncFromHash = useStreakByteStore((s) => s.syncFromHash);
+  const loadCompletions = useStreakByteStore((s) => s.loadCompletions);
+
+  // Saved lesson progress (works offline) decides which lessons are done and unlocked.
+  useEffect(() => {
+    void loadCompletions();
+  }, [loadCompletions]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -67,6 +75,8 @@ export function App() {
         {view === 'leaderboard' && <LeaderboardView />}
         {view === 'profile' && <ProfileView />}
         {view === 'login' && <LoginView />}
+        {view === 'quiz' && <QuizView />}
+        {view === 'learn' && <LearnView />}
       </main>
 
       <SessionSetupModal />

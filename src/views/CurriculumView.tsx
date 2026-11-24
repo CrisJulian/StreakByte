@@ -1,5 +1,6 @@
 import { Icon } from '../components/Icon';
-import { TRACKS } from '../data/curriculum';
+import { getTrackProgress, lessonLabel, TRACKS } from '../data/curriculum';
+import { lessonKeyFor } from '../domain/rules/lessonProgress';
 import { useStreakByteStore } from '../store/useStreakByteStore';
 
 export function CurriculumView() {
@@ -7,9 +8,13 @@ export function CurriculumView() {
   const searchQuery = useStreakByteStore((s) => s.searchQuery);
   const setTrack = useStreakByteStore((s) => s.setTrack);
   const setSearchQuery = useStreakByteStore((s) => s.setSearchQuery);
-  const openSetup = useStreakByteStore((s) => s.openSetup);
+  const completions = useStreakByteStore((s) => s.completions);
+  const navigate = useStreakByteStore((s) => s.navigate);
 
   const activeTrack = TRACKS[track];
+  // Done / current / locked are worked out from the saved quiz results, never stored.
+  const progress = getTrackProgress(track, completions);
+  const currentIdx = progress.lessons.findIndex((l) => l.status === 'cur');
   const q = searchQuery.trim().toLowerCase();
   const filteredLessons = activeTrack.lessons
     .map((lesson, idx) => ({ lesson, idx }))
@@ -84,34 +89,21 @@ export function CurriculumView() {
             </li>
           ) : (
             filteredLessons.map(({ lesson, idx }) => {
-              const isDone = lesson.status === 'done';
-              const isCur = lesson.status === 'cur';
-              const isLock = lesson.status === 'lock';
-              const setupTarget = track === 'net' ? 'network' : 'pc';
-              const setupTitle = `Lesson ${idx + 1}: ${lesson.title}`;
+              const derived = progress.lessons[idx];
+              const key = lessonKeyFor(track, idx);
+              const label = lessonLabel(lesson, idx);
+              const isDone = derived.status === 'done';
+              const isCur = derived.status === 'cur';
+              const isLock = derived.status === 'lock';
 
               return (
                 <li
                   key={lesson.title}
-                  tabIndex={isCur ? 0 : undefined}
-                  role={isCur ? 'button' : undefined}
-                  onClick={isCur ? () => openSetup(setupTarget, setupTitle) : undefined}
-                  onKeyDown={
-                    isCur
-                      ? (e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            openSetup(setupTarget, setupTitle);
-                          }
-                        }
-                      : undefined
-                  }
+                  data-status={derived.status}
                   className={`grid grid-cols-[40px_minmax(0,1fr)_auto_auto_auto] max-[760px]:grid-cols-[36px_minmax(0,1fr)_auto] gap-3.5 items-center px-[18px] py-4 border rounded-[14px] transition-all ${
                     isLock
                       ? 'border-dashed border-line bg-transparent text-muted'
-                      : isCur
-                        ? 'bg-panel cursor-pointer hover:border-muted'
-                        : 'bg-panel border-line hover:border-muted'
+                      : 'bg-panel border-line hover:border-muted'
                   }`}
                   style={
                     isCur
@@ -138,6 +130,12 @@ export function CurriculumView() {
                   <div>
                     <h3 className="m-0 text-base font-bold leading-snug">{lesson.title}</h3>
                     <p className="mt-0.5 mb-0 text-muted text-sm">{lesson.subtitle}</p>
+                    {isLock && derived.lockMessage && (
+                      <p className="mt-1 mb-0 inline-flex items-center gap-1.5 text-sm font-semibold">
+                        <Icon name="lock" className="w-4 h-4" />
+                        {derived.lockMessage}
+                      </p>
+                    )}
                   </div>
 
                   <span className="num text-sm text-muted whitespace-nowrap max-[760px]:hidden">
@@ -147,22 +145,31 @@ export function CurriculumView() {
                     +{lesson.xp} XP
                   </span>
 
-                  {isDone && (
-                    <span className="inline-flex items-center justify-end gap-1.5 text-green font-bold text-sm min-w-[104px]">
-                      Completed
-                    </span>
-                  )}
-                  {isCur && (
-                    <span className="inline-flex items-center justify-end gap-1.5 text-amber font-bold text-sm min-w-[104px]">
-                      In progress
-                    </span>
-                  )}
-                  {isLock && (
-                    <span className="inline-flex items-center justify-end gap-1.5 text-muted font-semibold text-sm min-w-[104px]">
-                      <Icon name="lock" className="w-4 h-4" />
-                      Locked
-                    </span>
-                  )}
+                  <span className="inline-flex items-center justify-end gap-2 min-w-[104px] flex-wrap">
+                    {isLock && <span className="text-muted font-semibold text-sm">Locked</span>}
+                    {isDone && <span className="text-green font-bold text-sm">Completed</span>}
+                    {isCur && <span className="text-amber font-bold text-sm">Up next</span>}
+                    {!isLock && (
+                      <button
+                        type="button"
+                        aria-label={`${isDone ? 'Review' : 'Open'} ${label}`}
+                        onClick={() => navigate(`learn/${key}`)}
+                        className="min-h-9 px-3 border border-line rounded-lg bg-transparent text-ink font-semibold text-sm cursor-pointer hover:bg-panel2 hover:border-muted"
+                      >
+                        {isDone ? 'Review' : 'Open'}
+                      </button>
+                    )}
+                    {isDone && (
+                      <button
+                        type="button"
+                        aria-label={`Quiz for ${label}`}
+                        onClick={() => navigate(`quiz/${key}`)}
+                        className="min-h-9 px-3 border border-line rounded-lg bg-transparent text-ink font-semibold text-sm cursor-pointer hover:bg-panel2 hover:border-muted"
+                      >
+                        Quiz
+                      </button>
+                    )}
+                  </span>
                 </li>
               );
             })
@@ -173,14 +180,18 @@ export function CurriculumView() {
           <aside aria-label="Track progress" className="bg-panel border border-line rounded-2xl p-[22px]">
             <h2 className="m-0 mb-1 text-[1.125rem] font-bold">{activeTrack.heading}</h2>
             <p className="m-0 text-muted text-sm">
-              {activeTrack.done} of {activeTrack.total} lessons complete
+              {progress.doneCount} of {progress.total} lessons complete
             </p>
 
-            <div className="grid grid-cols-12 gap-1 my-3" aria-hidden="true">
-              {Array.from({ length: activeTrack.total }, (_, idx) => (
+            <div
+              className="grid gap-1 my-3"
+              style={{ gridTemplateColumns: `repeat(${progress.total}, minmax(0, 1fr))` }}
+              aria-hidden="true"
+            >
+              {progress.lessons.map((l) => (
                 <i
-                  key={idx}
-                  className={`h-2 rounded-[3px] ${idx < activeTrack.done ? 'bg-amber' : 'bg-panel2'}`}
+                  key={l.key}
+                  className={`h-2 rounded-[3px] ${l.status === 'done' ? 'bg-amber' : 'bg-panel2'}`}
                 />
               ))}
             </div>
@@ -195,18 +206,26 @@ export function CurriculumView() {
               <b>{activeTrack.badge}</b>
             </div>
 
-            <button
-              type="button"
-              onClick={() =>
-                openSetup(
-                  activeTrack.defaultTarget,
-                  track === 'net' ? 'Lesson 2: IP address basics' : 'Lesson 3: Memory (RAM)',
-                )
-              }
-              className="w-full inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-cyan rounded-[10px] bg-cyan text-cyan-ink font-semibold text-[0.9375rem] cursor-pointer transition-all hover:brightness-110 active:brightness-95"
-            >
-              Start lesson
-            </button>
+            {currentIdx >= 0 ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => navigate(`learn/${lessonKeyFor(track, currentIdx)}`)}
+                  className="w-full inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-cyan rounded-[10px] bg-cyan text-cyan-ink font-semibold text-[0.9375rem] cursor-pointer transition-all hover:brightness-110 active:brightness-95"
+                >
+                  Start lesson
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(`quiz/${lessonKeyFor(track, currentIdx)}`)}
+                  className="mt-2.5 w-full inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-line rounded-[10px] bg-transparent text-ink font-semibold text-[0.9375rem] cursor-pointer transition-colors hover:bg-panel2 hover:border-muted"
+                >
+                  Take the quiz
+                </button>
+              </>
+            ) : (
+              <p className="m-0 text-green font-bold text-sm">All lessons complete!</p>
+            )}
           </aside>
         </div>
       </div>

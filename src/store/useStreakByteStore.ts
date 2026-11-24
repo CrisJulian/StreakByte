@@ -1,9 +1,24 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
+import { QUIZ_BANK } from '../data/quizBank';
+import { getTrackProgress, isLessonKeyLocked, lessonLabel, TRACKS } from '../data/curriculum';
+import { LESSON_CONTENT } from '../data/lessons';
+import type { LessonCompletion } from '../domain/entities/progress';
+import type { QuizSession } from '../domain/entities/quiz';
+import { DEFAULT_PASS_MARK, isQuizPassed, recordCompletion } from '../domain/rules/lessonProgress';
+import {
+  isFinished,
+  nextQuestion,
+  parseLessonKey,
+  scoreQuiz,
+  selectChoice,
+  startQuiz,
+  submitAnswer,
+} from '../domain/rules/quiz';
 import { services } from '../composition';
 import { createInitialNetState, placeDevice, saveDeviceConfig, selectDevice } from '../domain/rules/network';
 import { createInitialPcState, nextHint, placePart, selectPart } from '../domain/rules/pcBuild';
-import { summarizeNetworkBuild, summarizePcBuild } from '../domain/rules/summaries';
+import { summarizeNetworkBuild, summarizePcBuild, summarizeQuiz } from '../domain/rules/summaries';
 import type {
   AchievementFilter,
   CableType,
@@ -37,6 +52,8 @@ const VALID_VIEWS: readonly ViewId[] = [
   'profile',
   'complete',
   'login',
+  'quiz',
+  'learn',
 ];
 
 export { PC_HINTS, PC_SLOT_TO_PART } from '../domain/rules/pcBuild';
@@ -48,7 +65,7 @@ export const CABLE_COLORS: Record<CableType, string> = {
   coax: '#a3add1',
 };
 
-export function parseHash(hash: string): { view: ViewId; lab?: LabId } {
+export function parseHash(hash: string): { view: ViewId; lab?: LabId; quiz?: string; learn?: string } {
   const raw = hash.startsWith('#') ? hash.slice(1) : hash;
   const [rawHead, sub] = (raw || 'dashboard').split('/');
   const head = rawHead === 'sandboxes' ? 'lesson' : rawHead;
@@ -59,6 +76,12 @@ export function parseHash(hash: string): { view: ViewId; lab?: LabId } {
   if (view === 'lesson') {
     return { view, lab: sub === 'network' ? 'net' : 'pc' };
   }
+  if (view === 'quiz') {
+    return { view, quiz: sub ?? '' };
+  }
+  if (view === 'learn') {
+    return { view, learn: sub ?? '' };
+  }
   return { view };
 }
 
@@ -66,7 +89,7 @@ function createInitialSetupModal(): SetupModalState {
   return {
     open: false,
     target: 'pc',
-    title: 'Lesson 3: Memory (RAM)',
+    title: 'Final Lesson: Build a PC',
     mode: 'guided',
     length: '5',
   };
@@ -112,6 +135,11 @@ export interface StreakByteStore {
   pc: PcBuildState;
   net: NetworkLabState;
   completion: CompletionSummary | null;
+  quiz: QuizSession | null;
+  /** Lesson key shown on the Learn page, e.g. "hw-3". */
+  learnKey: string | null;
+  /** Lessons whose quiz was passed. Locks and unlocks are derived from this. */
+  completions: LessonCompletion[];
   profileSettings: ProfileSettings;
   chat: ChatState;
   toastMessage: string | null;
@@ -155,6 +183,15 @@ export interface StreakByteStore {
   closeNetworkConfig: () => void;
   saveNetworkConfig: (config: NetDeviceConfig) => boolean;
   completeNetworkBuild: () => void;
+
+  // Quiz
+  selectQuizChoice: (choiceIndex: number) => void;
+  submitQuizAnswer: () => void;
+  nextQuizQuestion: () => void;
+
+  // Lesson progress
+  loadCompletions: () => Promise<void>;
+  recordLessonResult: (lessonKey: string, correct: number, total: number) => void;
 
   // Profile
   updateProfileSettings: (patch: Partial<ProfileSettings>) => void;
@@ -213,6 +250,9 @@ export const useStreakByteStore = create<StreakByteStore>()(
       pc: createInitialPcState(),
       net: createInitialNetState(),
       completion: null,
+      quiz: null,
+      learnKey: null,
+      completions: [],
       profileSettings: createInitialProfileSettings(),
       chat: createInitialChatState(),
       toastMessage: null,
@@ -220,6 +260,44 @@ export const useStreakByteStore = create<StreakByteStore>()(
 
       syncFromHash: (hash) => {
         const parsed = parseHash(hash);
+
+        if (parsed.view === 'learn') {
+          const key = parsed.learn ?? '';
+          if (!LESSON_CONTENT[key]) {
+            get().navigate('curriculum');
+            return;
+          }
+          if (isLessonKeyLocked(key, get().completions)) {
+            get().showToast('Finish the earlier lessons to unlock this one.');
+            get().navigate('curriculum');
+            return;
+          }
+          // Safe to run twice for one navigation: it only sets state.
+          set({ view: 'learn', learnKey: key });
+          return;
+        }
+
+        if (parsed.view === 'quiz') {
+          const key = parsed.quiz ?? '';
+          const bank = QUIZ_BANK[key];
+          if (!bank) {
+            get().navigate('curriculum');
+            return;
+          }
+          if (isLessonKeyLocked(key, get().completions)) {
+            get().showToast('Finish the earlier lessons to unlock this one.');
+            get().navigate('curriculum');
+            return;
+          }
+          // Hash sync can fire twice for one navigation; never restart a quiz in progress.
+          if (get().quiz?.lessonKey !== key) {
+            set({ view: 'quiz', quiz: startQuiz(key, bank) });
+          } else {
+            set({ view: 'quiz' });
+          }
+          return;
+        }
+
         set((state) => ({
           view: parsed.view,
           activeLab: parsed.lab ?? state.activeLab,
@@ -259,7 +337,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
             ...state.setupModal,
             open: true,
             target: isNet ? 'network' : 'pc',
-            title: title || (isNet ? 'Final level: Build a network' : 'Lesson 3: Memory (RAM)'),
+            title: title || (isNet ? 'Final Lesson: Build a Network' : 'Final Lesson: Build a PC'),
           },
         }));
       },
@@ -352,6 +430,90 @@ export const useStreakByteStore = create<StreakByteStore>()(
         get().navigate('complete');
       },
 
+      selectQuizChoice: (choiceIndex) =>
+        set((state) => (state.quiz ? { quiz: selectChoice(state.quiz, choiceIndex) } : {})),
+
+      submitQuizAnswer: () =>
+        set((state) => (state.quiz ? { quiz: submitAnswer(state.quiz) } : {})),
+
+      nextQuizQuestion: () => {
+        const session = get().quiz;
+        if (!session || !session.submitted) return;
+
+        const next = nextQuestion(session);
+        if (!isFinished(next)) {
+          set({ quiz: next });
+          return;
+        }
+
+        const parsed = parseLessonKey(next.lessonKey);
+        const track = parsed ? TRACKS[parsed.trackId as keyof typeof TRACKS] : undefined;
+        const lessonIdx = parsed ? parsed.number - 1 : -1;
+        const lesson = track?.lessons[lessonIdx];
+        const following = track?.lessons[lessonIdx + 1];
+        const score = scoreQuiz(next);
+        const passed = isQuizPassed(score.correct, score.total);
+
+        // Passing the quiz completes the lesson. Saving twice keeps one record (idempotent).
+        if (passed) get().recordLessonResult(next.lessonKey, score.correct, score.total);
+
+        const progress = track
+          ? getTrackProgress(track.id, get().completions)
+          : null;
+        const followingLock = progress?.lessons[lessonIdx + 1]?.lockMessage;
+        const followingMeta = following
+          ? `${following.minutes} min · +${following.xp} XP`
+          : '';
+
+        set({
+          quiz: null,
+          completion: summarizeQuiz({
+            lessonTitle: lesson && parsed ? lessonLabel(lesson, lessonIdx) : 'this lesson',
+            lessonXp: lesson?.xp ?? 0,
+            score,
+            passed,
+            passMark: DEFAULT_PASS_MARK,
+            next: following
+              ? [
+                  lessonLabel(following, lessonIdx + 1),
+                  followingLock ?? following.subtitle,
+                  followingMeta,
+                ]
+              : ['Back to the curriculum', 'Pick your next lesson', 'Keep your streak going'],
+          }),
+        });
+        get().navigate('complete');
+      },
+
+      loadCompletions: async () => {
+        try {
+          const saved = await services.progress.loadLessonCompletions();
+          if (saved.length === 0) return;
+          set((state) => ({
+            completions: saved.reduce(
+              (all, c) => recordCompletion(all, c),
+              state.completions,
+            ),
+          }));
+        } catch {
+          // Progress could not be read (private mode, storage error): start with none.
+        }
+      },
+
+      recordLessonResult: (lessonKey, correct, total) => {
+        const completion: LessonCompletion = {
+          lessonKey,
+          correct,
+          total,
+          completedAt: new Date().toISOString(),
+        };
+        set((state) => ({ completions: recordCompletion(state.completions, completion) }));
+        void services.progress.saveLessonCompletion(completion).catch(() => undefined);
+        void services.syncQueue
+          .enqueue({ type: 'complete-lesson', payload: completion })
+          .catch(() => undefined);
+      },
+
       updateProfileSettings: (patch) =>
         set((state) => ({
           profileSettings: { ...state.profileSettings, ...patch },
@@ -418,6 +580,9 @@ export const useStreakByteStore = create<StreakByteStore>()(
           pc: createInitialPcState(),
           net: createInitialNetState(),
           completion: null,
+          quiz: null,
+          learnKey: null,
+          completions: [],
           profileSettings: createInitialProfileSettings(),
           chat: createInitialChatState(),
           toastMessage: null,

@@ -66,7 +66,7 @@ export function LessonPlayerView() {
                   : 'bg-transparent text-muted hover:text-ink'
               }`}
             >
-              Lesson 3: Build a PC
+              Final Lesson: Build a PC
             </button>
             <button
               type="button"
@@ -78,7 +78,7 @@ export function LessonPlayerView() {
                   : 'bg-transparent text-muted hover:text-ink'
               }`}
             >
-              Final level: Build a network
+              Final Lesson: Build a Network
             </button>
           </div>
         </div>
@@ -123,6 +123,27 @@ export function LessonPlayerView() {
       </div>
 
       {activeLab === 'pc' ? <PcBuildLab /> : <NetworkBuildLab />}
+
+      <section
+        aria-labelledby="lesson-quiz"
+        className="mt-8 p-[22px] rounded-2xl border border-line bg-panel flex items-center justify-between gap-4 flex-wrap"
+      >
+        <div>
+          <h2 id="lesson-quiz" className="m-0 text-[1.125rem] font-bold">
+            Knowledge check
+          </h2>
+          <p className="m-0 mt-1 text-muted text-sm">
+            4 questions, 4 choices each. Get 3 of 4 right to complete this lesson. Mistakes are saved for review, never a game over.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => navigate(activeLab === 'pc' ? 'quiz/hw-6' : 'quiz/net-5')}
+          className="inline-flex items-center justify-center min-h-11 px-[18px] border border-cyan rounded-[10px] bg-cyan text-cyan-ink font-semibold text-[0.9375rem] cursor-pointer transition-all hover:brightness-110"
+        >
+          Take the quiz
+        </button>
+      </section>
 
       <section
         aria-labelledby="lesson-references"

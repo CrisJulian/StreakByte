@@ -154,3 +154,51 @@ describe('useStreakByteStore', () => {
     expect(getStudyBuddyReply('a2 b2')).toContain('Spot on!');
   });
 });
+
+describe('quiz flow in the store', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useStreakByteStore.getState().resetAll();
+  });
+
+  it('starts a quiz from the hash and does not restart it on a second sync', () => {
+    useStreakByteStore.getState().syncFromHash('#quiz/hw-3');
+    const first = useStreakByteStore.getState().quiz;
+    expect(useStreakByteStore.getState().view).toBe('quiz');
+    expect(first?.questions.length).toBe(4);
+    expect(first?.questions.every((q) => q.choices.length === 4)).toBe(true);
+
+    useStreakByteStore.getState().selectQuizChoice(1);
+    useStreakByteStore.getState().syncFromHash('#quiz/hw-3');
+    expect(useStreakByteStore.getState().quiz?.selected).toBe(1);
+  });
+
+  it('falls back to the curriculum for an unknown lesson key', () => {
+    useStreakByteStore.getState().syncFromHash('#quiz/nope-9');
+    expect(useStreakByteStore.getState().view).toBe('curriculum');
+    expect(useStreakByteStore.getState().quiz).toBeNull();
+  });
+
+  it('finishes with a real score, saves missed topics, and goes to Lesson Complete', () => {
+    useStreakByteStore.getState().syncFromHash('#quiz/hw-3');
+
+    for (let i = 0; i < 4; i += 1) {
+      const quiz = useStreakByteStore.getState().quiz!;
+      const q = quiz.questions[quiz.index];
+      // answer the first question correctly, the rest wrong
+      const pick = i === 0 ? q.correctIndex : (q.correctIndex + 1) % 4;
+      useStreakByteStore.getState().selectQuizChoice(pick);
+      useStreakByteStore.getState().submitQuizAnswer();
+      useStreakByteStore.getState().nextQuizQuestion();
+    }
+
+    const state = useStreakByteStore.getState();
+    expect(state.view).toBe('complete');
+    expect(state.quiz).toBeNull();
+    expect(state.completion?.partsValue).toBe('1 / 4');
+    expect(state.completion?.accuracy).toBe('25%');
+    expect(state.completion?.xp).toBe('+30'); // 120 XP lesson * 1/4
+    expect(state.completion?.review.length).toBe(3);
+    expect(state.completion?.next[0]).toBe('Lesson 4: Storage');
+  });
+});

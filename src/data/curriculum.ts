@@ -1,12 +1,18 @@
-import type { CurriculumTrack, TrackId } from '../types/streakbyte';
+import type { DerivedTrackProgress, LessonCompletion } from '../domain/entities/progress';
+import { parseLessonKey } from '../domain/rules/quiz';
+import { deriveTrackProgress } from '../domain/rules/lessonProgress';
+import type { CurriculumLesson, CurriculumTrack, TrackId } from '../types/streakbyte';
 
+/**
+ * Lesson order and titles follow the exported lesson documents.
+ * Whether a lesson is done, current or locked is NOT stored here: it is derived from the
+ * saved quiz results (see domain/rules/lessonProgress.ts).
+ */
 export const TRACKS: Record<TrackId, CurriculumTrack> = {
   hw: {
     id: 'hw',
     heading: 'Hardware Basics',
     description: 'Build and understand a computer, one short lesson at a time.',
-    done: 2,
-    total: 12,
     badge: 'RAM master',
     defaultTarget: 'pc',
     lessons: [
@@ -15,35 +21,42 @@ export const TRACKS: Record<TrackId, CurriculumTrack> = {
         subtitle: 'Case, motherboard, CPU and cooling',
         minutes: 5,
         xp: 110,
-        status: 'done',
+        kind: 'learn',
       },
       {
         title: 'The motherboard',
         subtitle: 'Sockets, slots and ports',
         minutes: 6,
         xp: 110,
-        status: 'done',
+        kind: 'learn',
       },
       {
         title: 'Memory (RAM)',
         subtitle: 'DIMM slots, DDR4 vs DDR5, dual-channel',
         minutes: 5,
         xp: 120,
-        status: 'cur',
+        kind: 'learn',
       },
       {
         title: 'Storage',
         subtitle: 'HDD, SSD and M.2',
         minutes: 6,
         xp: 120,
-        status: 'lock',
+        kind: 'learn',
       },
       {
         title: 'Power supply',
         subtitle: 'Wattage, cables and connectors',
         minutes: 6,
         xp: 120,
-        status: 'lock',
+        kind: 'learn',
+      },
+      {
+        title: 'Final Lesson: Build a PC',
+        subtitle: 'Put the parts together in order, safely',
+        minutes: 8,
+        xp: 150,
+        kind: 'final',
       },
     ],
   },
@@ -51,8 +64,6 @@ export const TRACKS: Record<TrackId, CurriculumTrack> = {
     id: 'net',
     heading: 'Networking Basics',
     description: 'Connect devices and understand how they talk, one short lesson at a time.',
-    done: 1,
-    total: 12,
     badge: 'Network ninja',
     defaultTarget: 'network',
     lessons: [
@@ -61,36 +72,66 @@ export const TRACKS: Record<TrackId, CurriculumTrack> = {
         subtitle: 'Devices, links and the internet',
         minutes: 5,
         xp: 110,
-        status: 'done',
+        kind: 'learn',
       },
       {
         title: 'IP address basics',
         subtitle: 'Addresses, masks and gateways',
         minutes: 6,
         xp: 120,
-        status: 'cur',
+        kind: 'learn',
       },
       {
         title: 'Subnet masks',
         subtitle: 'Split one network into parts',
         minutes: 6,
         xp: 120,
-        status: 'lock',
+        kind: 'learn',
       },
       {
         title: 'Routers and switches',
         subtitle: 'How traffic finds its way',
         minutes: 6,
         xp: 120,
-        status: 'lock',
+        kind: 'learn',
       },
       {
-        title: 'Build a network',
-        subtitle: 'Final level: wire up a small LAN',
+        title: 'Final Lesson: Build a Network',
+        subtitle: 'Wire up a small LAN and test it with ping',
         minutes: 8,
         xp: 150,
-        status: 'cur',
+        kind: 'final',
       },
     ],
   },
 };
+
+/** "Lesson 3: Memory (RAM)" for normal lessons; Final Lessons already say "Final Lesson". */
+export function lessonLabel(lesson: CurriculumLesson, index: number): string {
+  return lesson.kind === 'final' ? lesson.title : `Lesson ${index + 1}: ${lesson.title}`;
+}
+
+/** The lab a Final Lesson opens. */
+export function finalLessonLab(trackId: TrackId): 'pc' | 'network' {
+  return trackId === 'net' ? 'network' : 'pc';
+}
+
+/** Status of every lesson in a track, worked out from the saved quiz results. */
+export function getTrackProgress(
+  trackId: TrackId,
+  completions: readonly LessonCompletion[],
+): DerivedTrackProgress {
+  return deriveTrackProgress(
+    trackId,
+    TRACKS[trackId].lessons.map((l) => l.kind),
+    completions,
+  );
+}
+
+/** True for a Final Lesson key (e.g. "hw-6") whose earlier lessons are not all complete yet. */
+export function isLessonKeyLocked(key: string, completions: readonly LessonCompletion[]): boolean {
+  const parsed = parseLessonKey(key);
+  if (!parsed || !(parsed.trackId in TRACKS)) return false;
+  const progress = getTrackProgress(parsed.trackId as TrackId, completions);
+  return progress.lessons[parsed.number - 1]?.status === 'lock';
+}

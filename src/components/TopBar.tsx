@@ -47,7 +47,8 @@ export function TopBar() {
     };
   }, [streakOpen]);
 
-  const activeNav: ViewId = view === 'lesson' || view === 'complete' ? 'curriculum' : view;
+  const activeNav: ViewId =
+    view === 'lesson' || view === 'complete' || view === 'quiz' || view === 'learn' ? 'curriculum' : view;
   const nextThemeLabel = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
 
   return (

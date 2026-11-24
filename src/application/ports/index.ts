@@ -1,4 +1,5 @@
 import type { ProfileSettings } from '../../types/streakbyte';
+import type { LessonCompletion } from '../../domain/entities/progress';
 import type { StreakState } from '../../domain/rules/streak';
 
 /** Ports: what the app needs from the outside world. Adapters (local, Supabase) implement these. */
@@ -22,6 +23,10 @@ export interface ProgressRepository {
   saveStreak(streak: StreakState): Promise<void>;
   loadSettings(): Promise<ProfileSettings | null>;
   saveSettings(settings: ProfileSettings): Promise<void>;
+  /** Lessons whose quiz was passed. Unlocking is derived from this list. */
+  loadLessonCompletions(): Promise<LessonCompletion[]>;
+  /** Idempotent: saving the same lesson twice keeps one record (best score wins). */
+  saveLessonCompletion(completion: LessonCompletion): Promise<void>;
 }
 
 /**

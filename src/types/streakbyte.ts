@@ -7,14 +7,15 @@ export type ViewId =
   | 'leaderboard'
   | 'profile'
   | 'complete'
-  | 'login';
+  | 'login'
+  | 'quiz'
+  | 'learn';
 
 export type TrackId = 'hw' | 'net';
 export type LabId = 'pc' | 'net';
 export type ThemeMode = 'dark' | 'light';
 export type SessionMode = 'guided' | 'timed';
 export type SessionLength = '5' | '10';
-export type LessonStatus = 'done' | 'cur' | 'lock';
 
 export type PcPartId = 'ram' | 'm2' | 'gpu' | 'psu';
 export type PcSlotId = 'A1' | 'A2' | 'B1' | 'B2' | 'M2' | 'PCIE' | 'PWR';
@@ -60,19 +61,17 @@ export interface LessonReference {
 
 export interface CurriculumLesson {
   title: string;
-  references?: LessonReference[];
   subtitle: string;
   minutes: number;
   xp: number;
-  status: LessonStatus;
+  /** "final" = Final Lesson (opens a lab). It stays locked until every lesson before it is complete. */
+  kind: 'learn' | 'final';
 }
 
 export interface CurriculumTrack {
   id: TrackId;
   heading: string;
   description: string;
-  done: number;
-  total: number;
   badge: string;
   defaultTarget: 'pc' | 'network';
   lessons: CurriculumLesson[];
