@@ -110,18 +110,13 @@ export function removeExteriorWhiteBackground(
   }
 }
 
-type VideoWithFrameCallback = HTMLVideoElement & {
-  requestVideoFrameCallback?: (cb: () => void) => number;
-  cancelVideoFrameCallback?: (handle: number) => void;
-};
-
 export function WelcomeMascot() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasFrame, setHasFrame] = useState(false);
 
   useEffect(() => {
-    const video = videoRef.current as VideoWithFrameCallback | null;
+    const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
 
@@ -133,14 +128,13 @@ export function WelcomeMascot() {
       queue: new Int32Array(CANVAS_SIZE * CANVAS_SIZE),
     };
 
-    const reducedMotion =
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
 
     let cancelled = false;
     let rafId: number | null = null;
-    let vfcId: number | null = null;
+    let lastTime = -1;
 
     const drawFrame = () => {
       if (cancelled || video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) {
@@ -173,48 +167,39 @@ export function WelcomeMascot() {
       return true;
     };
 
-    const scheduleNext = () => {
+    const tick = () => {
       if (cancelled) return;
-      if (reducedMotion) {
-        video.pause();
-        return;
-      }
-      if (typeof video.requestVideoFrameCallback === 'function') {
-        vfcId = video.requestVideoFrameCallback(() => {
-          drawFrame();
-          scheduleNext();
-        });
-      } else {
-        rafId = window.requestAnimationFrame(() => {
-          drawFrame();
-          scheduleNext();
-        });
-      }
-    };
-
-    const onLoadedData = () => {
-      drawFrame();
-      if (!reducedMotion) {
-        const playPromise = video.play?.();
-        if (playPromise && typeof playPromise.catch === 'function') {
-          playPromise.catch(() => {});
+      if (video.readyState >= 2 && video.currentTime !== lastTime) {
+        if (drawFrame()) {
+          lastTime = video.currentTime;
         }
-        scheduleNext();
+      }
+      rafId = window.requestAnimationFrame(tick);
+    };
+
+    const startPlayback = () => {
+      if (cancelled) return;
+      drawFrame();
+      const playPromise = video.play?.();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {});
+      }
+      if (rafId === null) {
+        rafId = window.requestAnimationFrame(tick);
       }
     };
 
-    video.addEventListener('loadeddata', onLoadedData);
+    video.addEventListener('loadeddata', startPlayback);
+    video.addEventListener('canplay', startPlayback);
     if (video.readyState >= 2) {
-      onLoadedData();
+      startPlayback();
     }
 
     return () => {
       cancelled = true;
-      video.removeEventListener('loadeddata', onLoadedData);
+      video.removeEventListener('loadeddata', startPlayback);
+      video.removeEventListener('canplay', startPlayback);
       if (rafId !== null) window.cancelAnimationFrame(rafId);
-      if (vfcId !== null && typeof video.cancelVideoFrameCallback === 'function') {
-        video.cancelVideoFrameCallback(vfcId);
-      }
     };
   }, []);
 
@@ -231,8 +216,9 @@ export function WelcomeMascot() {
         loop
         muted
         playsInline
+        preload="auto"
         aria-hidden="true"
-        className="absolute inset-0 w-full h-full opacity-0 pointer-events-none"
+        className="absolute inset-0 w-full h-full opacity-[0.001] pointer-events-none"
       />
       <canvas
         ref={canvasRef}

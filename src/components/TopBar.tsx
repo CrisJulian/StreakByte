@@ -1,6 +1,8 @@
+import { useEffect, useRef, useState } from 'react';
 import { useStreakByteStore } from '../store/useStreakByteStore';
 import type { IconName, ViewId } from '../types/streakbyte';
 import { Icon } from './Icon';
+import { WeekStrip } from './WeekStrip';
 
 const NAV_TABS: { id: ViewId; label: string; icon: IconName }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: 'home' },
@@ -16,6 +18,34 @@ export function TopBar() {
   const navigate = useStreakByteStore((s) => s.navigate);
   const toggleTheme = useStreakByteStore((s) => s.toggleTheme);
   const showToast = useStreakByteStore((s) => s.showToast);
+
+  const [streakOpen, setStreakOpen] = useState(false);
+  const streakWrapRef = useRef<HTMLDivElement>(null);
+  const streakBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!streakOpen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setStreakOpen(false);
+        streakBtnRef.current?.focus();
+      }
+    };
+
+    const onPointerDown = (e: PointerEvent) => {
+      if (streakWrapRef.current && !streakWrapRef.current.contains(e.target as Node)) {
+        setStreakOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('pointerdown', onPointerDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('pointerdown', onPointerDown);
+    };
+  }, [streakOpen]);
 
   const activeNav: ViewId = view === 'lesson' || view === 'complete' ? 'curriculum' : view;
   const nextThemeLabel = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
@@ -67,13 +97,44 @@ export function TopBar() {
       </nav>
 
       <div className="flex justify-end items-center gap-2.5 flex-none">
-        <div
-          className="inline-flex items-center gap-2 min-h-10 px-3.5 py-2 border border-line rounded-full bg-bg font-semibold text-sm text-ink whitespace-nowrap flex-none"
-          title="5-day streak"
-        >
-          <Icon name="flame" className="w-[18px] h-[18px] text-amber" />
-          <span className="num">5</span>
-          <span className="max-[1180px]:hidden">day streak</span>
+        <div ref={streakWrapRef} className="relative flex-none">
+          <button
+            ref={streakBtnRef}
+            type="button"
+            onClick={() => setStreakOpen((prev) => !prev)}
+            aria-expanded={streakOpen}
+            aria-haspopup="dialog"
+            aria-controls="streak-popover"
+            aria-label="5 day streak"
+            title="5-day streak"
+            className={`inline-flex items-center gap-2 min-h-10 px-3.5 py-2 border rounded-full bg-bg font-semibold text-sm text-ink whitespace-nowrap cursor-pointer transition-colors hover:border-muted ${
+              streakOpen ? 'border-cyan' : 'border-line'
+            }`}
+          >
+            <Icon name="flame" className="w-[18px] h-[18px] text-amber" />
+            <span className="num">5</span>
+            <span className="max-[1180px]:hidden">day streak</span>
+          </button>
+
+          {streakOpen && (
+            <section
+              id="streak-popover"
+              role="dialog"
+              aria-label="Daily streak"
+              className="sb-pop absolute right-0 top-[calc(100%+10px)] z-50 w-[330px] max-w-[calc(100vw-24px)] max-[760px]:fixed max-[760px]:left-3 max-[760px]:right-3 max-[760px]:top-[68px] max-[760px]:w-auto bg-panel border border-line rounded-2xl p-[18px] shadow-[0_14px_34px_rgba(0,0,0,0.28)]"
+            >
+              <div className="flex justify-between items-center gap-3">
+                <h2 className="m-0 text-base font-bold">5 day streak</h2>
+                <span className="text-[0.8125rem] font-semibold text-muted">On</span>
+              </div>
+              <WeekStrip
+                filledCount={5}
+                todayIndex={4}
+                ariaLabel="Monday to Friday done, weekend still open"
+              />
+              <p className="m-0 text-muted text-sm">Finish one lesson today to keep it going.</p>
+            </section>
+          )}
         </div>
 
         <div

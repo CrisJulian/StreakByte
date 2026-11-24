@@ -16,8 +16,17 @@ describe('App integration', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    // Initial Dashboard
+    // Initial Dashboard (streak card hidden until top-bar pill is clicked)
     expect(screen.getByRole('heading', { name: 'Welcome back, Mika' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Daily streak' })).not.toBeInTheDocument();
+
+    const streakBtn = screen.getByRole('button', { name: '5 day streak' });
+    await user.click(streakBtn);
+    const streakDialog = screen.getByRole('dialog', { name: 'Daily streak' });
+    expect(within(streakDialog).getByText('Finish one lesson today to keep it going.')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Daily streak' })).not.toBeInTheDocument();
+    expect(streakBtn).toHaveFocus();
 
     // Theme toggle updates <html data-theme>
     const themeBtn = screen.getByRole('button', { name: 'Switch to light theme' });
