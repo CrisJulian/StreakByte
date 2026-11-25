@@ -6,7 +6,7 @@ import type {
   SyncQueue,
 } from './application/ports';
 import { supabaseAuth } from './adapters/supabase/supabaseAuth';
-import { localProgress } from './adapters/local/localProgress';
+import { supabaseProgress } from './adapters/supabase/supabaseProgress';
 import { localReminders } from './adapters/local/localReminders';
 import { geminiStudyBuddy } from './adapters/gemini/geminiStudyBuddy';
 import { localSyncQueue } from './adapters/local/localSyncQueue';
@@ -25,7 +25,7 @@ export interface Services {
  */
 export const services: Services = {
   auth: supabaseAuth,
-  progress: localProgress,
+  progress: supabaseProgress,
   studyBuddy: geminiStudyBuddy,
   reminders: localReminders,
   syncQueue: localSyncQueue,

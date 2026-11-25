@@ -1,16 +1,83 @@
 import { Icon } from '../components/Icon';
 import { WelcomeMascot } from '../components/WelcomeMascot';
-import { DASHBOARD_BOARD_PREVIEW } from '../data/leaderboard';
+import { getTrackProgress, LESSON_XP_BY_KEY, lessonLabel, TRACKS } from '../data/curriculum';
+import { formatXp, initialsFor } from '../data/leaderboard';
+import { lessonKeyFor } from '../domain/rules/lessonProgress';
+import { deriveAchievements } from '../domain/rules/progressViews';
+import {
+  calculateTotalXp,
+  calculateWeeklyXp,
+  effectiveStreak,
+  localDayString,
+  mergeLeaderboard,
+} from '../domain/rules/xp';
 import { useStreakByteStore } from '../store/useStreakByteStore';
 
 export function DashboardView() {
   const openSetup = useStreakByteStore((s) => s.openSetup);
   const setTrack = useStreakByteStore((s) => s.setTrack);
   const navigate = useStreakByteStore((s) => s.navigate);
+  const track = useStreakByteStore((s) => s.track);
+  const completions = useStreakByteStore((s) => s.completions);
+  const streak = useStreakByteStore((s) => s.streak);
+  const labBonusXp = useStreakByteStore((s) => s.labBonusXp);
+  const leaderboard = useStreakByteStore((s) => s.leaderboard);
+  const authUser = useStreakByteStore((s) => s.authUser);
+  const isGuest = useStreakByteStore((s) => s.isGuest);
+  const selectedTracks = useStreakByteStore((s) => s.profileSettings.selectedTracks);
   const displayName = useStreakByteStore(
     (s) => s.profileSettings.displayName || s.authUser?.displayName || 'Learner',
   );
   const firstName = displayName.trim().split(/\s+/)[0] || 'Learner';
+
+  const activeTrackId = selectedTracks.includes(track) ? track : selectedTracks[0] ?? 'hw';
+  const activeTrack = TRACKS[activeTrackId];
+  const activeProgress = getTrackProgress(activeTrackId, completions);
+  const nextIdx = activeProgress.lessons.findIndex((l) => l.status === 'cur');
+  const safeIdx = nextIdx >= 0 ? nextIdx : Math.max(0, activeTrack.lessons.length - 1);
+  const nextLesson = activeTrack.lessons[safeIdx];
+  const nextLessonKey = lessonKeyFor(activeTrackId, safeIdx);
+  const nextLessonTitle = lessonLabel(nextLesson, safeIdx);
+  const trackPct =
+    activeProgress.total === 0
+      ? 0
+      : Math.round((activeProgress.doneCount / activeProgress.total) * 100);
+
+  const today = localDayString();
+  const streakDays = effectiveStreak(streak, today);
+  const totalXp = calculateTotalXp(completions, LESSON_XP_BY_KEY, labBonusXp);
+  const weeklyXp = calculateWeeklyXp(completions, LESSON_XP_BY_KEY, new Date(), labBonusXp);
+
+  const ranked = mergeLeaderboard(
+    isGuest ? [] : leaderboard,
+    {
+      userId: authUser?.id || 'local-guest',
+      displayName,
+      avatarUrl: authUser?.avatarUrl,
+      weeklyXp,
+      allTimeXp: totalXp,
+      streakDays,
+    },
+    'w',
+  );
+  const previewRows = ranked.slice(0, 4);
+  const me = ranked.find((r) => r.isYou) ?? ranked[0];
+  const achievements = deriveAchievements({
+    completions,
+    streak,
+    totalXp,
+    hwTotal: TRACKS.hw.lessons.length,
+    leaderboardRank: me?.rank ?? null,
+    today,
+  });
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
+  const previewAchievements = achievements.slice(0, 4);
+  const above = me && me.rank > 1 ? ranked[me.rank - 2] : null;
+  const heroSubtitle = above
+    ? `You’re ${formatXp(above.xp - me.xp)} XP behind ${above.name} this week.`
+    : totalXp > 0
+      ? 'You’re leading the board this week. Keep your streak going!'
+      : 'Complete your first lesson to earn XP and start your streak.';
 
   return (
     <div className="grid gap-5">
@@ -21,9 +88,7 @@ export function DashboardView() {
           <h1 className="m-0 text-[2.125rem] font-bold leading-[1.15] tracking-[-0.025em] text-balance">
             Welcome back, {firstName}
           </h1>
-          <p className="mt-1.5 mb-0 text-muted text-[1.0625rem] max-w-[65ch]">
-            You’re 70 points behind Joel Mendoza this week.
-          </p>
+          <p className="mt-1.5 mb-0 text-muted text-[1.0625rem] max-w-[65ch]">{heroSubtitle}</p>
         </div>
       </div>
 
@@ -36,54 +101,64 @@ export function DashboardView() {
           <div>
             <div className="flex gap-2 flex-wrap mb-3.5">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-panel2 text-[0.8125rem] font-semibold text-muted">
-                Hardware Basics
+                {activeTrack.heading}
               </span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-panel2 text-[0.8125rem] font-semibold text-muted">
-                5 min left
+                {nextLesson.minutes} min
               </span>
               <span
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.8125rem] font-semibold text-cyan"
                 style={{ background: 'color-mix(in srgb, var(--cyan) 16%, transparent)' }}
               >
-                +120 XP
+                +{nextLesson.xp} XP
               </span>
             </div>
 
             <h2 className="m-0 mb-2.5 text-[1.75rem] font-bold leading-[1.15] tracking-[-0.02em] text-balance">
-              Lesson 3: Memory (RAM)
+              {nextLessonTitle}
             </h2>
-            <p className="m-0 mb-5 text-muted max-w-[46ch]">
-              How a DIMM is built, how clock cycles keep memory in sync, and why the key notch only
-              lets a module fit one way.
-            </p>
+            <p className="m-0 mb-5 text-muted max-w-[46ch]">{nextLesson.subtitle}</p>
 
             <div className="flex justify-between text-sm font-semibold mb-2">
-              <span>Lesson progress</span>
-              <span className="num">60%</span>
+              <span>Track progress</span>
+              <span className="num">{trackPct}%</span>
             </div>
             <div
               className="h-2 rounded-full bg-panel2 overflow-hidden"
               role="progressbar"
-              aria-label="Lesson progress"
-              aria-valuenow={60}
+              aria-label="Track progress"
+              aria-valuenow={trackPct}
               aria-valuemin={0}
               aria-valuemax={100}
             >
-              <i className="sb-bar-fill block h-full rounded-full bg-cyan" style={{ width: '60%' }} />
+              <i
+                className="sb-bar-fill block h-full rounded-full bg-cyan"
+                style={{ width: `${trackPct}%` }}
+              />
             </div>
 
             <p className="mt-2.5 mb-5 text-muted text-sm">
-              Next: Checkpoint 3 of 6, seat the RAM modules
+              {activeProgress.doneCount} of {activeProgress.total} lessons complete in{' '}
+              {activeTrack.heading}
             </p>
 
-            <button
-              type="button"
-              onClick={() => openSetup('pc')}
-              className="inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-cyan rounded-[10px] bg-cyan text-cyan-ink font-semibold text-[0.9375rem] cursor-pointer transition-all hover:brightness-110 active:brightness-95"
-            >
-              <Icon name="play" className="w-[18px] h-[18px]" />
-              Start lesson
-            </button>
+            <div className="flex flex-wrap gap-2.5">
+              <button
+                type="button"
+                onClick={() => openSetup(activeTrack.defaultTarget, nextLessonTitle)}
+                className="inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-cyan rounded-[10px] bg-cyan text-cyan-ink font-semibold text-[0.9375rem] cursor-pointer transition-all hover:brightness-110 active:brightness-95"
+              >
+                <Icon name="play" className="w-[18px] h-[18px]" />
+                Start lesson
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(`learn/${nextLessonKey}`)}
+                className="inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-line rounded-[10px] bg-transparent text-ink font-semibold text-[0.9375rem] cursor-pointer transition-colors hover:bg-panel2 hover:border-muted"
+              >
+                Read lesson
+              </button>
+            </div>
           </div>
 
           <div className="rounded-[14px] bg-bg border border-line p-2.5">
@@ -161,28 +236,43 @@ export function DashboardView() {
             <h2 className="m-0 text-[1.125rem] font-bold">Leaderboard</h2>
             <span className="text-[0.8125rem] font-semibold text-muted">This week</span>
           </div>
-          <p className="m-0 text-muted text-sm">Cyber-Ops · Tier 62</p>
+          <p className="m-0 text-muted text-sm">
+            {isGuest ? 'Guest mode · Local progress only' : 'Live class standings'}
+          </p>
 
           <ol className="grid gap-1 mt-3 mb-3.5">
-            {DASHBOARD_BOARD_PREVIEW.map((row) => (
+            {previewRows.map((row) => (
               <li
-                key={row.rank}
+                key={row.userId}
                 aria-current={row.isYou ? 'true' : undefined}
-                className={`grid grid-cols-[20px_34px_minmax(0,1fr)_auto] gap-2.5 items-center px-2.5 py-2 rounded-xl ${row.isYou ? 'bg-you font-semibold' : ''
-                  }`}
+                className={`grid grid-cols-[20px_34px_minmax(0,1fr)_auto] gap-2.5 items-center px-2.5 py-2 rounded-xl ${
+                  row.isYou ? 'bg-you font-semibold' : ''
+                }`}
               >
                 <span className="num text-muted text-sm text-center">{row.rank}</span>
-                <span
-                  className={`grid place-items-center w-[34px] h-[34px] rounded-full font-bold text-xs ${row.isYou ? 'bg-cyan text-cyan-ink' : 'bg-panel2 text-ink'
+                {row.avatarUrl ? (
+                  <img
+                    src={row.avatarUrl}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    className="w-[34px] h-[34px] rounded-full object-cover border border-line"
+                  />
+                ) : (
+                  <span
+                    className={`grid place-items-center w-[34px] h-[34px] rounded-full font-bold text-xs ${
+                      row.isYou ? 'bg-cyan text-cyan-ink' : 'bg-panel2 text-ink'
                     }`}
-                >
-                  {row.initials}
-                </span>
+                  >
+                    {initialsFor(row.name)}
+                  </span>
+                )}
                 <span className="font-semibold text-sm leading-tight overflow-hidden text-ellipsis whitespace-nowrap">
-                  {row.name}
-                  <small className="block text-muted text-xs font-medium">{row.streak}</small>
+                  {row.isYou ? `${row.name} (you)` : row.name}
+                  <small className="block text-muted text-xs font-medium">
+                    {row.streakDays}-day streak
+                  </small>
                 </span>
-                <b className="num text-sm">{row.xp}</b>
+                <b className="num text-sm">{formatXp(row.xp)}</b>
               </li>
             ))}
           </ol>
@@ -195,12 +285,12 @@ export function DashboardView() {
             }}
             className="mt-auto w-full inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-line rounded-[10px] bg-transparent text-ink font-semibold text-[0.9375rem] no-underline transition-colors hover:bg-panel2 hover:border-muted"
           >
-            View full division
+            View full leaderboard
           </a>
         </aside>
       </div>
 
-      {/* Row 2: Hardware Basics, Networking Basics, and Achievements all level on one row */}
+      {/* Row 2: Selected tracks + Achievements */}
       <div className="grid grid-cols-[minmax(0,1fr)_360px] max-[1100px]:grid-cols-1 gap-x-5 gap-y-3 items-stretch mt-1">
         <h2
           id="tracks-heading"
@@ -211,86 +301,77 @@ export function DashboardView() {
 
         <section
           aria-label="Tracks"
-          className="col-start-1 grid grid-cols-2 max-[760px]:grid-cols-1 gap-5"
+          className={`col-start-1 grid ${
+            selectedTracks.length > 1 ? 'grid-cols-2 max-[760px]:grid-cols-1' : 'grid-cols-1'
+          } gap-5`}
         >
-          <article
-            className="bg-panel border rounded-2xl p-5 flex flex-col gap-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-muted"
-            style={{ borderColor: 'color-mix(in srgb, var(--cyan) 55%, var(--line))' }}
-          >
-            <div className="flex gap-3.5 items-center">
-              <div className="grid place-items-center w-11 h-11 rounded-xl bg-panel2 text-cyan flex-none">
-                <Icon name="cpu" />
-              </div>
-              <h3 className="m-0 text-base font-bold leading-snug">
-                Hardware Basics
-                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-cyan text-cyan-ink ml-1.5">
-                  Current
-                </span>
-              </h3>
-            </div>
-            <p className="m-0 text-muted text-sm">
-              CPU, RAM, PSU, architecture and physical assembly · 12 lessons
-            </p>
-            <div className="mt-auto flex flex-col gap-3">
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-1.5 rounded-full bg-panel2 overflow-hidden">
-                  <i
-                    className="sb-bar-fill block h-full rounded-full bg-cyan"
-                    style={{ width: '17%' }}
-                  />
-                </div>
-                <small className="num text-muted text-[0.8125rem] whitespace-nowrap">2 of 12</small>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setTrack('hw');
-                  navigate('curriculum');
-                }}
-                className="inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-cyan rounded-[10px] bg-cyan text-cyan-ink font-semibold text-[0.9375rem] cursor-pointer transition-all hover:brightness-110 active:brightness-95"
+          {selectedTracks.map((id) => {
+            const t = TRACKS[id];
+            const progress = getTrackProgress(id, completions);
+            const pct =
+              progress.total === 0 ? 0 : Math.round((progress.doneCount / progress.total) * 100);
+            const isActive = id === activeTrackId;
+            return (
+              <article
+                key={id}
+                className="bg-panel border rounded-2xl p-5 flex flex-col gap-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-muted"
+                style={
+                  isActive
+                    ? { borderColor: 'color-mix(in srgb, var(--cyan) 55%, var(--line))' }
+                    : undefined
+                }
               >
-                Resume track
-              </button>
-            </div>
-          </article>
-
-          <article className="bg-panel border border-line rounded-2xl p-5 flex flex-col gap-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-muted">
-            <div className="flex gap-3.5 items-center">
-              <div className="grid place-items-center w-11 h-11 rounded-xl bg-panel2 text-cyan flex-none">
-                <Icon name="net" />
-              </div>
-              <h3 className="m-0 text-base font-bold leading-snug">
-                Networking Basics
-                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-panel2 text-muted ml-1.5">
-                  Paused
-                </span>
-              </h3>
-            </div>
-            <p className="m-0 text-muted text-sm">
-              IP protocols, subnetting, routers and topologies · 12 lessons
-            </p>
-            <div className="mt-auto flex flex-col gap-3">
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-1.5 rounded-full bg-panel2 overflow-hidden">
-                  <i
-                    className="sb-bar-fill block h-full rounded-full"
-                    style={{ width: '8%', background: 'var(--muted)' }}
-                  />
+                <div className="flex gap-3.5 items-center">
+                  <div className="grid place-items-center w-11 h-11 rounded-xl bg-panel2 text-cyan flex-none">
+                    <Icon name={id === 'net' ? 'net' : 'cpu'} />
+                  </div>
+                  <h3 className="m-0 text-base font-bold leading-snug">
+                    {t.heading}
+                    <span
+                      className={`text-xs font-bold px-2 py-0.5 rounded-md ml-1.5 ${
+                        isActive ? 'bg-cyan text-cyan-ink' : 'bg-panel2 text-muted'
+                      }`}
+                    >
+                      {isActive ? 'Current' : 'Active'}
+                    </span>
+                  </h3>
                 </div>
-                <small className="num text-muted text-[0.8125rem] whitespace-nowrap">1 of 12</small>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setTrack('net');
-                  navigate('curriculum');
-                }}
-                className="inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-line rounded-[10px] bg-transparent text-ink font-semibold text-[0.9375rem] cursor-pointer transition-colors hover:bg-panel2 hover:border-muted"
-              >
-                Switch to track
-              </button>
-            </div>
-          </article>
+                <p className="m-0 text-muted text-sm">
+                  {t.description} · {t.lessons.length} lessons
+                </p>
+                <div className="mt-auto flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-1.5 rounded-full bg-panel2 overflow-hidden">
+                      <i
+                        className="sb-bar-fill block h-full rounded-full"
+                        style={{
+                          width: `${pct}%`,
+                          background: isActive ? 'var(--cyan)' : 'var(--muted)',
+                        }}
+                      />
+                    </div>
+                    <small className="num text-muted text-[0.8125rem] whitespace-nowrap">
+                      {progress.doneCount} of {progress.total}
+                    </small>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTrack(id);
+                      navigate('curriculum');
+                    }}
+                    className={`inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border rounded-[10px] font-semibold text-[0.9375rem] cursor-pointer transition-all ${
+                      isActive
+                        ? 'border-cyan bg-cyan text-cyan-ink hover:brightness-110 active:brightness-95'
+                        : 'border-line bg-transparent text-ink hover:bg-panel2 hover:border-muted'
+                    }`}
+                  >
+                    {isActive ? 'Resume track' : 'Switch to track'}
+                  </button>
+                </div>
+              </article>
+            );
+          })}
         </section>
 
         <section
@@ -299,67 +380,53 @@ export function DashboardView() {
         >
           <div className="flex justify-between items-center gap-3">
             <h2 className="m-0 text-[1.125rem] font-bold">Achievements</h2>
-            <span className="num text-[0.8125rem] font-semibold text-muted">3 of 8</span>
+            <span className="num text-[0.8125rem] font-semibold text-muted">
+              {unlockedCount} of {achievements.length}
+            </span>
           </div>
 
           <ul className="grid grid-cols-2 gap-x-3 gap-y-3.5 my-auto py-3">
-            <li className="flex items-center gap-2.5 min-w-0">
-              <div
-                className="grid place-items-center w-9 h-9 rounded-[10px] text-cyan flex-none"
-                style={{ background: 'color-mix(in srgb, var(--cyan) 16%, transparent)' }}
+            {previewAchievements.map((ach) => (
+              <li
+                key={ach.id}
+                className={`flex items-center gap-2.5 min-w-0 ${ach.unlocked ? '' : 'text-muted'}`}
               >
-                <Icon name="wrench" className="w-[18px] h-[18px]" />
-              </div>
-              <span className="min-w-0 text-sm font-semibold leading-tight">
-                <span className="block truncate">First Build</span>
-                <small className="inline-flex items-center gap-1 text-xs font-medium text-cyan">
-                  <Icon name="check" className="w-3.5 h-3.5" strokeWidth={2.5} />
-                  Done
-                </small>
-              </span>
-            </li>
-
-            <li className="flex items-center gap-2.5 min-w-0">
-              <div
-                className="grid place-items-center w-9 h-9 rounded-[10px] text-amber flex-none"
-                style={{ background: 'color-mix(in srgb, var(--amber) 16%, transparent)' }}
-              >
-                <Icon name="flame" className="w-[18px] h-[18px]" />
-              </div>
-              <span className="min-w-0 text-sm font-semibold leading-tight">
-                <span className="block truncate">5-Day Run</span>
-                <small className="inline-flex items-center gap-1 text-xs font-medium text-cyan">
-                  <Icon name="check" className="w-3.5 h-3.5" strokeWidth={2.5} />
-                  Done
-                </small>
-              </span>
-            </li>
-
-            <li className="flex items-center gap-2.5 min-w-0">
-              <div
-                className="grid place-items-center w-9 h-9 rounded-[10px] text-cyan flex-none"
-                style={{ background: 'color-mix(in srgb, var(--cyan) 16%, transparent)' }}
-              >
-                <Icon name="cpu" className="w-[18px] h-[18px]" />
-              </div>
-              <span className="min-w-0 text-sm font-semibold leading-tight">
-                <span className="block truncate">RAM Master</span>
-                <small className="inline-flex items-center gap-1 text-xs font-medium text-cyan">
-                  <Icon name="check" className="w-3.5 h-3.5" strokeWidth={2.5} />
-                  Done
-                </small>
-              </span>
-            </li>
-
-            <li className="flex items-center gap-2.5 min-w-0 text-muted">
-              <div className="grid place-items-center w-9 h-9 rounded-[10px] bg-panel2 text-muted flex-none">
-                <Icon name="lock" className="w-[18px] h-[18px]" />
-              </div>
-              <span className="min-w-0 text-sm font-semibold leading-tight">
-                <span className="block truncate">Net Ninja</span>
-                <small className="block num text-xs font-medium text-muted">8 / 100 XP</small>
-              </span>
-            </li>
+                <div
+                  className={`grid place-items-center w-9 h-9 rounded-[10px] flex-none ${
+                    !ach.unlocked
+                      ? 'bg-panel2 text-muted'
+                      : ach.accent === 'amber'
+                        ? 'text-amber'
+                        : 'text-cyan'
+                  }`}
+                  style={
+                    ach.unlocked
+                      ? {
+                          background:
+                            ach.accent === 'amber'
+                              ? 'color-mix(in srgb, var(--amber) 16%, transparent)'
+                              : 'color-mix(in srgb, var(--cyan) 16%, transparent)',
+                        }
+                      : undefined
+                  }
+                >
+                  <Icon name={ach.icon} className="w-[18px] h-[18px]" />
+                </div>
+                <span className="min-w-0 text-sm font-semibold leading-tight">
+                  <span className="block truncate">{ach.title}</span>
+                  {ach.unlocked ? (
+                    <small className="inline-flex items-center gap-1 text-xs font-medium text-cyan">
+                      <Icon name="check" className="w-3.5 h-3.5" strokeWidth={2.5} />
+                      Done
+                    </small>
+                  ) : (
+                    <small className="block num text-xs font-medium text-muted">
+                      {ach.progressText ?? ach.statusText}
+                    </small>
+                  )}
+                </span>
+              </li>
+            ))}
           </ul>
 
           <a

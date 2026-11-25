@@ -64,7 +64,7 @@ describe('useStreakByteStore', () => {
 
     const state = useStreakByteStore.getState();
     expect(state.view).toBe('complete');
-    expect(state.completion?.title).toBe('Nice build, Mika!');
+    expect(state.completion?.title).toBe('Nice build, Learner!');
     expect(state.completion?.accuracy).toBe('83%'); // 5 / (5 + 0 + 1 dual penalty)
     expect(state.completion?.review[0]).toEqual(['Dual-channel RAM', 'You used slots A1 and B1']);
   });
@@ -172,6 +172,31 @@ describe('useStreakByteStore', () => {
     expect(loggedOutState.isGuest).toBe(false);
     expect(loggedOutState.authUser).toBeNull();
     expect(loggedOutState.view).toBe('login');
+  });
+
+  it('supports onboarding track selection, setSelectedTracks, and real streak/XP updates', async () => {
+    useStreakByteStore.getState().setAuthUser({
+      id: 'u-1',
+      email: 'ada@example.com',
+      displayName: 'Ada Lovelace',
+    });
+
+    await useStreakByteStore.getState().completeOnboarding(['net']);
+    let state = useStreakByteStore.getState();
+    expect(state.profileSettings.onboardingCompleted).toBe(true);
+    expect(state.profileSettings.selectedTracks).toEqual(['net']);
+    expect(state.track).toBe('net');
+    expect(state.view).toBe('dashboard');
+
+    useStreakByteStore.getState().setSelectedTracks(['hw']);
+    state = useStreakByteStore.getState();
+    expect(state.profileSettings.selectedTracks).toEqual(['hw']);
+    expect(state.track).toBe('hw');
+
+    useStreakByteStore.getState().recordLessonResult('hw-1', 4, 4);
+    state = useStreakByteStore.getState();
+    expect(state.completions).toHaveLength(1);
+    expect(state.streak.current).toBe(1);
   });
 
   it('syncs avatarUrl and profileSettings on setAuthUser and loadAuthUser', async () => {

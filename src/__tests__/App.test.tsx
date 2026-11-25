@@ -28,10 +28,10 @@ describe('App integration', () => {
     expect(screen.getByRole('heading', { name: 'Welcome back, Guest' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog', { name: 'Daily streak' })).not.toBeInTheDocument();
 
-    const streakBtn = screen.getByRole('button', { name: '5 day streak' });
+    const streakBtn = screen.getByRole('button', { name: '0 day streak' });
     await user.click(streakBtn);
     const streakDialog = screen.getByRole('dialog', { name: 'Daily streak' });
-    expect(within(streakDialog).getByText('Finish one lesson today to keep it going.')).toBeInTheDocument();
+    expect(within(streakDialog).getByText('Finish one lesson today to start your streak.')).toBeInTheDocument();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog', { name: 'Daily streak' })).not.toBeInTheDocument();
     expect(streakBtn).toHaveFocus();
@@ -78,7 +78,7 @@ describe('App integration', () => {
     expect(within(chatDialog).getByText(/off-centre on the gold pins/i)).toBeInTheDocument();
   });
 
-  it('displays signed-in Google user name and avatar across Dashboard, TopBar, and Profile', async () => {
+  it('displays signed-in Google user name, real XP/level, and avatar across Dashboard, TopBar, and Profile', async () => {
     const user = userEvent.setup();
     useStreakByteStore.getState().setAuthUser({
       id: 'g-1',
@@ -86,6 +86,10 @@ describe('App integration', () => {
       displayName: 'Ada Lovelace',
       avatarUrl: 'https://lh3.googleusercontent.com/ada',
     });
+    useStreakByteStore.setState((s) => ({
+      profileLoaded: true,
+      profileSettings: { ...s.profileSettings, onboardingCompleted: true },
+    }));
     useStreakByteStore.getState().navigate('dashboard');
 
     render(<App />);
@@ -96,8 +100,61 @@ describe('App integration', () => {
 
     await user.click(profileLink);
     expect(screen.getByRole('heading', { name: 'Ada Lovelace', level: 1 })).toBeInTheDocument();
+    expect(screen.getByText(/Level 1, Beginner · 0 total XP/i)).toBeInTheDocument();
     const avatarImg = screen.getByRole('img', { name: 'Ada Lovelace' });
     expect(avatarImg).toHaveAttribute('src', 'https://lh3.googleusercontent.com/ada');
     expect(avatarImg).toHaveAttribute('referrerpolicy', 'no-referrer');
+  });
+
+  it('shows first-time curriculum onboarding for new signed-in users and filters Dashboard tracks', async () => {
+    const user = userEvent.setup();
+    useStreakByteStore.getState().setAuthUser({
+      id: 'g-new',
+      email: 'new@example.com',
+      displayName: 'Grace Hopper',
+    });
+    useStreakByteStore.setState((s) => ({
+      profileLoaded: true,
+      profileSettings: { ...s.profileSettings, onboardingCompleted: false },
+    }));
+    useStreakByteStore.getState().navigate('dashboard');
+
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'Choose what you want to study' })).toBeInTheDocument();
+    await user.click(screen.getByRole('radio', { name: /Networking Basics/i }));
+    await user.click(screen.getByRole('button', { name: 'Start learning' }));
+
+    expect(screen.getByRole('heading', { name: 'Welcome back, Grace' })).toBeInTheDocument();
+    const tracksSection = screen.getByRole('region', { name: 'Tracks' });
+    expect(within(tracksSection).getByRole('heading', { name: /Networking Basics/i })).toBeInTheDocument();
+    expect(within(tracksSection).queryByRole('heading', { name: /Hardware Basics/i })).not.toBeInTheDocument();
+  });
+
+  it('shows 0 unlocked achievements and empty practice state for a brand-new user', async () => {
+    const user = userEvent.setup();
+    useStreakByteStore.getState().setAuthUser({
+      id: 'g-empty',
+      email: 'fresh@example.com',
+      displayName: 'Fresh Learner',
+    });
+    useStreakByteStore.setState((s) => ({
+      profileLoaded: true,
+      profileSettings: { ...s.profileSettings, onboardingCompleted: true },
+    }));
+    useStreakByteStore.getState().navigate('dashboard');
+
+    render(<App />);
+
+    const nav = screen.getByRole('navigation', { name: 'Main' });
+    await user.click(within(nav).getByRole('link', { name: 'Achievements' }));
+    expect(screen.getByText('0 of 8 unlocked')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Unlocked 0' })).toBeInTheDocument();
+
+    await user.click(within(nav).getByRole('link', { name: 'Practice' }));
+    expect(screen.getByText('Go to curriculum')).toBeInTheDocument();
+    expect(
+      screen.getByText(/No completed lessons to review yet/i),
+    ).toBeInTheDocument();
   });
 });

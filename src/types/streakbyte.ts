@@ -78,6 +78,7 @@ export interface CurriculumTrack {
 }
 
 export interface PracticeItem {
+  lessonKey: string;
   title: string;
   meta: string;
   best: number;
@@ -98,8 +99,10 @@ export interface AchievementItem {
 }
 
 export interface LeaderboardStudent {
+  userId: string;
   name: string;
   initial: string;
+  avatarUrl?: string;
   weeklyXp: number;
   allTimeXp: number;
   streakDays: number;
@@ -167,6 +170,8 @@ export interface SetupModalState {
 export interface ProfileSettings {
   displayName: string;
   email: string;
+  selectedTracks: TrackId[];
+  onboardingCompleted: boolean;
   dailyGoal: '5' | '10';
   dailyReminder: boolean;
   soundEffects: boolean;

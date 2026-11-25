@@ -53,6 +53,8 @@ test('learn to quiz completion persists across reload', async ({ page }) => {
   await expect(page.getByText('100%')).toBeVisible();
 
   await page.reload();
+  await expect(page.getByRole('button', { name: '1 day streak' })).toBeVisible();
+  await expect(page.getByTitle('Total XP')).toContainText('110');
   await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Curriculum' }).click();
 
   const lessonRow = page.locator('li', { hasText: 'Inside the PC' });

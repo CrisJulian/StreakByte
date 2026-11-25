@@ -5,7 +5,7 @@ export const STARTER_PROMPTS = [
 ] as const;
 
 export const STUDY_BUDDY_GREETING =
-  'Hi Mika! I’m your study buddy. Stuck on RAM or want a quick quiz? Ask away.';
+  'Hi there! I’m your study buddy. Stuck on RAM or want a quick quiz? Ask away.';
 
 /**
  * Offline-first Study Buddy responder for StreakByte's Hardware & Networking curriculum.

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Icon } from '../components/Icon';
 import { LAB_REFERENCES } from '../data/references';
+import { effectiveStreak, localDayString } from '../domain/rules/xp';
 import { useStreakByteStore } from '../store/useStreakByteStore';
 import { NetworkBuildLab } from './labs/NetworkBuildLab';
 import { PcBuildLab } from './labs/PcBuildLab';
@@ -8,9 +9,11 @@ import { PcBuildLab } from './labs/PcBuildLab';
 export function LessonPlayerView() {
   const activeLab = useStreakByteStore((s) => s.activeLab);
   const pc = useStreakByteStore((s) => s.pc);
+  const streak = useStreakByteStore((s) => s.streak);
   const lessonSeconds = useStreakByteStore((s) => s.lessonSeconds);
   const tickLessonTimer = useStreakByteStore((s) => s.tickLessonTimer);
   const navigate = useStreakByteStore((s) => s.navigate);
+  const streakDays = effectiveStreak(streak, localDayString());
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -113,7 +116,7 @@ export function LessonPlayerView() {
             }}
           >
             <Icon name="flame" className="w-4 h-4 text-amber" />
-            6-day streak
+            {streakDays}-day streak
           </span>
           <span className="inline-flex items-center gap-2 min-h-10 px-3.5 py-2 border border-line rounded-full bg-panel font-semibold text-sm">
             <Icon name="clock" className="w-4 h-4 text-amber" />

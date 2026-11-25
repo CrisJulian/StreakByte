@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import { QUIZ_BANK } from '../data/quizBank';
-import { getTrackProgress, isLessonKeyLocked, lessonLabel, TRACKS } from '../data/curriculum';
+import { getTrackProgress, isLessonKeyLocked, LESSON_XP_BY_KEY, lessonLabel, TRACKS } from '../data/curriculum';
 import { LESSON_CONTENT } from '../data/lessons';
 import type { LessonCompletion } from '../domain/entities/progress';
 import type { QuizSession } from '../domain/entities/quiz';
@@ -16,10 +16,17 @@ import {
   submitAnswer,
 } from '../domain/rules/quiz';
 import { services } from '../composition';
-import type { AuthUser } from '../application/ports';
+import type { AuthUser, LeaderboardEntry } from '../application/ports';
 import { createInitialNetState, placeDevice, saveDeviceConfig, selectDevice } from '../domain/rules/network';
 import { createInitialPcState, nextHint, placePart, selectPart } from '../domain/rules/pcBuild';
+import { createInitialStreak, recordActivity, type StreakState } from '../domain/rules/streak';
 import { summarizeNetworkBuild, summarizePcBuild, summarizeQuiz } from '../domain/rules/summaries';
+import {
+  calculateTotalXp,
+  calculateWeeklyXp,
+  effectiveStreak,
+  localDayString,
+} from '../domain/rules/xp';
 import type {
   AchievementFilter,
   CableType,
@@ -98,14 +105,26 @@ function createInitialSetupModal(): SetupModalState {
 
 function createInitialProfileSettings(): ProfileSettings {
   return {
-    displayName: 'Mika Reyes',
-    email: 'mika.reyes@school.edu',
+    displayName: '',
+    email: '',
+    selectedTracks: ['hw', 'net'],
+    onboardingCompleted: false,
     dailyGoal: '5',
     dailyReminder: true,
     soundEffects: true,
     hintsByDefault: true,
     geminiApiKey: '',
   };
+}
+
+function sanitizeTracks(tracks: readonly TrackId[]): TrackId[] {
+  const valid = tracks.filter((t): t is TrackId => t === 'hw' || t === 'net');
+  return valid.length > 0 ? Array.from(new Set(valid)) : ['hw', 'net'];
+}
+
+function learnerFirstName(profileSettings: ProfileSettings, authUser: AuthUser | null): string {
+  const full = (profileSettings.displayName || authUser?.displayName || 'Learner').trim();
+  return full.split(/\s+/)[0] || 'Learner';
 }
 
 function createInitialChatState(): ChatState {
@@ -145,6 +164,10 @@ export interface StreakByteStore {
   learnKey: string | null;
   /** Lessons whose quiz was passed. Locks and unlocks are derived from this. */
   completions: LessonCompletion[];
+  streak: StreakState;
+  labBonusXp: number;
+  leaderboard: LeaderboardEntry[];
+  profileLoaded: boolean;
   profileSettings: ProfileSettings;
   chat: ChatState;
   toastMessage: string | null;
@@ -155,6 +178,11 @@ export interface StreakByteStore {
   loginAsGuest: () => void;
   logout: () => Promise<void>;
   loadAuthUser: () => Promise<AuthUser | null>;
+  loadUserData: () => Promise<void>;
+  refreshLeaderboard: () => Promise<void>;
+  completeOnboarding: (tracks: TrackId[]) => Promise<void>;
+  setSelectedTracks: (tracks: TrackId[]) => void;
+  saveProfileSettings: () => Promise<void>;
 
   // Navigation & shell
   syncFromHash: (hash: string) => void;
@@ -266,6 +294,10 @@ export const useStreakByteStore = create<StreakByteStore>()(
       quiz: null,
       learnKey: null,
       completions: [],
+      streak: createInitialStreak(),
+      labBonusXp: 0,
+      leaderboard: [],
+      profileLoaded: false,
       profileSettings: createInitialProfileSettings(),
       chat: createInitialChatState(),
       toastMessage: null,
@@ -293,11 +325,14 @@ export const useStreakByteStore = create<StreakByteStore>()(
         set({
           authUser: guestUser,
           isGuest: true,
+          profileLoaded: true,
           view: 'dashboard',
           profileSettings: {
             ...get().profileSettings,
             displayName: 'Guest Learner',
             email: 'guest@streakbyte.local',
+            selectedTracks: ['hw', 'net'],
+            onboardingCompleted: true,
           },
         });
         get().showToast('Welcome, Guest! (Dev Mode)');
@@ -310,7 +345,18 @@ export const useStreakByteStore = create<StreakByteStore>()(
         } catch {
           // Ignore
         }
-        set({ authUser: null, isGuest: false, view: 'login' });
+        services.progress.clearLocalCache();
+        set({
+          authUser: null,
+          isGuest: false,
+          view: 'login',
+          completions: [],
+          streak: createInitialStreak(),
+          labBonusXp: 0,
+          leaderboard: [],
+          profileLoaded: false,
+          profileSettings: createInitialProfileSettings(),
+        });
         get().showToast('Logged out.');
         get().navigate('login');
       },
@@ -326,6 +372,154 @@ export const useStreakByteStore = create<StreakByteStore>()(
           // ignore
         }
         return null;
+      },
+
+      loadUserData: async () => {
+        const currentAuth = get().authUser;
+        const isGuest = get().isGuest;
+        try {
+          const [savedCompletions, savedStreak, savedBonusXp, remoteSettings] = await Promise.all([
+            services.progress.loadLessonCompletions(),
+            services.progress.loadStreak(),
+            services.progress.loadLabBonusXp(),
+            currentAuth && !isGuest ? services.progress.loadSettings() : Promise.resolve(null),
+          ]);
+
+          set((state) => {
+            const mergedCompletions = savedCompletions.reduce(
+              (all, c) => recordCompletion(all, c),
+              state.completions,
+            );
+
+            if (!currentAuth || isGuest) {
+              return {
+                completions: mergedCompletions,
+                streak: savedStreak,
+                labBonusXp: savedBonusXp,
+                profileLoaded: true,
+              };
+            }
+
+            const selectedTracks = remoteSettings
+              ? sanitizeTracks(remoteSettings.selectedTracks)
+              : state.profileSettings.selectedTracks;
+            const nextSettings: ProfileSettings = remoteSettings
+              ? {
+                  ...state.profileSettings,
+                  ...remoteSettings,
+                  selectedTracks,
+                  displayName: remoteSettings.displayName || currentAuth.displayName || 'Learner',
+                  email: remoteSettings.email || currentAuth.email || '',
+                }
+              : {
+                  ...state.profileSettings,
+                  displayName: currentAuth.displayName || state.profileSettings.displayName,
+                  email: currentAuth.email || state.profileSettings.email,
+                  selectedTracks: ['hw', 'net'],
+                  onboardingCompleted: false,
+                };
+
+            return {
+              completions: mergedCompletions,
+              streak: savedStreak,
+              labBonusXp: savedBonusXp,
+              profileSettings: nextSettings,
+              track: selectedTracks.includes(state.track) ? state.track : selectedTracks[0],
+              profileLoaded: true,
+            };
+          });
+
+          if (currentAuth && !isGuest && get().profileSettings.onboardingCompleted) {
+            const state = get();
+            const today = localDayString();
+            const streakDays = effectiveStreak(state.streak, today);
+            await services.progress.syncLeaderboardEntry({
+              displayName: state.profileSettings.displayName || currentAuth.displayName || 'Learner',
+              avatarUrl: currentAuth.avatarUrl,
+              weeklyXp: calculateWeeklyXp(state.completions, LESSON_XP_BY_KEY, new Date(), state.labBonusXp),
+              allTimeXp: calculateTotalXp(state.completions, LESSON_XP_BY_KEY, state.labBonusXp),
+              streakDays,
+            });
+          }
+          if (currentAuth && !isGuest) {
+            await get().refreshLeaderboard();
+          }
+        } catch {
+          set({ profileLoaded: true });
+        }
+      },
+
+      refreshLeaderboard: async () => {
+        if (get().isGuest || !get().authUser) return;
+        try {
+          const rows = await services.progress.loadLeaderboard(get().leaderboardPeriod);
+          set({ leaderboard: rows });
+        } catch {
+          // Offline / unavailable: keep current leaderboard state
+        }
+      },
+
+      completeOnboarding: async (tracks) => {
+        const selectedTracks = sanitizeTracks(tracks);
+        const currentAuth = get().authUser;
+        const nextSettings: ProfileSettings = {
+          ...get().profileSettings,
+          displayName: get().profileSettings.displayName || currentAuth?.displayName || 'Learner',
+          email: get().profileSettings.email || currentAuth?.email || '',
+          selectedTracks,
+          onboardingCompleted: true,
+        };
+        set({
+          profileSettings: nextSettings,
+          track: selectedTracks[0],
+          profileLoaded: true,
+        });
+        await Promise.all([
+          services.progress.saveSettings(nextSettings).catch(() => undefined),
+          services.progress.saveStreak(get().streak).catch(() => undefined),
+          services.progress
+            .syncLeaderboardEntry({
+              displayName: nextSettings.displayName,
+              avatarUrl: currentAuth?.avatarUrl,
+              weeklyXp: calculateWeeklyXp(get().completions, LESSON_XP_BY_KEY, new Date(), get().labBonusXp),
+              allTimeXp: calculateTotalXp(get().completions, LESSON_XP_BY_KEY, get().labBonusXp),
+              streakDays: effectiveStreak(get().streak, localDayString()),
+            })
+            .catch(() => undefined),
+        ]);
+        await get().refreshLeaderboard();
+        get().navigate('dashboard');
+      },
+
+      setSelectedTracks: (tracks) => {
+        const selectedTracks = sanitizeTracks(tracks);
+        set((state) => ({
+          profileSettings: { ...state.profileSettings, selectedTracks },
+          track: selectedTracks.includes(state.track) ? state.track : selectedTracks[0],
+        }));
+        void services.progress.saveSettings(get().profileSettings).catch(() => undefined);
+      },
+
+      saveProfileSettings: async () => {
+        const settings = get().profileSettings;
+        const currentAuth = get().authUser;
+        await services.progress.saveSettings(settings).catch(() => undefined);
+        void services.syncQueue
+          .enqueue({ type: 'save-settings', payload: settings })
+          .catch(() => undefined);
+        if (!get().isGuest && currentAuth) {
+          await services.progress
+            .syncLeaderboardEntry({
+              displayName: settings.displayName || currentAuth.displayName || 'Learner',
+              avatarUrl: currentAuth.avatarUrl,
+              weeklyXp: calculateWeeklyXp(get().completions, LESSON_XP_BY_KEY, new Date(), get().labBonusXp),
+              allTimeXp: calculateTotalXp(get().completions, LESSON_XP_BY_KEY, get().labBonusXp),
+              streakDays: effectiveStreak(get().streak, localDayString()),
+            })
+            .catch(() => undefined);
+          await get().refreshLeaderboard();
+        }
+        get().showToast('Changes saved');
       },
 
       syncFromHash: (hash) => {
@@ -398,7 +592,10 @@ export const useStreakByteStore = create<StreakByteStore>()(
       setSearchQuery: (searchQuery) => set({ searchQuery }),
       setPracticeFilter: (practiceFilter) => set({ practiceFilter }),
       setAchievementFilter: (achievementFilter) => set({ achievementFilter }),
-      setLeaderboardPeriod: (leaderboardPeriod) => set({ leaderboardPeriod }),
+      setLeaderboardPeriod: (leaderboardPeriod) => {
+        set({ leaderboardPeriod });
+        void get().refreshLeaderboard();
+      },
 
       openSetup: (target, title) => {
         const isNet = target === 'network';
@@ -447,7 +644,30 @@ export const useStreakByteStore = create<StreakByteStore>()(
       triggerPcHint: () => set((state) => ({ pc: nextHint(state.pc) })),
 
       completePcBuild: () => {
-        set({ completion: summarizePcBuild(get().pc) });
+        const name = learnerFirstName(get().profileSettings, get().authUser);
+        const nextBonus = get().labBonusXp + 120;
+        const nextStreak = recordActivity(get().streak, localDayString());
+        set({
+          completion: summarizePcBuild(get().pc, name),
+          labBonusXp: nextBonus,
+          streak: nextStreak,
+        });
+        void services.progress.saveLabBonusXp(nextBonus).catch(() => undefined);
+        void services.progress.saveStreak(nextStreak).catch(() => undefined);
+        void services.syncQueue.enqueue({ type: 'save-streak', payload: nextStreak }).catch(() => undefined);
+        if (!get().isGuest && get().authUser) {
+          const state = get();
+          void services.progress
+            .syncLeaderboardEntry({
+              displayName: state.profileSettings.displayName || state.authUser?.displayName || 'Learner',
+              avatarUrl: state.authUser?.avatarUrl,
+              weeklyXp: calculateWeeklyXp(state.completions, LESSON_XP_BY_KEY, new Date(), nextBonus),
+              allTimeXp: calculateTotalXp(state.completions, LESSON_XP_BY_KEY, nextBonus),
+              streakDays: effectiveStreak(nextStreak, localDayString()),
+            })
+            .then(() => get().refreshLeaderboard())
+            .catch(() => undefined);
+        }
         get().navigate('complete');
       },
 
@@ -496,7 +716,30 @@ export const useStreakByteStore = create<StreakByteStore>()(
       },
 
       completeNetworkBuild: () => {
-        set({ completion: summarizeNetworkBuild(get().net) });
+        const name = learnerFirstName(get().profileSettings, get().authUser);
+        const nextBonus = get().labBonusXp + 150;
+        const nextStreak = recordActivity(get().streak, localDayString());
+        set({
+          completion: summarizeNetworkBuild(get().net, name),
+          labBonusXp: nextBonus,
+          streak: nextStreak,
+        });
+        void services.progress.saveLabBonusXp(nextBonus).catch(() => undefined);
+        void services.progress.saveStreak(nextStreak).catch(() => undefined);
+        void services.syncQueue.enqueue({ type: 'save-streak', payload: nextStreak }).catch(() => undefined);
+        if (!get().isGuest && get().authUser) {
+          const state = get();
+          void services.progress
+            .syncLeaderboardEntry({
+              displayName: state.profileSettings.displayName || state.authUser?.displayName || 'Learner',
+              avatarUrl: state.authUser?.avatarUrl,
+              weeklyXp: calculateWeeklyXp(state.completions, LESSON_XP_BY_KEY, new Date(), nextBonus),
+              allTimeXp: calculateTotalXp(state.completions, LESSON_XP_BY_KEY, nextBonus),
+              streakDays: effectiveStreak(nextStreak, localDayString()),
+            })
+            .then(() => get().refreshLeaderboard())
+            .catch(() => undefined);
+        }
         get().navigate('complete');
       },
 
@@ -535,22 +778,26 @@ export const useStreakByteStore = create<StreakByteStore>()(
           ? `${following.minutes} min · +${following.xp} XP`
           : '';
 
+        const name = learnerFirstName(get().profileSettings, get().authUser);
         set({
           quiz: null,
-          completion: summarizeQuiz({
-            lessonTitle: lesson && parsed ? lessonLabel(lesson, lessonIdx) : 'this lesson',
-            lessonXp: lesson?.xp ?? 0,
-            score,
-            passed,
-            passMark: DEFAULT_PASS_MARK,
-            next: following
-              ? [
-                  lessonLabel(following, lessonIdx + 1),
-                  followingLock ?? following.subtitle,
-                  followingMeta,
-                ]
-              : ['Back to the curriculum', 'Pick your next lesson', 'Keep your streak going'],
-          }),
+          completion: summarizeQuiz(
+            {
+              lessonTitle: lesson && parsed ? lessonLabel(lesson, lessonIdx) : 'this lesson',
+              lessonXp: lesson?.xp ?? 0,
+              score,
+              passed,
+              passMark: DEFAULT_PASS_MARK,
+              next: following
+                ? [
+                    lessonLabel(following, lessonIdx + 1),
+                    followingLock ?? following.subtitle,
+                    followingMeta,
+                  ]
+                : ['Back to the curriculum', 'Pick your next lesson', 'Keep your streak going'],
+            },
+            name,
+          ),
         });
         get().navigate('complete');
       },
@@ -577,11 +824,37 @@ export const useStreakByteStore = create<StreakByteStore>()(
           total,
           completedAt: new Date().toISOString(),
         };
-        set((state) => ({ completions: recordCompletion(state.completions, completion) }));
+        const nextStreak = recordActivity(get().streak, localDayString());
+        set((state) => ({
+          completions: recordCompletion(state.completions, completion),
+          streak: nextStreak,
+        }));
         void services.progress.saveLessonCompletion(completion).catch(() => undefined);
+        void services.progress.saveStreak(nextStreak).catch(() => undefined);
         void services.syncQueue
           .enqueue({ type: 'complete-lesson', payload: completion })
           .catch(() => undefined);
+        void services.syncQueue
+          .enqueue({ type: 'save-streak', payload: nextStreak })
+          .catch(() => undefined);
+        if (!get().isGuest && get().authUser) {
+          const state = get();
+          void services.progress
+            .syncLeaderboardEntry({
+              displayName: state.profileSettings.displayName || state.authUser?.displayName || 'Learner',
+              avatarUrl: state.authUser?.avatarUrl,
+              weeklyXp: calculateWeeklyXp(
+                state.completions,
+                LESSON_XP_BY_KEY,
+                new Date(),
+                state.labBonusXp,
+              ),
+              allTimeXp: calculateTotalXp(state.completions, LESSON_XP_BY_KEY, state.labBonusXp),
+              streakDays: effectiveStreak(nextStreak, localDayString()),
+            })
+            .then(() => get().refreshLeaderboard())
+            .catch(() => undefined);
+        }
       },
 
       updateProfileSettings: (patch) =>
@@ -675,6 +948,10 @@ export const useStreakByteStore = create<StreakByteStore>()(
           quiz: null,
           learnKey: null,
           completions: [],
+          streak: createInitialStreak(),
+          labBonusXp: 0,
+          leaderboard: [],
+          profileLoaded: false,
           profileSettings: createInitialProfileSettings(),
           chat: createInitialChatState(),
           toastMessage: null,

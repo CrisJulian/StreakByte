@@ -1,10 +1,11 @@
 import { Icon } from '../components/Icon';
 import { WeekStrip } from '../components/WeekStrip';
+import { deriveWeekStrip, effectiveStreak, localDayString } from '../domain/rules/xp';
 import { useStreakByteStore } from '../store/useStreakByteStore';
 import type { CompletionSummary } from '../types/streakbyte';
 
 const DEFAULT_COMPLETION: CompletionSummary = {
-  title: 'Nice build, Mika!',
+  title: 'Nice build!',
   subtitle: 'You installed 5 of 5 parts and kept your streak alive.',
   xp: '+120',
   accuracy: '80%',
@@ -20,7 +21,12 @@ const DEFAULT_COMPLETION: CompletionSummary = {
 
 export function CompleteView() {
   const completion = useStreakByteStore((s) => s.completion) ?? DEFAULT_COMPLETION;
+  const streak = useStreakByteStore((s) => s.streak);
   const navigate = useStreakByteStore((s) => s.navigate);
+
+  const today = localDayString();
+  const streakDays = effectiveStreak(streak, today);
+  const weekStrip = deriveWeekStrip(streak);
 
   return (
     <div>
@@ -58,10 +64,16 @@ export function CompleteView() {
         <div className="min-w-[290px] max-[1100px]:min-w-0 p-4 rounded-[14px] bg-bg border border-line">
           <div className="flex items-center gap-2 font-bold">
             <Icon name="flame" className="w-5 h-5 text-amber" />
-            6 day streak
+            {streakDays} day streak
           </div>
-          <WeekStrip filledCount={6} todayIndex={5} ariaLabel="Monday to Saturday done" />
-          <p className="m-0 text-muted text-sm">Streak extended. Come back tomorrow.</p>
+          <WeekStrip
+            filledCount={weekStrip.filledCount}
+            todayIndex={weekStrip.todayIndex}
+            ariaLabel={weekStrip.ariaLabel}
+          />
+          <p className="m-0 text-muted text-sm">
+            {streakDays > 0 ? 'Streak active. Keep it going tomorrow.' : 'Complete a lesson to start your streak.'}
+          </p>
         </div>
       </section>
 

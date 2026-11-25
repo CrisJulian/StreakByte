@@ -3,7 +3,7 @@ import { scoreNetworkBuild } from './network';
 import { scorePcBuild } from './pcBuild';
 
 /** Builds the Lesson Complete payload for the PC lab. Copy is unchanged from the original store. */
-export function summarizePcBuild(pc: PcBuildState, learnerName = 'Mika'): CompletionSummary {
+export function summarizePcBuild(pc: PcBuildState, learnerName = 'Learner'): CompletionSummary {
   const { accuracyPct, missedDualChannel, usedRamSlots } = scorePcBuild(pc);
   return {
     title: `Nice build, ${learnerName}!`,
@@ -24,7 +24,7 @@ export function summarizePcBuild(pc: PcBuildState, learnerName = 'Mika'): Comple
   };
 }
 
-export function summarizeNetworkBuild(net: NetworkLabState, learnerName = 'Mika'): CompletionSummary {
+export function summarizeNetworkBuild(net: NetworkLabState, learnerName = 'Learner'): CompletionSummary {
   const { accuracyPct } = scoreNetworkBuild(net);
   return {
     title: `Nice build, ${learnerName}!`,
@@ -60,7 +60,7 @@ function passNote(input: QuizSummaryInput): string {
 }
 
 /** Lesson Complete payload for a finished quiz, built from the real answers. */
-export function summarizeQuiz(input: QuizSummaryInput, learnerName = 'Mika'): CompletionSummary {
+export function summarizeQuiz(input: QuizSummaryInput, learnerName = 'Learner'): CompletionSummary {
   const { score } = input;
   const xp = score.total === 0 ? 0 : Math.round((input.lessonXp * score.correct) / score.total);
   return {

@@ -13,6 +13,7 @@ import { LearnView } from './views/LearnView';
 import { LeaderboardView } from './views/LeaderboardView';
 import { LessonPlayerView } from './views/LessonPlayerView';
 import { LoginView } from './views/LoginView';
+import { OnboardingView } from './views/OnboardingView';
 import { PracticeView } from './views/PracticeView';
 import { ProfileView } from './views/ProfileView';
 import { QuizView } from './views/QuizView';
@@ -22,18 +23,29 @@ export function App() {
   const theme = useStreakByteStore((s) => s.theme);
   const authUser = useStreakByteStore((s) => s.authUser);
   const isGuest = useStreakByteStore((s) => s.isGuest);
+  const profileLoaded = useStreakByteStore((s) => s.profileLoaded);
+  const onboardingCompleted = useStreakByteStore((s) => s.profileSettings.onboardingCompleted);
   const loadAuthUser = useStreakByteStore((s) => s.loadAuthUser);
+  const loadUserData = useStreakByteStore((s) => s.loadUserData);
   const syncFromHash = useStreakByteStore((s) => s.syncFromHash);
   const loadCompletions = useStreakByteStore((s) => s.loadCompletions);
 
   // Saved lesson progress (works offline) decides which lessons are done and unlocked.
   useEffect(() => {
     void loadCompletions();
-    void loadAuthUser();
+    void loadAuthUser().then((user) => {
+      if (user || useStreakByteStore.getState().isGuest) {
+        void loadUserData();
+      }
+    });
     return services.auth.onAuthStateChange((user) => {
       const store = useStreakByteStore.getState();
       if (user) {
+        const userChanged = store.authUser?.id !== user.id;
         store.setAuthUser(user);
+        if (userChanged || !store.profileLoaded) {
+          void store.loadUserData();
+        }
         if (store.view === 'login') {
           store.navigate('dashboard');
         }
@@ -42,9 +54,13 @@ export function App() {
         store.navigate('login');
       }
     });
-  }, [loadCompletions, loadAuthUser]);
+  }, [loadCompletions, loadAuthUser, loadUserData]);
 
   const isAuthed = Boolean(authUser || isGuest);
+  const needsAuthScreen = !isAuthed || view === 'login';
+  const needsLoading = isAuthed && !isGuest && !needsAuthScreen && !profileLoaded;
+  const needsOnboarding = isAuthed && !isGuest && !needsAuthScreen && profileLoaded && !onboardingCompleted;
+  const showAppShell = isAuthed && !needsAuthScreen && !needsLoading && !needsOnboarding;
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -79,18 +95,24 @@ export function App() {
         Skip to main content
       </a>
 
-      {isAuthed && view !== 'login' && <TopBar />}
+      {showAppShell && <TopBar />}
 
       <main
         id="main"
         className={
-          !isAuthed || view === 'login'
+          !showAppShell
             ? 'max-w-[1040px] mx-auto px-6 py-6 min-h-screen flex items-center justify-center max-[760px]:px-4 max-[760px]:py-4'
             : 'max-w-[1180px] mx-auto px-6 pt-7 pb-16 max-[760px]:px-4 max-[760px]:pt-5 max-[760px]:pb-8'
         }
       >
-        {!isAuthed || view === 'login' ? (
+        {needsAuthScreen ? (
           <LoginView />
+        ) : needsLoading ? (
+          <p role="status" className="text-muted text-sm font-semibold">
+            Loading your profile…
+          </p>
+        ) : needsOnboarding ? (
+          <OnboardingView />
         ) : (
           <>
             {view === 'dashboard' && <DashboardView />}
@@ -108,7 +130,7 @@ export function App() {
       </main>
 
       <SessionSetupModal />
-      {isAuthed && view !== 'login' && <StudyBuddyChat />}
+      {showAppShell && <StudyBuddyChat />}
       <Toast />
     </>
   );

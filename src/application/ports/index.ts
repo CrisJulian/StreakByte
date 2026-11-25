@@ -21,15 +21,29 @@ export interface AuthService {
   signOut(): Promise<void>;
 }
 
+export interface LeaderboardEntry {
+  userId: string;
+  displayName: string;
+  avatarUrl?: string;
+  weeklyXp: number;
+  allTimeXp: number;
+  streakDays: number;
+}
+
 export interface ProgressRepository {
   loadStreak(): Promise<StreakState>;
   saveStreak(streak: StreakState): Promise<void>;
+  loadLabBonusXp(): Promise<number>;
+  saveLabBonusXp(xp: number): Promise<void>;
   loadSettings(): Promise<ProfileSettings | null>;
   saveSettings(settings: ProfileSettings): Promise<void>;
   /** Lessons whose quiz was passed. Unlocking is derived from this list. */
   loadLessonCompletions(): Promise<LessonCompletion[]>;
   /** Idempotent: saving the same lesson twice keeps one record (best score wins). */
   saveLessonCompletion(completion: LessonCompletion): Promise<void>;
+  loadLeaderboard(period: 'w' | 'a'): Promise<LeaderboardEntry[]>;
+  syncLeaderboardEntry(entry: Omit<LeaderboardEntry, 'userId'>): Promise<void>;
+  clearLocalCache(): void;
 }
 
 export interface StudyBuddyMessage {

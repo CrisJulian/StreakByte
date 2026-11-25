@@ -1,6 +1,10 @@
 import { Icon } from '../components/Icon';
-import { PROFILE_BADGES } from '../data/achievements';
+import { getTrackProgress, LESSON_XP_BY_KEY, TRACKS } from '../data/curriculum';
+import { formatXp } from '../data/leaderboard';
+import { deriveAchievements, deriveActivityHeatmap } from '../domain/rules/progressViews';
+import { calculateTotalXp, deriveLevel } from '../domain/rules/xp';
 import { useStreakByteStore } from '../store/useStreakByteStore';
+import type { TrackId } from '../types/streakbyte';
 
 const HEAT_DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const HEAT_LEVELS = ['', 'l1', 'l2', 'l3'] as const;
@@ -17,12 +21,37 @@ export function ProfileView() {
   const setTheme = useStreakByteStore((s) => s.setTheme);
   const settings = useStreakByteStore((s) => s.profileSettings);
   const updateProfileSettings = useStreakByteStore((s) => s.updateProfileSettings);
-  const showToast = useStreakByteStore((s) => s.showToast);
+  const setSelectedTracks = useStreakByteStore((s) => s.setSelectedTracks);
+  const saveProfileSettings = useStreakByteStore((s) => s.saveProfileSettings);
+  const completions = useStreakByteStore((s) => s.completions);
+  const streak = useStreakByteStore((s) => s.streak);
+  const labBonusXp = useStreakByteStore((s) => s.labBonusXp);
   const logout = useStreakByteStore((s) => s.logout);
   const authUser = useStreakByteStore((s) => s.authUser);
 
   const fullName = settings.displayName.trim() || authUser?.displayName || 'Learner';
   const initial = (fullName[0] || 'L').toUpperCase();
+  const totalXp = calculateTotalXp(completions, LESSON_XP_BY_KEY, labBonusXp);
+  const level = deriveLevel(totalXp);
+  const heatmap = deriveActivityHeatmap(completions);
+  const achievements = deriveAchievements({
+    completions,
+    streak,
+    totalXp,
+    hwTotal: TRACKS.hw.lessons.length,
+    leaderboardRank: null,
+  });
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
+  const trackChoice: 'hw' | 'net' | 'both' =
+    settings.selectedTracks.length > 1
+      ? 'both'
+      : settings.selectedTracks[0] === 'net'
+        ? 'net'
+        : 'hw';
+  const chooseTracks = (choice: 'hw' | 'net' | 'both') => {
+    const next: TrackId[] = choice === 'both' ? ['hw', 'net'] : [choice];
+    setSelectedTracks(next);
+  };
 
   return (
     <div>
@@ -49,16 +78,23 @@ export function ProfileView() {
           <h1 className="m-0 text-[2.125rem] font-bold leading-[1.15] tracking-[-0.025em]">
             {fullName}
           </h1>
-          <p className="mt-1 mb-3.5 text-muted">Level 4, Beginner · Joined September 2026</p>
+          <p className="mt-1 mb-3.5 text-muted">
+            Level {level.level}, {level.title} · {formatXp(totalXp)} total XP
+          </p>
           <div className="flex items-center gap-3">
             <div className="flex-1 h-2.5 rounded-full bg-panel2 overflow-hidden">
-              <i className="sb-bar-fill block h-full rounded-full bg-amber" style={{ width: '83%' }} />
+              <i
+                className="sb-bar-fill block h-full rounded-full bg-amber"
+                style={{ width: `${level.progressPct}%` }}
+              />
             </div>
             <small className="num text-muted text-[0.8125rem] whitespace-nowrap">
-              1,240 / 1,500 XP
+              {formatXp(level.currentLevelXp)} / {formatXp(level.nextLevelXp)} XP
             </small>
           </div>
-          <p className="mt-2 mb-0 text-muted text-sm">260 XP to Level 5</p>
+          <p className="mt-2 mb-0 text-muted text-sm">
+            {formatXp(level.xpToNext)} XP to Level {level.level + 1}
+          </p>
         </div>
       </section>
 
@@ -67,28 +103,30 @@ export function ProfileView() {
           <section className="bg-panel border border-line rounded-2xl p-[22px]">
             <h2 className="m-0 mb-1 text-[1.125rem] font-bold">Track progress</h2>
             <div className="grid gap-3.5 mt-3.5">
-              <div>
-                <div className="flex justify-between items-center gap-3 mb-1.5 font-semibold text-[0.9375rem]">
-                  <span>Hardware Basics</span>
-                  <span className="num text-[0.8125rem] font-semibold text-muted">
-                    2 of 12 lessons · 17%
-                  </span>
-                </div>
-                <div className="h-2 rounded-full bg-panel2 overflow-hidden">
-                  <i className="sb-bar-fill block h-full rounded-full bg-amber" style={{ width: '17%' }} />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between items-center gap-3 mb-1.5 font-semibold text-[0.9375rem]">
-                  <span>Networking Basics</span>
-                  <span className="num text-[0.8125rem] font-semibold text-muted">
-                    1 of 12 lessons · 8%
-                  </span>
-                </div>
-                <div className="h-2 rounded-full bg-panel2 overflow-hidden">
-                  <i className="sb-bar-fill block h-full rounded-full bg-cyan" style={{ width: '8%' }} />
-                </div>
-              </div>
+              {settings.selectedTracks.map((id) => {
+                const trackInfo = TRACKS[id];
+                const prog = getTrackProgress(id, completions);
+                const pct =
+                  prog.total === 0 ? 0 : Math.round((prog.doneCount / prog.total) * 100);
+                return (
+                  <div key={id}>
+                    <div className="flex justify-between items-center gap-3 mb-1.5 font-semibold text-[0.9375rem]">
+                      <span>{trackInfo.heading}</span>
+                      <span className="num text-[0.8125rem] font-semibold text-muted">
+                        {prog.doneCount} of {prog.total} lessons · {pct}%
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-full bg-panel2 overflow-hidden">
+                      <i
+                        className={`sb-bar-fill block h-full rounded-full ${
+                          id === 'net' ? 'bg-cyan' : 'bg-amber'
+                        }`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
 
@@ -116,16 +154,13 @@ export function ProfileView() {
               {HEAT_DAYS.map((day, r) => (
                 <div key={`${day}-${r}`} className="contents">
                   <span className="text-muted text-xs font-bold">{day}</span>
-                  {Array.from({ length: 5 }, (_, c) => {
-                    const lvl = HEAT_LEVELS[(r * 3 + c * 2 + (r % 2)) % 4];
-                    return (
-                      <i
-                        key={c}
-                        className="h-7 rounded-md block"
-                        style={{ background: heatBg(lvl) }}
-                      />
-                    );
-                  })}
+                  {heatmap[r].map((lvl, c) => (
+                    <i
+                      key={c}
+                      className="h-7 rounded-md block"
+                      style={{ background: heatBg(lvl) }}
+                    />
+                  ))}
                 </div>
               ))}
             </div>
@@ -134,13 +169,15 @@ export function ProfileView() {
           <section className="bg-panel border border-line rounded-2xl p-[22px]">
             <div className="flex justify-between items-center gap-3">
               <h2 className="m-0 text-[1.125rem] font-bold">Achievements</h2>
-              <span className="num text-[0.8125rem] font-semibold text-muted">3 of 8</span>
+              <span className="num text-[0.8125rem] font-semibold text-muted">
+                {unlockedCount} of {achievements.length}
+              </span>
             </div>
 
             <ul className="grid grid-cols-4 max-[760px]:grid-cols-2 gap-3 mt-3.5">
-              {PROFILE_BADGES.map((badge) => (
+              {achievements.map((badge) => (
                 <li
-                  key={badge.label}
+                  key={badge.id}
                   className={`grid justify-items-center gap-1.5 text-center text-[0.8125rem] font-semibold ${
                     badge.unlocked ? '' : 'text-muted'
                   }`}
@@ -155,9 +192,9 @@ export function ProfileView() {
                         : undefined
                     }
                   >
-                    <Icon name={badge.unlocked ? 'bolt' : 'lock'} className="w-6 h-6" />
+                    <Icon name={badge.unlocked ? badge.icon : 'lock'} className="w-6 h-6" />
                   </div>
-                  {badge.label}
+                  {badge.title}
                 </li>
               ))}
             </ul>
@@ -169,7 +206,7 @@ export function ProfileView() {
             noValidate
             onSubmit={(e) => {
               e.preventDefault();
-              showToast('Changes saved');
+              void saveProfileSettings();
             }}
             className="bg-panel border border-line rounded-2xl p-[22px]"
           >
@@ -246,6 +283,37 @@ export function ProfileView() {
               >
                 Light
               </button>
+            </div>
+
+            <span id="tracks-l" className="block mt-4 mb-2 text-muted text-[0.8125rem] font-bold">
+              Curriculum tracks
+            </span>
+            <div
+              role="group"
+              aria-labelledby="tracks-l"
+              className="flex p-1 border border-line rounded-xl bg-bg gap-1"
+            >
+              {(
+                [
+                  ['hw', 'Hardware'],
+                  ['net', 'Networking'],
+                  ['both', 'Both'],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={trackChoice === id}
+                  onClick={() => chooseTracks(id)}
+                  className={`flex-1 min-h-10 px-3 border-0 rounded-lg font-semibold text-sm cursor-pointer transition-colors ${
+                    trackChoice === id
+                      ? 'bg-cyan text-cyan-ink'
+                      : 'bg-transparent text-muted hover:text-ink'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
             <span id="goal-l" className="block mt-4 mb-2 text-muted text-[0.8125rem] font-bold">

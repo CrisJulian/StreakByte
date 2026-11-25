@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { LESSON_XP_BY_KEY } from '../data/curriculum';
+import { formatXp } from '../data/leaderboard';
+import { calculateTotalXp, deriveWeekStrip, effectiveStreak, localDayString } from '../domain/rules/xp';
 import { useStreakByteStore } from '../store/useStreakByteStore';
 import type { IconName, ViewId } from '../types/streakbyte';
 import { Icon } from './Icon';
@@ -18,6 +21,9 @@ export function TopBar() {
   const navigate = useStreakByteStore((s) => s.navigate);
   const toggleTheme = useStreakByteStore((s) => s.toggleTheme);
   const showToast = useStreakByteStore((s) => s.showToast);
+  const completions = useStreakByteStore((s) => s.completions);
+  const streak = useStreakByteStore((s) => s.streak);
+  const labBonusXp = useStreakByteStore((s) => s.labBonusXp);
   const displayName = useStreakByteStore(
     (s) => s.profileSettings.displayName || s.authUser?.displayName || 'Learner',
   );
@@ -26,6 +32,17 @@ export function TopBar() {
     nameParts.length >= 2
       ? `${nameParts[0]} ${nameParts[1][0].toUpperCase()}.`
       : nameParts[0] || 'Learner';
+  const today = localDayString();
+  const streakDays = effectiveStreak(streak, today);
+  const totalXp = calculateTotalXp(completions, LESSON_XP_BY_KEY, labBonusXp);
+  const weekStrip = deriveWeekStrip(streak);
+  const streakLabel = `${streakDays} day streak`;
+  const streakCopy =
+    streakDays === 0
+      ? 'Finish one lesson today to start your streak.'
+      : streak.lastActiveDay === today
+        ? 'You’re done for today. Come back tomorrow to keep it going.'
+        : 'Finish one lesson today to keep it going.';
 
   const [streakOpen, setStreakOpen] = useState(false);
   const streakWrapRef = useRef<HTMLDivElement>(null);
@@ -114,14 +131,14 @@ export function TopBar() {
             aria-expanded={streakOpen}
             aria-haspopup="dialog"
             aria-controls="streak-popover"
-            aria-label="5 day streak"
-            title="5-day streak"
+            aria-label={streakLabel}
+            title={streakLabel}
             className={`inline-flex items-center gap-2 min-h-10 px-3.5 py-2 border rounded-full bg-bg font-semibold text-sm text-ink whitespace-nowrap cursor-pointer transition-colors hover:border-muted ${
               streakOpen ? 'border-cyan' : 'border-line'
             }`}
           >
             <Icon name="flame" className="w-[18px] h-[18px] text-amber" />
-            <span className="num">5</span>
+            <span className="num">{streakDays}</span>
             <span className="max-[1180px]:hidden">day streak</span>
           </button>
 
@@ -133,15 +150,17 @@ export function TopBar() {
               className="sb-pop absolute right-0 top-[calc(100%+10px)] z-50 w-[330px] max-w-[calc(100vw-24px)] max-[760px]:fixed max-[760px]:left-3 max-[760px]:right-3 max-[760px]:top-[68px] max-[760px]:w-auto bg-panel border border-line rounded-2xl p-[18px] shadow-[0_14px_34px_rgba(0,0,0,0.28)]"
             >
               <div className="flex justify-between items-center gap-3">
-                <h2 className="m-0 text-base font-bold">5 day streak</h2>
-                <span className="text-[0.8125rem] font-semibold text-muted">On</span>
+                <h2 className="m-0 text-base font-bold">{streakLabel}</h2>
+                <span className="text-[0.8125rem] font-semibold text-muted">
+                  {streakDays > 0 ? 'On' : 'Start'}
+                </span>
               </div>
               <WeekStrip
-                filledCount={5}
-                todayIndex={4}
-                ariaLabel="Monday to Friday done, weekend still open"
+                filledCount={weekStrip.filledCount}
+                todayIndex={weekStrip.todayIndex}
+                ariaLabel={weekStrip.ariaLabel}
               />
-              <p className="m-0 text-muted text-sm">Finish one lesson today to keep it going.</p>
+              <p className="m-0 text-muted text-sm">{streakCopy}</p>
             </section>
           )}
         </div>
@@ -151,7 +170,7 @@ export function TopBar() {
           title="Total XP"
         >
           <Icon name="bolt" className="w-[18px] h-[18px] text-cyan" />
-          <span className="num">1,240</span>
+          <span className="num">{formatXp(totalXp)}</span>
           <span className="max-[1180px]:hidden">XP</span>
         </div>
 

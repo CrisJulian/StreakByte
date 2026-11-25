@@ -5,15 +5,17 @@ import { useStreakByteStore } from '../store/useStreakByteStore';
 
 export function CurriculumView() {
   const track = useStreakByteStore((s) => s.track);
+  const selectedTracks = useStreakByteStore((s) => s.profileSettings.selectedTracks);
   const searchQuery = useStreakByteStore((s) => s.searchQuery);
   const setTrack = useStreakByteStore((s) => s.setTrack);
   const setSearchQuery = useStreakByteStore((s) => s.setSearchQuery);
   const completions = useStreakByteStore((s) => s.completions);
   const navigate = useStreakByteStore((s) => s.navigate);
 
-  const activeTrack = TRACKS[track];
+  const activeTrackId = selectedTracks.includes(track) ? track : selectedTracks[0] ?? 'hw';
+  const activeTrack = TRACKS[activeTrackId];
   // Done / current / locked are worked out from the saved quiz results, never stored.
-  const progress = getTrackProgress(track, completions);
+  const progress = getTrackProgress(activeTrackId, completions);
   const currentIdx = progress.lessons.findIndex((l) => l.status === 'cur');
   const q = searchQuery.trim().toLowerCase();
   const filteredLessons = activeTrack.lessons
@@ -49,36 +51,46 @@ export function CurriculumView() {
           </p>
         </div>
 
-        <div
-          role="group"
-          aria-label="Track"
-          className="inline-flex p-1 border border-line rounded-xl bg-bg gap-1"
-        >
+        {selectedTracks.length > 1 ? (
+          <div
+            role="group"
+            aria-label="Track"
+            className="inline-flex p-1 border border-line rounded-xl bg-bg gap-1"
+          >
+            <button
+              type="button"
+              aria-pressed={activeTrackId === 'hw'}
+              onClick={() => setTrack('hw')}
+              className={`min-h-10 px-4 border-0 rounded-lg font-semibold text-sm cursor-pointer transition-colors ${
+                activeTrackId === 'hw'
+                  ? 'bg-cyan text-cyan-ink'
+                  : 'bg-transparent text-muted hover:text-ink'
+              }`}
+            >
+              Hardware
+            </button>
+            <button
+              type="button"
+              aria-pressed={activeTrackId === 'net'}
+              onClick={() => setTrack('net')}
+              className={`min-h-10 px-4 border-0 rounded-lg font-semibold text-sm cursor-pointer transition-colors ${
+                activeTrackId === 'net'
+                  ? 'bg-cyan text-cyan-ink'
+                  : 'bg-transparent text-muted hover:text-ink'
+              }`}
+            >
+              Networking
+            </button>
+          </div>
+        ) : (
           <button
             type="button"
-            aria-pressed={track === 'hw'}
-            onClick={() => setTrack('hw')}
-            className={`min-h-10 px-4 border-0 rounded-lg font-semibold text-sm cursor-pointer transition-colors ${
-              track === 'hw'
-                ? 'bg-cyan text-cyan-ink'
-                : 'bg-transparent text-muted hover:text-ink'
-            }`}
+            onClick={() => navigate('profile')}
+            className="min-h-10 px-4 border border-line rounded-xl bg-panel text-muted font-semibold text-sm cursor-pointer transition-colors hover:text-ink hover:border-muted"
           >
-            Hardware
+            Studying {activeTrack.heading} · Manage tracks
           </button>
-          <button
-            type="button"
-            aria-pressed={track === 'net'}
-            onClick={() => setTrack('net')}
-            className={`min-h-10 px-4 border-0 rounded-lg font-semibold text-sm cursor-pointer transition-colors ${
-              track === 'net'
-                ? 'bg-cyan text-cyan-ink'
-                : 'bg-transparent text-muted hover:text-ink'
-            }`}
-          >
-            Networking
-          </button>
-        </div>
+        )}
       </div>
 
       <div className="grid grid-cols-[minmax(0,1fr)_360px] max-[1100px]:grid-cols-1 gap-5 items-start">
@@ -90,7 +102,7 @@ export function CurriculumView() {
           ) : (
             filteredLessons.map(({ lesson, idx }) => {
               const derived = progress.lessons[idx];
-              const key = lessonKeyFor(track, idx);
+              const key = lessonKeyFor(activeTrackId, idx);
               const label = lessonLabel(lesson, idx);
               const isDone = derived.status === 'done';
               const isCur = derived.status === 'cur';
@@ -210,14 +222,14 @@ export function CurriculumView() {
               <>
                 <button
                   type="button"
-                  onClick={() => navigate(`learn/${lessonKeyFor(track, currentIdx)}`)}
+                  onClick={() => navigate(`learn/${lessonKeyFor(activeTrackId, currentIdx)}`)}
                   className="w-full inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-cyan rounded-[10px] bg-cyan text-cyan-ink font-semibold text-[0.9375rem] cursor-pointer transition-all hover:brightness-110 active:brightness-95"
                 >
                   Start lesson
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate(`quiz/${lessonKeyFor(track, currentIdx)}`)}
+                  onClick={() => navigate(`quiz/${lessonKeyFor(activeTrackId, currentIdx)}`)}
                   className="mt-2.5 w-full inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-line rounded-[10px] bg-transparent text-ink font-semibold text-[0.9375rem] cursor-pointer transition-colors hover:bg-panel2 hover:border-muted"
                 >
                   Take the quiz
