@@ -4,3 +4,5 @@ dist/
 docs/superpowers/
 *.local
 .DS_Store
+playwright-report/
+test-results/

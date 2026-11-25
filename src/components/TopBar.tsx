@@ -18,6 +18,14 @@ export function TopBar() {
   const navigate = useStreakByteStore((s) => s.navigate);
   const toggleTheme = useStreakByteStore((s) => s.toggleTheme);
   const showToast = useStreakByteStore((s) => s.showToast);
+  const displayName = useStreakByteStore(
+    (s) => s.profileSettings.displayName || s.authUser?.displayName || 'Learner',
+  );
+  const nameParts = displayName.trim().split(/\s+/).filter(Boolean);
+  const shortName =
+    nameParts.length >= 2
+      ? `${nameParts[0]} ${nameParts[1][0].toUpperCase()}.`
+      : nameParts[0] || 'Learner';
 
   const [streakOpen, setStreakOpen] = useState(false);
   const streakWrapRef = useRef<HTMLDivElement>(null);
@@ -168,14 +176,14 @@ export function TopBar() {
 
         <a
           href="#profile"
-          aria-label="Profile, Mika Reyes"
+          aria-label={`Profile, ${displayName}`}
           onClick={(e) => {
             e.preventDefault();
             navigate('profile');
           }}
           className="grid place-items-center min-w-[112px] h-10 px-5 py-2 rounded-full bg-cyan text-cyan-ink font-bold text-sm flex-none no-underline whitespace-nowrap transition-all hover:brightness-110"
         >
-          Mika R.
+          {shortName}
         </a>
       </div>
     </header>

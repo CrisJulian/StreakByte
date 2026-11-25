@@ -25,7 +25,7 @@ describe('App integration', () => {
     await user.click(guestBtn);
 
     // Initial Dashboard (streak card hidden until top-bar pill is clicked)
-    expect(screen.getByRole('heading', { name: 'Welcome back, Mika' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Welcome back, Guest' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog', { name: 'Daily streak' })).not.toBeInTheDocument();
 
     const streakBtn = screen.getByRole('button', { name: '5 day streak' });
@@ -76,5 +76,28 @@ describe('App integration', () => {
     const chatDialog = screen.getByRole('dialog', { name: 'Study buddy chat' });
     await user.click(within(chatDialog).getByRole('button', { name: 'Explain the RAM key notch' }));
     expect(within(chatDialog).getByText(/off-centre on the gold pins/i)).toBeInTheDocument();
+  });
+
+  it('displays signed-in Google user name and avatar across Dashboard, TopBar, and Profile', async () => {
+    const user = userEvent.setup();
+    useStreakByteStore.getState().setAuthUser({
+      id: 'g-1',
+      email: 'ada@example.com',
+      displayName: 'Ada Lovelace',
+      avatarUrl: 'https://lh3.googleusercontent.com/ada',
+    });
+    useStreakByteStore.getState().navigate('dashboard');
+
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'Welcome back, Ada' })).toBeInTheDocument();
+    const profileLink = screen.getByRole('link', { name: 'Profile, Ada Lovelace' });
+    expect(profileLink).toHaveTextContent('Ada L.');
+
+    await user.click(profileLink);
+    expect(screen.getByRole('heading', { name: 'Ada Lovelace', level: 1 })).toBeInTheDocument();
+    const avatarImg = screen.getByRole('img', { name: 'Ada Lovelace' });
+    expect(avatarImg).toHaveAttribute('src', 'https://lh3.googleusercontent.com/ada');
+    expect(avatarImg).toHaveAttribute('referrerpolicy', 'no-referrer');
   });
 });

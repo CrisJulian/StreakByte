@@ -7,6 +7,10 @@ export function DashboardView() {
   const openSetup = useStreakByteStore((s) => s.openSetup);
   const setTrack = useStreakByteStore((s) => s.setTrack);
   const navigate = useStreakByteStore((s) => s.navigate);
+  const displayName = useStreakByteStore(
+    (s) => s.profileSettings.displayName || s.authUser?.displayName || 'Learner',
+  );
+  const firstName = displayName.trim().split(/\s+/)[0] || 'Learner';
 
   return (
     <div className="grid gap-5">
@@ -15,7 +19,7 @@ export function DashboardView() {
         <WelcomeMascot />
         <div className="min-w-0">
           <h1 className="m-0 text-[2.125rem] font-bold leading-[1.15] tracking-[-0.025em] text-balance">
-            Welcome back, Mika
+            Welcome back, {firstName}
           </h1>
           <p className="mt-1.5 mb-0 text-muted text-[1.0625rem] max-w-[65ch]">
             You’re 70 points behind Joel Mendoza this week.

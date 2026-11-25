@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { services } from '../../composition';
 import { parseHash, useStreakByteStore } from '../useStreakByteStore';
 import { getStudyBuddyReply } from '../../data/studyBuddy';
 
@@ -171,6 +172,33 @@ describe('useStreakByteStore', () => {
     expect(loggedOutState.isGuest).toBe(false);
     expect(loggedOutState.authUser).toBeNull();
     expect(loggedOutState.view).toBe('login');
+  });
+
+  it('syncs avatarUrl and profileSettings on setAuthUser and loadAuthUser', async () => {
+    const googleUser = {
+      id: 'g-123',
+      email: 'ada@example.com',
+      displayName: 'Ada Lovelace',
+      avatarUrl: 'https://lh3.googleusercontent.com/ada',
+    };
+
+    useStreakByteStore.getState().setAuthUser(googleUser);
+    let state = useStreakByteStore.getState();
+    expect(state.authUser).toEqual(googleUser);
+    expect(state.profileSettings.displayName).toBe('Ada Lovelace');
+    expect(state.profileSettings.email).toBe('ada@example.com');
+
+    useStreakByteStore.getState().resetAll();
+    const spy = vi.spyOn(services.auth, 'currentUser').mockResolvedValue(googleUser);
+    try {
+      await useStreakByteStore.getState().loadAuthUser();
+      state = useStreakByteStore.getState();
+      expect(state.authUser).toEqual(googleUser);
+      expect(state.profileSettings.displayName).toBe('Ada Lovelace');
+      expect(state.profileSettings.email).toBe('ada@example.com');
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
 

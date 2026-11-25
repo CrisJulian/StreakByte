@@ -319,7 +319,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
         try {
           const user = await services.auth.currentUser();
           if (user) {
-            set({ authUser: user });
+            get().setAuthUser(user);
             return user;
           }
         } catch {

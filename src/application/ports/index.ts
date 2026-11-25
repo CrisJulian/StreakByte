@@ -8,12 +8,15 @@ export interface AuthUser {
   id: string;
   email: string;
   displayName: string;
+  avatarUrl?: string;
 }
 
 export interface AuthService {
   currentUser(): Promise<AuthUser | null>;
   signIn(email: string, password: string, keepLoggedIn: boolean): Promise<AuthUser>;
   signUp(email: string, password: string): Promise<AuthUser>;
+  signInWithGoogle(): Promise<void>;
+  onAuthStateChange(callback: (user: AuthUser | null) => void): () => void;
   sendPasswordReset(email: string): Promise<void>;
   signOut(): Promise<void>;
 }

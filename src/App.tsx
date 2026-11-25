@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { services } from './composition';
 import { SessionSetupModal } from './components/SessionSetupModal';
 import { StudyBuddyChat } from './components/StudyBuddyChat';
 import { Toast } from './components/Toast';
@@ -29,6 +30,18 @@ export function App() {
   useEffect(() => {
     void loadCompletions();
     void loadAuthUser();
+    return services.auth.onAuthStateChange((user) => {
+      const store = useStreakByteStore.getState();
+      if (user) {
+        store.setAuthUser(user);
+        if (store.view === 'login') {
+          store.navigate('dashboard');
+        }
+      } else if (!store.isGuest && store.authUser) {
+        store.setAuthUser(null);
+        store.navigate('login');
+      }
+    });
   }, [loadCompletions, loadAuthUser]);
 
   const isAuthed = Boolean(authUser || isGuest);

@@ -5,7 +5,7 @@ import type {
   StudyBuddyService,
   SyncQueue,
 } from './application/ports';
-import { localAuth } from './adapters/local/localAuth';
+import { supabaseAuth } from './adapters/supabase/supabaseAuth';
 import { localProgress } from './adapters/local/localProgress';
 import { localReminders } from './adapters/local/localReminders';
 import { geminiStudyBuddy } from './adapters/gemini/geminiStudyBuddy';
@@ -24,7 +24,7 @@ export interface Services {
  * adapters here and swap them in; nothing else in the app changes.
  */
 export const services: Services = {
-  auth: localAuth,
+  auth: supabaseAuth,
   progress: localProgress,
   studyBuddy: geminiStudyBuddy,
   reminders: localReminders,

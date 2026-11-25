@@ -19,6 +19,10 @@ export function ProfileView() {
   const updateProfileSettings = useStreakByteStore((s) => s.updateProfileSettings);
   const showToast = useStreakByteStore((s) => s.showToast);
   const logout = useStreakByteStore((s) => s.logout);
+  const authUser = useStreakByteStore((s) => s.authUser);
+
+  const fullName = settings.displayName.trim() || authUser?.displayName || 'Learner';
+  const initial = (fullName[0] || 'L').toUpperCase();
 
   return (
     <div>
@@ -29,12 +33,21 @@ export function ProfileView() {
           borderColor: 'color-mix(in srgb, var(--cyan) 35%, var(--line))',
         }}
       >
-        <span className="grid place-items-center w-20 h-20 rounded-[18px] text-[2rem] font-bold bg-amber text-amber-ink">
-          M
-        </span>
+        {authUser?.avatarUrl ? (
+          <img
+            src={authUser.avatarUrl}
+            alt={fullName}
+            referrerPolicy="no-referrer"
+            className="w-20 h-20 rounded-[18px] object-cover border border-line"
+          />
+        ) : (
+          <span className="grid place-items-center w-20 h-20 rounded-[18px] text-[2rem] font-bold bg-amber text-amber-ink">
+            {initial}
+          </span>
+        )}
         <div>
           <h1 className="m-0 text-[2.125rem] font-bold leading-[1.15] tracking-[-0.025em]">
-            {settings.displayName || 'Mika Reyes'}
+            {fullName}
           </h1>
           <p className="mt-1 mb-3.5 text-muted">Level 4, Beginner · Joined September 2026</p>
           <div className="flex items-center gap-3">

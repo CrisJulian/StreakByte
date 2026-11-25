@@ -24,6 +24,12 @@ export const localAuth: AuthService = {
     if (password.length < 8) throw new Error('Password must be at least 8 characters.');
     return this.signIn(email, password, true);
   },
+  async signInWithGoogle() {
+    throw new Error('Google sign-in requires Supabase auth.');
+  },
+  onAuthStateChange() {
+    return () => {};
+  },
   async sendPasswordReset(email) {
     if (!email.trim()) throw new Error('Enter your email first.');
   },

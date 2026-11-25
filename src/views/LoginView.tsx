@@ -1,4 +1,4 @@
-import { useState, type SyntheticEvent } from 'react';
+import { useEffect, useState, type SyntheticEvent } from 'react';
 import { services } from '../composition';
 import { useStreakByteStore } from '../store/useStreakByteStore';
 
@@ -19,6 +19,15 @@ export function LoginView() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthError = params.get('error_description') || params.get('error');
+    if (oauthError) {
+      setError(oauthError);
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.hash}`);
+    }
+  }, []);
+
   const submit = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
@@ -34,6 +43,17 @@ export function LoginView() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
     } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    setError(null);
+    setBusy(true);
+    try {
+      await services.auth.signInWithGoogle();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google sign-in failed. Try again.');
       setBusy(false);
     }
   };
@@ -180,6 +200,33 @@ export function LoginView() {
               or
             </span>
           </div>
+
+          <button
+            type="button"
+            disabled={busy}
+            onClick={handleGoogle}
+            className="w-full min-h-10 rounded-[10px] border border-line bg-bg text-ink font-semibold text-sm cursor-pointer transition-colors hover:border-cyan hover:text-cyan disabled:opacity-60 flex items-center justify-center gap-2.5"
+          >
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="#4285F4"
+                d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 24c3.3 0 6.08-1.09 8.105-2.96l-3.88-3.05c-1.1.74-2.51 1.18-4.225 1.18-3.24 0-5.98-2.19-6.96-5.13H1.03v3.14C3.05 21.19 7.21 24 12 24Z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.04 14.04c-.25-.74-.39-1.53-.39-2.34s.14-1.6.39-2.34V6.22H1.03C.37 7.53 0 9.01 0 11.7s.37 4.17 1.03 5.48l4.01-3.14Z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 4.75c1.8 0 3.41.62 4.68 1.84l3.51-3.51C18.075 1.19 15.295 0 12 0 7.21 0 3.05 2.81 1.03 6.82l4.01 3.14c.98-2.94 3.72-5.21 6.96-5.21Z"
+              />
+            </svg>
+            <span>Continue with Google</span>
+          </button>
 
           <button
             type="button"
