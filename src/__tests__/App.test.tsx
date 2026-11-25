@@ -52,16 +52,22 @@ describe('App integration', () => {
     expect(screen.getByText('Storage')).toBeInTheDocument();
     expect(screen.queryByText('Inside the PC')).not.toBeInTheDocument();
 
-    // Navigate back to Dashboard and open Session Setup modal -> Escape restores focus to opener
+    // Navigate back to Dashboard: Read lesson is removed and Start lesson opens the Learn page
     await user.click(within(nav).getByRole('link', { name: 'Dashboard' }));
-    const openSetupBtn = screen.getByRole('button', { name: /Start lesson/i });
+    expect(screen.queryByRole('button', { name: 'Read lesson' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Start lesson/i }));
+    expect(screen.getByRole('heading', { name: /Inside the PC/i, level: 1 })).toBeInTheDocument();
+
+    // Open Session Setup modal from Leaderboard -> Escape restores focus to opener
+    await user.click(within(nav).getByRole('link', { name: 'Leaderboard' }));
+    const openSetupBtn = screen.getByRole('button', { name: 'Earn XP: resume lesson' });
     await user.click(openSetupBtn);
     expect(screen.getByRole('dialog', { name: 'Session setup' })).toBeInTheDocument();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog', { name: 'Session setup' })).not.toBeInTheDocument();
     expect(openSetupBtn).toHaveFocus();
 
-    // Re-open Session Setup modal -> Start lesson
+    // Re-open Session Setup modal -> Start lesson into PC lab
     await user.click(openSetupBtn);
 
     const dialog = screen.getByRole('dialog', { name: 'Session setup' });
@@ -158,7 +164,11 @@ describe('App integration', () => {
     expect(screen.getByText('0 of 8 unlocked')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Unlocked 0' })).toBeInTheDocument();
 
-    await user.click(within(nav).getByRole('link', { name: 'Practice' }));
+    await user.click(within(nav).getByRole('link', { name: 'Arena' }));
+    expect(screen.getByRole('heading', { name: 'Arena', level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Live 1v1 Duels' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Solo Practice' }));
     expect(screen.getByText('Go to curriculum')).toBeInTheDocument();
     expect(
       screen.getByText(/No completed lessons to review yet/i),

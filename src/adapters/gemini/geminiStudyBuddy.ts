@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import type { StudyBuddyContext, StudyBuddyService } from '../../application/ports';
+import { formatStudyBuddyPrompt } from '../../domain/rules/studyContext';
 import { localStudyBuddy } from '../local/localStudyBuddy';
 import { STUDY_BUDDY_GREETING } from '../../data/studyBuddy';
 
@@ -80,9 +81,7 @@ async function fetchGeminiReply(
     }
   }
 
-  const prompt = context?.currentLesson
-    ? `[Current student context: Lesson ${context.currentLesson}]\n${question}`
-    : question;
+  const prompt = formatStudyBuddyPrompt(question, context);
 
   contents.push({
     role: 'user',
@@ -115,7 +114,7 @@ async function fetchGeminiReply(
   }
 
   console.warn('[StudyBuddy] All Gemini models failed or unavailable. Falling back to local responder.', lastErr);
-  return localStudyBuddy.reply(question);
+  return localStudyBuddy.reply(question, context);
 }
 
 export const geminiStudyBuddy: StudyBuddyService = {
@@ -127,12 +126,12 @@ export const geminiStudyBuddy: StudyBuddyService = {
 
     // Fast-path synchronous response when offline or unconfigured
     if (!apiKey || !isOnline) {
-      return localStudyBuddy.reply(question);
+      return localStudyBuddy.reply(question, context);
     }
 
     return fetchGeminiReply(apiKey, question, context).catch((err) => {
       console.warn('[StudyBuddy] Fallback to local responder:', err);
-      return localStudyBuddy.reply(question);
+      return localStudyBuddy.reply(question, context);
     });
   },
 };

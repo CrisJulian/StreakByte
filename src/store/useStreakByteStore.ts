@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import { playSfx } from '../audio/soundEffects';
 import { QUIZ_BANK } from '../data/quizBank';
+import { ARENA_SCENARIOS } from '../data/arenaScenarios';
 import { getTrackProgress, isLessonKeyLocked, LESSON_XP_BY_KEY, lessonLabel, TRACKS } from '../data/curriculum';
 import { LESSON_CONTENT } from '../data/lessons';
 import type { LessonCompletion } from '../domain/entities/progress';
@@ -18,7 +19,18 @@ import {
   submitAnswer,
 } from '../domain/rules/quiz';
 import { services } from '../composition';
-import type { AuthUser, LeaderboardEntry } from '../application/ports';
+import type { AuthUser, ClassroomSummary, LeaderboardEntry, SyncOperation } from '../application/ports';
+import { generateArenaDuelTokens } from '../domain/rules/arenaQuestions';
+import {
+  createInitialArenaStats,
+  determineDuelWinner,
+  DUEL_QUESTION_COUNT,
+  type ArenaStats,
+  type DuelProgressEvent,
+  type DuelRoom,
+  type DuelTrack,
+  type DuelWagerMode,
+} from '../domain/rules/duel';
 import { createInitialNetState, placeDevice, saveDeviceConfig, selectDevice } from '../domain/rules/network';
 import { createInitialPcState, nextHint, placePart, selectPart } from '../domain/rules/pcBuild';
 import {
@@ -28,7 +40,16 @@ import {
   type DailyActivityState,
   type DailyQuestId,
 } from '../domain/rules/dailyQuests';
-import { createInitialStreak, recordActivity, type StreakState } from '../domain/rules/streak';
+import {
+  canBuyRestore,
+  canRestore,
+  createInitialStreak,
+  MAX_STREAK_RESTORES,
+  recordActivity,
+  STREAK_RESTORE_COST_XP,
+  type StreakState,
+} from '../domain/rules/streak';
+import { buildLabMistake, buildQuizMistake, type StudyMistake } from '../domain/rules/studyContext';
 import { summarizeNetworkBuild, summarizePcBuild, summarizeQuiz } from '../domain/rules/summaries';
 import {
   calculateTotalXp,
@@ -64,6 +85,7 @@ const VALID_VIEWS: readonly ViewId[] = [
   'dashboard',
   'curriculum',
   'lesson',
+  'arena',
   'practice',
   'achievements',
   'leaderboard',
@@ -76,6 +98,7 @@ const VALID_VIEWS: readonly ViewId[] = [
 
 export { PC_HINTS, PC_SLOT_TO_PART } from '../domain/rules/pcBuild';
 export { NET_DEVICE_NAMES } from '../domain/rules/network';
+export const LOCAL_TEST_DUEL_ID = 'local-test-duel';
 
 export const CABLE_COLORS: Record<CableType, string> = {
   eth: '#22d3ee',
@@ -163,10 +186,54 @@ function nextMsgId(): string {
   return `msg-${Date.now()}-${msgCounter}`;
 }
 
+async function syncCurrentUserLeaderboard(get: () => StreakByteStore): Promise<void> {
+  const state = get();
+  if (state.isGuest || !state.authUser) return;
+  const today = localDayString();
+  const totalXp = calculateTotalXp(state.completions, LESSON_XP_BY_KEY, state.labBonusXp, state.xpSpent);
+  await services.progress.syncLeaderboardEntry({
+    displayName: state.profileSettings.displayName || state.authUser.displayName || 'Learner',
+    avatarUrl: state.authUser.avatarUrl,
+    weeklyXp: calculateWeeklyXp(state.completions, LESSON_XP_BY_KEY, new Date(), state.labBonusXp, state.xpSpent),
+    allTimeXp: totalXp,
+    streakDays: effectiveStreak(state.streak, today),
+  });
+}
+
+async function persistOrQueue(
+  get: () => StreakByteStore,
+  set: (partial: Partial<StreakByteStore>) => void,
+  op: Omit<SyncOperation, 'id' | 'createdAt'>,
+  saveFn: () => Promise<void>,
+): Promise<void> {
+  // Always enqueue synchronously so offline writes are durable immediately.
+  void services.syncQueue.enqueue(op).catch(() => undefined);
+
+  const isSignedIn = !get().isGuest && Boolean(get().authUser);
+  if (!isSignedIn) {
+    await saveFn().catch(() => undefined);
+    return;
+  }
+
+  if (get().isOnline) {
+    // Batch ops enqueued in the same synchronous turn, then flush once to backend.
+    await Promise.resolve();
+    await get().flushSyncQueue();
+    return;
+  }
+
+  await saveFn().catch(() => undefined);
+  const pending = await services.syncQueue.pending().catch(() => []);
+  set({ pendingSyncCount: pending.length });
+}
+
 export interface StreakByteStore {
   view: ViewId;
   authUser: AuthUser | null;
   isGuest: boolean;
+  isOnline: boolean;
+  pendingSyncCount: number;
+  isSyncing: boolean;
   activeLab: LabId;
   theme: ThemeMode;
   track: TrackId;
@@ -182,12 +249,22 @@ export interface StreakByteStore {
   quiz: QuizSession | null;
   /** Lesson key shown on the Learn page, e.g. "hw-3". */
   learnKey: string | null;
+  /** Most recent quiz or lab error, offered as 1-click context for Study Buddy. */
+  lastMistake: StudyMistake | null;
   /** Lessons whose quiz was passed. Locks and unlocks are derived from this. */
   completions: LessonCompletion[];
   streak: StreakState;
   labBonusXp: number;
+  xpSpent: number;
   dailyActivity: DailyActivityState;
   leaderboard: LeaderboardEntry[];
+  classrooms: ClassroomSummary[];
+  selectedClassroomId: string | null;
+  arenaTab: 'duel' | 'practice';
+  arenaStats: ArenaStats;
+  activeDuel: DuelRoom | null;
+  openClassroomDuels: DuelRoom[];
+  opponentProgress: DuelProgressEvent | null;
   profileLoaded: boolean;
   profileSettings: ProfileSettings;
   chat: ChatState;
@@ -196,6 +273,30 @@ export interface StreakByteStore {
   levelUpEvent: { level: number; title: string; tick: number } | null;
   dismissLevelUp: () => void;
   claimDailyQuest: (questId: DailyQuestId) => void;
+  restoreCurrentStreak: () => Promise<void>;
+  buyStreakRestore: () => Promise<void>;
+
+  // Arena & Live 1v1 Duels
+  setArenaTab: (tab: 'duel' | 'practice') => void;
+  refreshClassroomDuels: () => Promise<void>;
+  createDuelRoom: (opts: {
+    track: DuelTrack;
+    wagerXp: number;
+    wagerMode?: DuelWagerMode;
+    classroomId: string | null;
+  }) => Promise<boolean>;
+  startBotTestDuel: (track: DuelTrack) => void;
+  joinDuelRoom: (code: string) => Promise<boolean>;
+  setDuelReady: (ready: boolean) => Promise<void>;
+  submitDuelResult: (score: number, timeMs: number) => Promise<void>;
+  cancelOrForfeitDuel: () => Promise<void>;
+  setActiveDuel: (room: DuelRoom | null) => void;
+  setOpponentProgress: (progress: DuelProgressEvent | null) => void;
+
+  // Offline sync
+  setOnlineStatus: (online: boolean) => void;
+  refreshPendingSyncCount: () => Promise<void>;
+  flushSyncQueue: () => Promise<void>;
 
   // Auth & session
   setAuthUser: (user: AuthUser | null) => void;
@@ -207,6 +308,12 @@ export interface StreakByteStore {
   completeOnboarding: (tracks: TrackId[]) => Promise<void>;
   setSelectedTracks: (tracks: TrackId[]) => void;
   saveProfileSettings: () => Promise<void>;
+
+  // Classrooms
+  selectClassroom: (classroomId: string | null) => void;
+  createClassroom: (name: string) => Promise<{ ok: boolean; error?: string }>;
+  joinClassroom: (code: string) => Promise<{ ok: boolean; error?: string }>;
+  leaveClassroom: (classroomId: string) => Promise<void>;
 
   // Navigation & shell
   syncFromHash: (hash: string) => void;
@@ -303,6 +410,9 @@ export const useStreakByteStore = create<StreakByteStore>()(
       view: 'login',
       authUser: null,
       isGuest: false,
+      isOnline: typeof navigator === 'undefined' ? true : navigator.onLine,
+      pendingSyncCount: 0,
+      isSyncing: false,
       activeLab: 'pc',
       theme: 'dark',
       track: 'hw',
@@ -317,11 +427,20 @@ export const useStreakByteStore = create<StreakByteStore>()(
       completion: null,
       quiz: null,
       learnKey: null,
+      lastMistake: null,
       completions: [],
       streak: createInitialStreak(),
       labBonusXp: 0,
+      xpSpent: 0,
       dailyActivity: createDailyActivity(localDayString()),
       leaderboard: [],
+      classrooms: [],
+      selectedClassroomId: null,
+      arenaTab: 'duel',
+      arenaStats: createInitialArenaStats(),
+      activeDuel: null,
+      openClassroomDuels: [],
+      opponentProgress: null,
       profileLoaded: false,
       profileSettings: createInitialProfileSettings(),
       chat: createInitialChatState(),
@@ -330,6 +449,115 @@ export const useStreakByteStore = create<StreakByteStore>()(
       levelUpEvent: null,
       dismissLevelUp: () => set({ levelUpEvent: null }),
 
+      setOnlineStatus: (online) => {
+        const wasOffline = !get().isOnline;
+        set({ isOnline: online });
+        if (online && (wasOffline || get().pendingSyncCount > 0)) {
+          void get().flushSyncQueue();
+        }
+      },
+
+      refreshPendingSyncCount: async () => {
+        try {
+          const items = await services.syncQueue.pending();
+          set({ pendingSyncCount: items.length });
+        } catch {
+          set({ pendingSyncCount: 0 });
+        }
+      },
+
+      flushSyncQueue: async () => {
+        const current = get();
+        if (current.isSyncing || !current.isOnline || current.isGuest || !current.authUser) return;
+        const before = await services.syncQueue.pending().catch(() => []);
+        if (before.length === 0) {
+          set({ pendingSyncCount: 0 });
+          return;
+        }
+        set({ isSyncing: true });
+        try {
+          await services.syncQueue.flush(async (op) => {
+            if (op.type === 'save-streak') {
+              await services.progress.saveStreak(op.payload as StreakState);
+            } else if (op.type === 'save-settings') {
+              await services.progress.saveSettings(op.payload as ProfileSettings);
+            } else if (op.type === 'complete-lesson') {
+              await services.progress.saveLessonCompletion(op.payload as LessonCompletion);
+            } else if (op.type === 'save-lab-bonus-xp') {
+              await services.progress.saveLabBonusXp(Number(op.payload) || 0);
+            }
+          });
+          const after = await services.syncQueue.pending().catch(() => []);
+          const syncedCount = Math.max(0, before.length - after.length);
+          set({ pendingSyncCount: after.length, isSyncing: false });
+          if (syncedCount > 0) {
+            void syncCurrentUserLeaderboard(get)
+              .then(() => get().refreshLeaderboard())
+              .catch(() => undefined);
+            get().showToast(
+              `Synced ${syncedCount} offline ${syncedCount === 1 ? 'change' : 'changes'}.`,
+            );
+          }
+        } catch {
+          const after = await services.syncQueue.pending().catch(() => []);
+          set({ pendingSyncCount: after.length, isSyncing: false });
+        }
+      },
+
+      restoreCurrentStreak: async () => {
+        const current = get();
+        const today = localDayString();
+        if (!canRestore(current.streak, today)) {
+          get().showToast('No streak restore available right now.');
+          return;
+        }
+        try {
+          const restored = await services.progress.restoreStreakServer(today);
+          playSfx('levelUp', { enabled: get().profileSettings.soundEffects });
+          set({ streak: restored });
+          if (!get().isGuest && get().authUser) {
+            void syncCurrentUserLeaderboard(get)
+              .then(() => get().refreshLeaderboard())
+              .catch(() => undefined);
+          }
+          get().showToast(`Streak restored! ${restored.current} day streak.`);
+        } catch (err) {
+          get().showToast(err instanceof Error ? err.message : 'Could not restore streak.');
+        }
+      },
+
+      buyStreakRestore: async () => {
+        const current = get();
+        if (current.streak.restoresLeft >= MAX_STREAK_RESTORES) {
+          get().showToast('You already hold the maximum number of streak restores.');
+          return;
+        }
+        const availableXp = calculateTotalXp(
+          current.completions,
+          LESSON_XP_BY_KEY,
+          current.labBonusXp,
+          current.xpSpent,
+        );
+        if (!canBuyRestore(current.streak, availableXp)) {
+          get().showToast(`You need ${STREAK_RESTORE_COST_XP} XP to buy a streak restore.`);
+          return;
+        }
+        try {
+          if (!current.isGuest && current.authUser) {
+            await syncCurrentUserLeaderboard(get);
+          }
+          const { streak, xpSpent } = await services.progress.buyStreakRestore(availableXp);
+          playSfx('combo', { enabled: get().profileSettings.soundEffects, combo: 4 });
+          set({ streak, xpSpent });
+          if (!get().isGuest && get().authUser) {
+            void get().refreshLeaderboard();
+          }
+          get().showToast(`Streak restore bought (-${STREAK_RESTORE_COST_XP} XP).`);
+        } catch (err) {
+          get().showToast(err instanceof Error ? err.message : 'Could not buy streak restore.');
+        }
+      },
+
       claimDailyQuest: (questId) => {
         const current = get();
         const today = localDayString();
@@ -337,9 +565,19 @@ export const useStreakByteStore = create<StreakByteStore>()(
         const { next, rewardXp } = claimDailyQuestRule(normalized, questId);
         if (rewardXp <= 0) return;
 
-        const prevXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, current.labBonusXp);
+        const prevXp = calculateTotalXp(
+          current.completions,
+          LESSON_XP_BY_KEY,
+          current.labBonusXp,
+          current.xpSpent,
+        );
         const nextBonus = current.labBonusXp + rewardXp;
-        const nextXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, nextBonus);
+        const nextXp = calculateTotalXp(
+          current.completions,
+          LESSON_XP_BY_KEY,
+          nextBonus,
+          current.xpSpent,
+        );
         const levelUp = maybeLevelUp(prevXp, nextXp, current.profileSettings.soundEffects);
         if (!levelUp) {
           playSfx('combo', { enabled: current.profileSettings.soundEffects, combo: 4 });
@@ -350,18 +588,15 @@ export const useStreakByteStore = create<StreakByteStore>()(
           labBonusXp: nextBonus,
           ...(levelUp ? { levelUpEvent: levelUp } : {}),
         });
-        void services.progress.saveLabBonusXp(nextBonus).catch(() => undefined);
+        void persistOrQueue(
+          get,
+          set,
+          { type: 'save-lab-bonus-xp', payload: nextBonus },
+          () => services.progress.saveLabBonusXp(nextBonus),
+        );
 
         if (!current.isGuest && current.authUser) {
-          void services.progress
-            .syncLeaderboardEntry({
-              displayName:
-                current.profileSettings.displayName || current.authUser.displayName || 'Learner',
-              avatarUrl: current.authUser.avatarUrl,
-              weeklyXp: calculateWeeklyXp(current.completions, LESSON_XP_BY_KEY, new Date(), nextBonus),
-              allTimeXp: nextXp,
-              streakDays: effectiveStreak(current.streak, today),
-            })
+          void syncCurrentUserLeaderboard(get)
             .then(() => get().refreshLeaderboard())
             .catch(() => undefined);
         }
@@ -414,12 +649,23 @@ export const useStreakByteStore = create<StreakByteStore>()(
         set({
           authUser: null,
           isGuest: false,
+          pendingSyncCount: 0,
+          isSyncing: false,
           view: 'login',
           completions: [],
           streak: createInitialStreak(),
           labBonusXp: 0,
+          xpSpent: 0,
           dailyActivity: createDailyActivity(localDayString()),
           leaderboard: [],
+          classrooms: [],
+          selectedClassroomId: null,
+          arenaTab: 'duel',
+          arenaStats: createInitialArenaStats(),
+          activeDuel: null,
+          openClassroomDuels: [],
+          opponentProgress: null,
+          lastMistake: null,
           profileLoaded: false,
           levelUpEvent: null,
           profileSettings: createInitialProfileSettings(),
@@ -445,11 +691,24 @@ export const useStreakByteStore = create<StreakByteStore>()(
         const currentAuth = get().authUser;
         const isGuest = get().isGuest;
         try {
-          const [savedCompletions, savedStreak, savedBonusXp, remoteSettings] = await Promise.all([
+          const [
+            savedCompletions,
+            savedStreak,
+            savedBonusXp,
+            savedXpSpent,
+            savedArenaStats,
+            remoteSettings,
+            myClassrooms,
+          ] = await Promise.all([
             services.progress.loadLessonCompletions(),
             services.progress.loadStreak(),
             services.progress.loadLabBonusXp(),
+            services.progress.loadXpSpent(),
+            currentAuth && !isGuest
+              ? services.progress.loadArenaStats()
+              : Promise.resolve(createInitialArenaStats()),
             currentAuth && !isGuest ? services.progress.loadSettings() : Promise.resolve(null),
+            currentAuth && !isGuest ? services.progress.loadMyClassrooms() : Promise.resolve([]),
           ]);
 
           set((state) => {
@@ -463,6 +722,10 @@ export const useStreakByteStore = create<StreakByteStore>()(
                 completions: mergedCompletions,
                 streak: savedStreak,
                 labBonusXp: savedBonusXp,
+                xpSpent: savedXpSpent,
+                arenaStats: createInitialArenaStats(),
+                classrooms: [],
+                selectedClassroomId: null,
                 profileLoaded: true,
               };
             }
@@ -490,23 +753,25 @@ export const useStreakByteStore = create<StreakByteStore>()(
               completions: mergedCompletions,
               streak: savedStreak,
               labBonusXp: savedBonusXp,
+              xpSpent: savedXpSpent,
+              arenaStats: savedArenaStats,
+              classrooms: myClassrooms,
+              selectedClassroomId: myClassrooms.some((c) => c.id === state.selectedClassroomId)
+                ? state.selectedClassroomId
+                : null,
               profileSettings: nextSettings,
               track: selectedTracks.includes(state.track) ? state.track : selectedTracks[0],
               profileLoaded: true,
             };
           });
 
+          await get().refreshPendingSyncCount();
+          if (currentAuth && !isGuest && get().isOnline) {
+            await get().flushSyncQueue();
+          }
+
           if (currentAuth && !isGuest && get().profileSettings.onboardingCompleted) {
-            const state = get();
-            const today = localDayString();
-            const streakDays = effectiveStreak(state.streak, today);
-            await services.progress.syncLeaderboardEntry({
-              displayName: state.profileSettings.displayName || currentAuth.displayName || 'Learner',
-              avatarUrl: currentAuth.avatarUrl,
-              weeklyXp: calculateWeeklyXp(state.completions, LESSON_XP_BY_KEY, new Date(), state.labBonusXp),
-              allTimeXp: calculateTotalXp(state.completions, LESSON_XP_BY_KEY, state.labBonusXp),
-              streakDays,
-            });
+            await syncCurrentUserLeaderboard(get);
           }
           if (currentAuth && !isGuest) {
             await get().refreshLeaderboard();
@@ -519,10 +784,261 @@ export const useStreakByteStore = create<StreakByteStore>()(
       refreshLeaderboard: async () => {
         if (get().isGuest || !get().authUser) return;
         try {
-          const rows = await services.progress.loadLeaderboard(get().leaderboardPeriod);
+          const rows = await services.progress.loadLeaderboard(
+            get().leaderboardPeriod,
+            get().selectedClassroomId,
+          );
           set({ leaderboard: rows });
         } catch {
           // Offline / unavailable: keep current leaderboard state
+        }
+      },
+
+      selectClassroom: (classroomId) => {
+        set({ selectedClassroomId: classroomId });
+        void get().refreshLeaderboard();
+      },
+
+      createClassroom: async (name) => {
+        try {
+          const room = await services.progress.createClassroom(name);
+          set((state) => ({
+            classrooms: [...state.classrooms, room],
+            selectedClassroomId: room.id,
+          }));
+          await get().refreshLeaderboard();
+          get().showToast(`Classroom created (${room.joinCode}).`);
+          return { ok: true };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Could not create classroom.';
+          get().showToast(msg);
+          return { ok: false, error: msg };
+        }
+      },
+
+      joinClassroom: async (code) => {
+        try {
+          const room = await services.progress.joinClassroom(code);
+          set((state) => {
+            const exists = state.classrooms.some((c) => c.id === room.id);
+            return {
+              classrooms: exists
+                ? state.classrooms.map((c) => (c.id === room.id ? room : c))
+                : [...state.classrooms, room],
+              selectedClassroomId: room.id,
+            };
+          });
+          await get().refreshLeaderboard();
+          get().showToast(`Joined ${room.name}!`);
+          return { ok: true };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Could not join classroom.';
+          get().showToast(msg);
+          return { ok: false, error: msg };
+        }
+      },
+
+      leaveClassroom: async (classroomId) => {
+        try {
+          await services.progress.leaveClassroom(classroomId);
+          set((state) => ({
+            classrooms: state.classrooms.filter((c) => c.id !== classroomId),
+            selectedClassroomId:
+              state.selectedClassroomId === classroomId ? null : state.selectedClassroomId,
+          }));
+          await get().refreshLeaderboard();
+          get().showToast('Left classroom.');
+        } catch (err) {
+          get().showToast(err instanceof Error ? err.message : 'Could not leave classroom.');
+        }
+      },
+
+      setArenaTab: (arenaTab) => set({ arenaTab }),
+
+      setOpponentProgress: (opponentProgress) => set({ opponentProgress }),
+
+      setActiveDuel: (room) => {
+        if (room?.status === 'cancelled') {
+          set({ activeDuel: null, opponentProgress: null });
+          get().showToast('Duel room was closed.');
+          return;
+        }
+        const prev = get().activeDuel;
+        set({ activeDuel: room });
+        if (room && room.status === 'finished' && (!prev || prev.status !== 'finished')) {
+          const authId = get().authUser?.id || 'local-guest';
+          if (room.winnerId) {
+            playSfx(room.winnerId === authId ? 'levelUp' : 'error', {
+              enabled: get().profileSettings.soundEffects,
+            });
+          }
+          if (room.id !== LOCAL_TEST_DUEL_ID) {
+            void get().loadUserData();
+          }
+        }
+      },
+
+      startBotTestDuel: (track) => {
+        const current = get();
+        const hostId = current.authUser?.id || 'local-guest';
+        const hostName =
+          current.profileSettings.displayName || current.authUser?.displayName || 'Learner';
+        const questionIds = generateArenaDuelTokens(
+          track,
+          ARENA_SCENARIOS,
+          DUEL_QUESTION_COUNT,
+        );
+        set({
+          opponentProgress: null,
+          activeDuel: {
+            id: LOCAL_TEST_DUEL_ID,
+            code: 'TEST1V',
+            classroomId: null,
+            track,
+            wagerXp: 0,
+            wagerMode: 'xp',
+            status: 'active',
+            questionIds,
+            hostId,
+            hostName,
+            hostReady: true,
+            hostScore: null,
+            hostTimeMs: null,
+            guestId: 'byte-bot',
+            guestName: 'BYTE Bot (Test)',
+            guestReady: true,
+            guestScore: null,
+            guestTimeMs: null,
+            startedAt: new Date(Date.now() + 2000).toISOString(),
+            winnerId: null,
+            settled: true,
+            bountyXp: 0,
+            fullByteBonusXp: 0,
+            shieldAwarded: false,
+            shieldConsumed: false,
+          },
+        });
+      },
+
+      refreshClassroomDuels: async () => {
+        const ids = get().classrooms.map((c) => c.id);
+        if (ids.length === 0 || get().isGuest || !get().authUser) {
+          set({ openClassroomDuels: [] });
+          return;
+        }
+        try {
+          const list = await services.duel.listOpenClassroomDuels(ids);
+          set({ openClassroomDuels: list });
+        } catch {
+          // ignore network hiccup
+        }
+      },
+
+      createDuelRoom: async ({ track, wagerXp, wagerMode = 'xp', classroomId }) => {
+        try {
+          if ((wagerXp > 0 || wagerMode === 'streak') && !get().isGuest && get().authUser) {
+            await services.progress.saveStreak(get().streak).catch(() => undefined);
+            await syncCurrentUserLeaderboard(get);
+          }
+          const questionIds = generateArenaDuelTokens(
+            track,
+            ARENA_SCENARIOS,
+            DUEL_QUESTION_COUNT,
+          );
+          const room = await services.duel.createDuel({
+            track,
+            wagerXp: wagerMode === 'streak' ? 0 : wagerXp,
+            wagerMode,
+            questionIds,
+            classroomId,
+          });
+          set({ activeDuel: room, opponentProgress: null });
+          get().showToast(`Duel room ${room.code} ready!`);
+          return true;
+        } catch (err) {
+          get().showToast(err instanceof Error ? err.message : 'Could not create duel room.');
+          return false;
+        }
+      },
+
+      joinDuelRoom: async (code) => {
+        try {
+          if (!get().isGuest && get().authUser) {
+            await syncCurrentUserLeaderboard(get);
+          }
+          const room = await services.duel.joinDuel(code);
+          set({ activeDuel: room, opponentProgress: null });
+          get().showToast(`Joined duel ${room.code}!`);
+          return true;
+        } catch (err) {
+          get().showToast(err instanceof Error ? err.message : 'Could not join duel.');
+          return false;
+        }
+      },
+
+      setDuelReady: async (ready) => {
+        const active = get().activeDuel;
+        if (!active) return;
+        try {
+          const updated = await services.duel.setReady(active.id, ready);
+          get().setActiveDuel(updated);
+        } catch (err) {
+          get().showToast(err instanceof Error ? err.message : 'Could not update ready state.');
+        }
+      },
+
+      submitDuelResult: async (score, timeMs) => {
+        const active = get().activeDuel;
+        if (!active) return;
+        if (active.id === LOCAL_TEST_DUEL_ID) {
+          const opp = get().opponentProgress;
+          const total = active.questionIds.length;
+          const botScore =
+            opp && opp.finished
+              ? opp.score
+              : Math.min(total, Math.max(4, total - 2));
+          const botTimeMs = Math.max(8000, Math.round(timeMs * 1.15));
+          const winnerId = determineDuelWinner(
+            { id: active.hostId, score, timeMs },
+            { id: active.guestId || 'byte-bot', score: botScore, timeMs: botTimeMs },
+          );
+          get().setActiveDuel({
+            ...active,
+            status: 'finished',
+            hostScore: score,
+            hostTimeMs: timeMs,
+            guestScore: botScore,
+            guestTimeMs: botTimeMs,
+            winnerId,
+          });
+          return;
+        }
+        try {
+          const updated = await services.duel.submitResult(active.id, score, timeMs);
+          get().setActiveDuel(updated);
+        } catch (err) {
+          get().showToast(err instanceof Error ? err.message : 'Could not submit duel score.');
+        }
+      },
+
+      cancelOrForfeitDuel: async () => {
+        const active = get().activeDuel;
+        if (!active) return;
+        if (active.id === LOCAL_TEST_DUEL_ID) {
+          set({ activeDuel: null, opponentProgress: null });
+          get().showToast('Exited test duel.');
+          return;
+        }
+        try {
+          const updated = await services.duel.cancelOrForfeitDuel(active.id);
+          if (active.status === 'waiting') {
+            set({ activeDuel: null, opponentProgress: null });
+            get().showToast('Left duel room.');
+          } else {
+            get().setActiveDuel(updated);
+          }
+        } catch (err) {
+          get().showToast(err instanceof Error ? err.message : 'Could not leave duel.');
         }
       },
 
@@ -542,17 +1058,19 @@ export const useStreakByteStore = create<StreakByteStore>()(
           profileLoaded: true,
         });
         await Promise.all([
-          services.progress.saveSettings(nextSettings).catch(() => undefined),
-          services.progress.saveStreak(get().streak).catch(() => undefined),
-          services.progress
-            .syncLeaderboardEntry({
-              displayName: nextSettings.displayName,
-              avatarUrl: currentAuth?.avatarUrl,
-              weeklyXp: calculateWeeklyXp(get().completions, LESSON_XP_BY_KEY, new Date(), get().labBonusXp),
-              allTimeXp: calculateTotalXp(get().completions, LESSON_XP_BY_KEY, get().labBonusXp),
-              streakDays: effectiveStreak(get().streak, localDayString()),
-            })
-            .catch(() => undefined),
+          persistOrQueue(
+            get,
+            set,
+            { type: 'save-settings', payload: nextSettings },
+            () => services.progress.saveSettings(nextSettings),
+          ),
+          persistOrQueue(
+            get,
+            set,
+            { type: 'save-streak', payload: get().streak },
+            () => services.progress.saveStreak(get().streak),
+          ),
+          syncCurrentUserLeaderboard(get).catch(() => undefined),
         ]);
         await get().refreshLeaderboard();
         get().navigate('dashboard');
@@ -564,26 +1082,26 @@ export const useStreakByteStore = create<StreakByteStore>()(
           profileSettings: { ...state.profileSettings, selectedTracks },
           track: selectedTracks.includes(state.track) ? state.track : selectedTracks[0],
         }));
-        void services.progress.saveSettings(get().profileSettings).catch(() => undefined);
+        const updated = get().profileSettings;
+        void persistOrQueue(
+          get,
+          set,
+          { type: 'save-settings', payload: updated },
+          () => services.progress.saveSettings(updated),
+        );
       },
 
       saveProfileSettings: async () => {
         const settings = get().profileSettings;
         const currentAuth = get().authUser;
-        await services.progress.saveSettings(settings).catch(() => undefined);
-        void services.syncQueue
-          .enqueue({ type: 'save-settings', payload: settings })
-          .catch(() => undefined);
+        await persistOrQueue(
+          get,
+          set,
+          { type: 'save-settings', payload: settings },
+          () => services.progress.saveSettings(settings),
+        );
         if (!get().isGuest && currentAuth) {
-          await services.progress
-            .syncLeaderboardEntry({
-              displayName: settings.displayName || currentAuth.displayName || 'Learner',
-              avatarUrl: currentAuth.avatarUrl,
-              weeklyXp: calculateWeeklyXp(get().completions, LESSON_XP_BY_KEY, new Date(), get().labBonusXp),
-              allTimeXp: calculateTotalXp(get().completions, LESSON_XP_BY_KEY, get().labBonusXp),
-              streakDays: effectiveStreak(get().streak, localDayString()),
-            })
-            .catch(() => undefined);
+          await syncCurrentUserLeaderboard(get).catch(() => undefined);
           await get().refreshLeaderboard();
         }
         get().showToast('Changes saved');
@@ -632,6 +1150,12 @@ export const useStreakByteStore = create<StreakByteStore>()(
         set((state) => ({
           view: parsed.view,
           activeLab: parsed.lab ?? state.activeLab,
+          arenaTab:
+            parsed.view === 'practice'
+              ? 'practice'
+              : parsed.view === 'arena'
+                ? 'duel'
+                : state.arenaTab,
         }));
       },
 
@@ -704,7 +1228,10 @@ export const useStreakByteStore = create<StreakByteStore>()(
 
       placePcPart: (slotId, draggedPart) => {
         const { state, placed } = placePart(get().pc, slotId, draggedPart);
-        set({ pc: state });
+        set({
+          pc: state,
+          lastMistake: placed ? null : buildLabMistake('pc', state.message),
+        });
         playSfx(placed ? 'snap' : 'error', { enabled: get().profileSettings.soundEffects });
         return placed;
       },
@@ -715,9 +1242,9 @@ export const useStreakByteStore = create<StreakByteStore>()(
         const current = get();
         const today = localDayString();
         const name = learnerFirstName(current.profileSettings, current.authUser);
-        const prevXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, current.labBonusXp);
+        const prevXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, current.labBonusXp, current.xpSpent);
         const nextBonus = current.labBonusXp + 120;
-        const nextXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, nextBonus);
+        const nextXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, nextBonus, current.xpSpent);
         const nextStreak = recordActivity(current.streak, today);
         const prevDaily = ensureDailyActivity(current.dailyActivity, today);
         const nextDaily = { ...prevDaily, labsCompleted: prevDaily.labsCompleted + 1 };
@@ -730,21 +1257,23 @@ export const useStreakByteStore = create<StreakByteStore>()(
           labBonusXp: nextBonus,
           streak: nextStreak,
           dailyActivity: nextDaily,
+          lastMistake: null,
           ...(levelUp ? { levelUpEvent: levelUp } : {}),
         });
-        void services.progress.saveLabBonusXp(nextBonus).catch(() => undefined);
-        void services.progress.saveStreak(nextStreak).catch(() => undefined);
-        void services.syncQueue.enqueue({ type: 'save-streak', payload: nextStreak }).catch(() => undefined);
+        void persistOrQueue(
+          get,
+          set,
+          { type: 'save-lab-bonus-xp', payload: nextBonus },
+          () => services.progress.saveLabBonusXp(nextBonus),
+        );
+        void persistOrQueue(
+          get,
+          set,
+          { type: 'save-streak', payload: nextStreak },
+          () => services.progress.saveStreak(nextStreak),
+        );
         if (!get().isGuest && get().authUser) {
-          const state = get();
-          void services.progress
-            .syncLeaderboardEntry({
-              displayName: state.profileSettings.displayName || state.authUser?.displayName || 'Learner',
-              avatarUrl: state.authUser?.avatarUrl,
-              weeklyXp: calculateWeeklyXp(state.completions, LESSON_XP_BY_KEY, new Date(), nextBonus),
-              allTimeXp: nextXp,
-              streakDays: effectiveStreak(nextStreak, localDayString()),
-            })
+          void syncCurrentUserLeaderboard(get)
             .then(() => get().refreshLeaderboard())
             .catch(() => undefined);
         }
@@ -756,7 +1285,10 @@ export const useStreakByteStore = create<StreakByteStore>()(
 
       placeNetworkDevice: (spot, draggedDevice) => {
         const { state, placed } = placeDevice(get().net, spot, draggedDevice);
-        set({ net: state });
+        set({
+          net: state,
+          lastMistake: placed ? null : buildLabMistake('net', state.message),
+        });
         playSfx(placed ? 'snap' : 'error', { enabled: get().profileSettings.soundEffects });
         return placed;
       },
@@ -792,7 +1324,11 @@ export const useStreakByteStore = create<StreakByteStore>()(
 
       saveNetworkConfig: (config) => {
         const { state, saved } = saveDeviceConfig(get().net, config);
-        set({ net: state });
+        const errText = Object.values(state.errors).filter(Boolean).join(' ') || state.message;
+        set({
+          net: state,
+          lastMistake: saved ? null : buildLabMistake('net', errText),
+        });
         playSfx(saved ? 'ping' : 'error', { enabled: get().profileSettings.soundEffects });
         return saved;
       },
@@ -801,9 +1337,9 @@ export const useStreakByteStore = create<StreakByteStore>()(
         const current = get();
         const today = localDayString();
         const name = learnerFirstName(current.profileSettings, current.authUser);
-        const prevXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, current.labBonusXp);
+        const prevXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, current.labBonusXp, current.xpSpent);
         const nextBonus = current.labBonusXp + 150;
-        const nextXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, nextBonus);
+        const nextXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, nextBonus, current.xpSpent);
         const nextStreak = recordActivity(current.streak, today);
         const prevDaily = ensureDailyActivity(current.dailyActivity, today);
         const nextDaily = { ...prevDaily, labsCompleted: prevDaily.labsCompleted + 1 };
@@ -816,21 +1352,23 @@ export const useStreakByteStore = create<StreakByteStore>()(
           labBonusXp: nextBonus,
           streak: nextStreak,
           dailyActivity: nextDaily,
+          lastMistake: null,
           ...(levelUp ? { levelUpEvent: levelUp } : {}),
         });
-        void services.progress.saveLabBonusXp(nextBonus).catch(() => undefined);
-        void services.progress.saveStreak(nextStreak).catch(() => undefined);
-        void services.syncQueue.enqueue({ type: 'save-streak', payload: nextStreak }).catch(() => undefined);
+        void persistOrQueue(
+          get,
+          set,
+          { type: 'save-lab-bonus-xp', payload: nextBonus },
+          () => services.progress.saveLabBonusXp(nextBonus),
+        );
+        void persistOrQueue(
+          get,
+          set,
+          { type: 'save-streak', payload: nextStreak },
+          () => services.progress.saveStreak(nextStreak),
+        );
         if (!get().isGuest && get().authUser) {
-          const state = get();
-          void services.progress
-            .syncLeaderboardEntry({
-              displayName: state.profileSettings.displayName || state.authUser?.displayName || 'Learner',
-              avatarUrl: state.authUser?.avatarUrl,
-              weeklyXp: calculateWeeklyXp(state.completions, LESSON_XP_BY_KEY, new Date(), nextBonus),
-              allTimeXp: nextXp,
-              streakDays: effectiveStreak(nextStreak, localDayString()),
-            })
+          void syncCurrentUserLeaderboard(get)
             .then(() => get().refreshLeaderboard())
             .catch(() => undefined);
         }
@@ -845,8 +1383,10 @@ export const useStreakByteStore = create<StreakByteStore>()(
         if (!current.quiz) return;
         const nextQuiz = submitAnswer(current.quiz);
         if (nextQuiz === current.quiz) return;
-        set({ quiz: nextQuiz });
         const last = nextQuiz.answers[nextQuiz.answers.length - 1];
+        const q = current.quiz.questions[current.quiz.index];
+        const mistake = last && !last.correct && q ? buildQuizMistake(q, last.choiceIndex) : null;
+        set({ quiz: nextQuiz, lastMistake: mistake });
         if (last?.correct) {
           playSfx('combo', {
             enabled: current.profileSettings.soundEffects,
@@ -889,6 +1429,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
         const name = learnerFirstName(get().profileSettings, get().authUser);
         set({
           quiz: null,
+          lastMistake: null,
           completion: summarizeQuiz(
             {
               lessonTitle: lesson && parsed ? lessonLabel(lesson, lessonIdx) : 'this lesson',
@@ -934,9 +1475,9 @@ export const useStreakByteStore = create<StreakByteStore>()(
         };
         const current = get();
         const today = localDayString();
-        const prevXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, current.labBonusXp);
+        const prevXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, current.labBonusXp, current.xpSpent);
         const nextCompletions = recordCompletion(current.completions, completion);
-        const nextXp = calculateTotalXp(nextCompletions, LESSON_XP_BY_KEY, current.labBonusXp);
+        const nextXp = calculateTotalXp(nextCompletions, LESSON_XP_BY_KEY, current.labBonusXp, current.xpSpent);
         const nextStreak = recordActivity(current.streak, today);
         const prevDaily = ensureDailyActivity(current.dailyActivity, today);
         const nextDaily = {
@@ -951,29 +1492,20 @@ export const useStreakByteStore = create<StreakByteStore>()(
           dailyActivity: nextDaily,
           ...(levelUp ? { levelUpEvent: levelUp } : {}),
         });
-        void services.progress.saveLessonCompletion(completion).catch(() => undefined);
-        void services.progress.saveStreak(nextStreak).catch(() => undefined);
-        void services.syncQueue
-          .enqueue({ type: 'complete-lesson', payload: completion })
-          .catch(() => undefined);
-        void services.syncQueue
-          .enqueue({ type: 'save-streak', payload: nextStreak })
-          .catch(() => undefined);
+        void persistOrQueue(
+          get,
+          set,
+          { type: 'complete-lesson', payload: completion },
+          () => services.progress.saveLessonCompletion(completion),
+        );
+        void persistOrQueue(
+          get,
+          set,
+          { type: 'save-streak', payload: nextStreak },
+          () => services.progress.saveStreak(nextStreak),
+        );
         if (!get().isGuest && get().authUser) {
-          const state = get();
-          void services.progress
-            .syncLeaderboardEntry({
-              displayName: state.profileSettings.displayName || state.authUser?.displayName || 'Learner',
-              avatarUrl: state.authUser?.avatarUrl,
-              weeklyXp: calculateWeeklyXp(
-                state.completions,
-                LESSON_XP_BY_KEY,
-                new Date(),
-                state.labBonusXp,
-              ),
-              allTimeXp: calculateTotalXp(state.completions, LESSON_XP_BY_KEY, state.labBonusXp),
-              streakDays: effectiveStreak(nextStreak, localDayString()),
-            })
+          void syncCurrentUserLeaderboard(get)
             .then(() => get().refreshLeaderboard())
             .catch(() => undefined);
         }
@@ -1023,10 +1555,17 @@ export const useStreakByteStore = create<StreakByteStore>()(
           text: m.text,
         }));
 
+        const state = get();
+        const currentLesson =
+          state.learnKey ??
+          state.quiz?.lessonKey ??
+          (state.view === 'lesson' ? (state.activeLab === 'net' ? 'net-lab' : 'hw-lab') : undefined);
+
         const reply = services.studyBuddy.reply(text, {
           history,
-          currentLesson: get().learnKey ?? undefined,
-          apiKey: get().profileSettings.geminiApiKey || undefined,
+          currentLesson,
+          recentMistake: state.lastMistake?.summary,
+          apiKey: state.profileSettings.geminiApiKey || undefined,
         });
 
         if (typeof reply === 'string') {
@@ -1061,6 +1600,9 @@ export const useStreakByteStore = create<StreakByteStore>()(
           view: 'login',
           authUser: null,
           isGuest: false,
+          isOnline: typeof navigator === 'undefined' ? true : navigator.onLine,
+          pendingSyncCount: 0,
+          isSyncing: false,
           activeLab: 'pc',
           theme: 'dark',
           track: 'hw',
@@ -1075,11 +1617,20 @@ export const useStreakByteStore = create<StreakByteStore>()(
           completion: null,
           quiz: null,
           learnKey: null,
+          lastMistake: null,
           completions: [],
           streak: createInitialStreak(),
           labBonusXp: 0,
+          xpSpent: 0,
           dailyActivity: createDailyActivity(localDayString()),
           leaderboard: [],
+          classrooms: [],
+          selectedClassroomId: null,
+          arenaTab: 'duel',
+          arenaStats: createInitialArenaStats(),
+          activeDuel: null,
+          openClassroomDuels: [],
+          opponentProgress: null,
           profileLoaded: false,
           levelUpEvent: null,
           profileSettings: createInitialProfileSettings(),

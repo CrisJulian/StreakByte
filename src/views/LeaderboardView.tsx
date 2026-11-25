@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { LESSON_XP_BY_KEY, TRACKS } from '../data/curriculum';
 import { formatStreak, formatXp } from '../data/leaderboard';
 import {
@@ -19,6 +19,15 @@ export function LeaderboardView() {
   const completions = useStreakByteStore((s) => s.completions);
   const streak = useStreakByteStore((s) => s.streak);
   const labBonusXp = useStreakByteStore((s) => s.labBonusXp);
+  const xpSpent = useStreakByteStore((s) => s.xpSpent);
+  const arenaStats = useStreakByteStore((s) => s.arenaStats);
+  const classrooms = useStreakByteStore((s) => s.classrooms);
+  const selectedClassroomId = useStreakByteStore((s) => s.selectedClassroomId);
+  const selectClassroom = useStreakByteStore((s) => s.selectClassroom);
+  const createClassroom = useStreakByteStore((s) => s.createClassroom);
+  const joinClassroom = useStreakByteStore((s) => s.joinClassroom);
+  const leaveClassroom = useStreakByteStore((s) => s.leaveClassroom);
+  const showToast = useStreakByteStore((s) => s.showToast);
   const authUser = useStreakByteStore((s) => s.authUser);
   const isGuest = useStreakByteStore((s) => s.isGuest);
   const selectedTracks = useStreakByteStore((s) => s.profileSettings.selectedTracks);
@@ -26,16 +35,20 @@ export function LeaderboardView() {
     (s) => s.profileSettings.displayName || s.authUser?.displayName || 'Learner',
   );
 
+  const [joinCodeInput, setJoinCodeInput] = useState('');
+  const [newRoomName, setNewRoomName] = useState('');
+  const [busyRoomAction, setBusyRoomAction] = useState(false);
+
   useEffect(() => {
     if (!isGuest) {
       void refreshLeaderboard();
     }
-  }, [isGuest, period, refreshLeaderboard]);
+  }, [isGuest, period, selectedClassroomId, refreshLeaderboard]);
 
   const today = localDayString();
   const streakDays = effectiveStreak(streak, today);
-  const totalXp = calculateTotalXp(completions, LESSON_XP_BY_KEY, labBonusXp);
-  const weeklyXp = calculateWeeklyXp(completions, LESSON_XP_BY_KEY, new Date(), labBonusXp);
+  const totalXp = calculateTotalXp(completions, LESSON_XP_BY_KEY, labBonusXp, xpSpent);
+  const weeklyXp = calculateWeeklyXp(completions, LESSON_XP_BY_KEY, new Date(), labBonusXp, xpSpent);
 
   const sorted = mergeLeaderboard(
     isGuest ? [] : leaderboard,
@@ -46,6 +59,9 @@ export function LeaderboardView() {
       weeklyXp,
       allTimeXp: totalXp,
       streakDays,
+      ...(arenaStats.wins > 0 ? { duelWins: arenaStats.wins } : {}),
+      ...(arenaStats.losses > 0 ? { duelLosses: arenaStats.losses } : {}),
+      ...(arenaStats.winStreak > 0 ? { duelWinStreak: arenaStats.winStreak } : {}),
     },
     period,
   );
@@ -83,6 +99,32 @@ export function LeaderboardView() {
         }));
 
   const defaultLab = TRACKS[selectedTracks[0] ?? 'hw'].defaultTarget;
+  const activeClassroom = classrooms.find((c) => c.id === selectedClassroomId) ?? null;
+
+  const handleJoinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (busyRoomAction || !joinCodeInput.trim()) return;
+    setBusyRoomAction(true);
+    const res = await joinClassroom(joinCodeInput);
+    if (res.ok) setJoinCodeInput('');
+    setBusyRoomAction(false);
+  };
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (busyRoomAction || !newRoomName.trim()) return;
+    setBusyRoomAction(true);
+    const res = await createClassroom(newRoomName);
+    if (res.ok) setNewRoomName('');
+    setBusyRoomAction(false);
+  };
+
+  const handleCopyCode = (code: string) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(code).catch(() => undefined);
+    }
+    showToast(`Copied join code ${code}`);
+  };
 
   return (
     <div>
@@ -92,41 +134,81 @@ export function LeaderboardView() {
             Leaderboard
           </h1>
           <p className="mt-1.5 mb-0 text-muted text-[1.0625rem]">
-            {period === 'a'
-              ? 'All-time XP in StreakByte. This board never resets.'
-              : 'XP earned this week. Resets every Monday.'}
+            {activeClassroom
+              ? `Classroom: ${activeClassroom.name} · Code ${activeClassroom.joinCode}`
+              : period === 'a'
+                ? 'All-time XP in StreakByte. This board never resets.'
+                : 'XP earned this week. Resets every Monday.'}
           </p>
         </div>
 
-        <div
-          role="group"
-          aria-label="Period"
-          className="inline-flex p-1 border border-line rounded-xl bg-bg gap-1"
-        >
-          <button
-            type="button"
-            aria-pressed={period === 'w'}
-            onClick={() => setPeriod('w')}
-            className={`min-h-10 px-4 border-0 rounded-lg font-semibold text-sm cursor-pointer transition-colors ${
-              period === 'w'
-                ? 'bg-cyan text-cyan-ink'
-                : 'bg-transparent text-muted hover:text-ink'
-            }`}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {classrooms.length > 0 && (
+            <div
+              role="group"
+              aria-label="Board scope"
+              className="inline-flex p-1 border border-line rounded-xl bg-bg gap-1 flex-wrap"
+            >
+              <button
+                type="button"
+                aria-pressed={selectedClassroomId === null}
+                onClick={() => selectClassroom(null)}
+                className={`min-h-10 px-3.5 border-0 rounded-lg font-semibold text-sm cursor-pointer transition-colors ${
+                  selectedClassroomId === null
+                    ? 'bg-cyan text-cyan-ink'
+                    : 'bg-transparent text-muted hover:text-ink'
+                }`}
+              >
+                Global
+              </button>
+              {classrooms.map((room) => (
+                <button
+                  key={room.id}
+                  type="button"
+                  aria-pressed={selectedClassroomId === room.id}
+                  onClick={() => selectClassroom(room.id)}
+                  className={`min-h-10 px-3.5 border-0 rounded-lg font-semibold text-sm cursor-pointer transition-colors ${
+                    selectedClassroomId === room.id
+                      ? 'bg-cyan text-cyan-ink'
+                      : 'bg-transparent text-muted hover:text-ink'
+                  }`}
+                >
+                  {room.name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div
+            role="group"
+            aria-label="Period"
+            className="inline-flex p-1 border border-line rounded-xl bg-bg gap-1"
           >
-            This week
-          </button>
-          <button
-            type="button"
-            aria-pressed={period === 'a'}
-            onClick={() => setPeriod('a')}
-            className={`min-h-10 px-4 border-0 rounded-lg font-semibold text-sm cursor-pointer transition-colors ${
-              period === 'a'
-                ? 'bg-cyan text-cyan-ink'
-                : 'bg-transparent text-muted hover:text-ink'
-            }`}
-          >
-            All time
-          </button>
+            <button
+              type="button"
+              aria-pressed={period === 'w'}
+              onClick={() => setPeriod('w')}
+              className={`min-h-10 px-4 border-0 rounded-lg font-semibold text-sm cursor-pointer transition-colors ${
+                period === 'w'
+                  ? 'bg-cyan text-cyan-ink'
+                  : 'bg-transparent text-muted hover:text-ink'
+              }`}
+            >
+              This week
+            </button>
+            <button
+              type="button"
+              aria-pressed={period === 'a'}
+              onClick={() => setPeriod('a')}
+              className={`min-h-10 px-4 border-0 rounded-lg font-semibold text-sm cursor-pointer transition-colors ${
+                period === 'a'
+                  ? 'bg-cyan text-cyan-ink'
+                  : 'bg-transparent text-muted hover:text-ink'
+              }`}
+            >
+              All time
+            </button>
+          </div>
         </div>
       </div>
 
@@ -185,9 +267,21 @@ export function LeaderboardView() {
                     </span>
                   )}
                   <b className="text-base">{row.isYou ? `${row.name} (you)` : row.name}</b>
+                  {row.duelWinStreak ? (
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[0.6875rem] font-bold ${
+                        isFirst ? 'bg-amber-ink/15 text-amber-ink' : 'bg-amber/18 text-amber'
+                      }`}
+                    >
+                      🔥 {row.duelWinStreak}W Streak
+                    </span>
+                  ) : null}
                   <span className="num">{formatXp(row.xp)} XP</span>
                   <small className="opacity-85 text-[0.8125rem]">
                     {formatStreak(row.streakDays)}
+                    {(row.duelWins || row.duelLosses)
+                      ? ` · ${row.duelWins ?? 0}W-${row.duelLosses ?? 0}L`
+                      : ''}
                   </small>
                 </article>
               );
@@ -216,9 +310,21 @@ export function LeaderboardView() {
                       {row.initial}
                     </span>
                   )}
-                  <span className="font-semibold overflow-hidden text-ellipsis whitespace-nowrap">
-                    {row.isYou ? `${row.name} (you)` : row.name}
-                  </span>
+                  <div className="min-w-0 flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold overflow-hidden text-ellipsis whitespace-nowrap">
+                      {row.isYou ? `${row.name} (you)` : row.name}
+                    </span>
+                    {row.duelWinStreak ? (
+                      <span className="px-2 py-0.5 rounded-full bg-amber/18 text-amber text-[0.6875rem] font-bold whitespace-nowrap">
+                        🔥 {row.duelWinStreak}W
+                      </span>
+                    ) : null}
+                    {(row.duelWins || row.duelLosses) ? (
+                      <span className="text-xs text-muted whitespace-nowrap">
+                        {row.duelWins ?? 0}W–{row.duelLosses ?? 0}L
+                      </span>
+                    ) : null}
+                  </div>
                   <span className="text-muted text-sm max-[760px]:hidden">
                     {formatStreak(row.streakDays)}
                   </span>
@@ -260,6 +366,98 @@ export function LeaderboardView() {
             >
               Earn XP: resume lesson
             </button>
+          </aside>
+
+          <aside className="bg-panel border border-line rounded-2xl p-4">
+            <h2 className="m-0 mb-1 text-base font-bold">Classrooms & Friends</h2>
+            {isGuest ? (
+              <p className="m-0 text-muted text-[0.8125rem] leading-[1.45]">
+                Sign in with Google to create or join a classroom leaderboard with friends.
+              </p>
+            ) : (
+              <div className="grid gap-3 mt-2">
+                {classrooms.length > 0 && (
+                  <ul className="grid gap-2 m-0 p-0 list-none">
+                    {classrooms.map((room) => (
+                      <li
+                        key={room.id}
+                        className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-line bg-bg"
+                      >
+                        <div className="min-w-0">
+                          <b className="block text-sm truncate">{room.name}</b>
+                          <small className="block text-xs text-muted">
+                            {room.memberCount} {room.memberCount === 1 ? 'member' : 'members'} ·{' '}
+                            <code className="font-mono font-bold text-ink">{room.joinCode}</code>
+                          </small>
+                        </div>
+                        <div className="flex items-center gap-1 flex-none">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyCode(room.joinCode)}
+                            className="min-h-8 px-2.5 rounded-lg border border-line bg-panel2 text-ink text-xs font-semibold cursor-pointer hover:border-muted"
+                          >
+                            Copy
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void leaveClassroom(room.id)}
+                            className="min-h-8 px-2.5 rounded-lg border border-line bg-transparent text-muted text-xs font-semibold cursor-pointer hover:text-ink"
+                          >
+                            Leave
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <form onSubmit={handleJoinSubmit} className="grid gap-1.5">
+                  <label htmlFor="classroom-join" className="text-xs font-bold text-muted">
+                    Join by code
+                  </label>
+                  <div className="flex gap-1.5">
+                    <input
+                      id="classroom-join"
+                      value={joinCodeInput}
+                      onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
+                      placeholder="ABC123"
+                      maxLength={8}
+                      className="flex-1 min-w-0 min-h-9 px-2.5 border border-line rounded-lg bg-bg text-ink text-sm font-mono uppercase focus-visible:outline-none focus-visible:border-cyan"
+                    />
+                    <button
+                      type="submit"
+                      disabled={busyRoomAction || !joinCodeInput.trim()}
+                      className="min-h-9 px-3 rounded-lg border border-cyan bg-cyan text-cyan-ink text-xs font-bold cursor-pointer disabled:opacity-50"
+                    >
+                      Join
+                    </button>
+                  </div>
+                </form>
+
+                <form onSubmit={handleCreateSubmit} className="grid gap-1.5">
+                  <label htmlFor="classroom-create" className="text-xs font-bold text-muted">
+                    Create classroom
+                  </label>
+                  <div className="flex gap-1.5">
+                    <input
+                      id="classroom-create"
+                      value={newRoomName}
+                      onChange={(e) => setNewRoomName(e.target.value)}
+                      placeholder="e.g. CS 101"
+                      maxLength={60}
+                      className="flex-1 min-w-0 min-h-9 px-2.5 border border-line rounded-lg bg-bg text-ink text-sm focus-visible:outline-none focus-visible:border-cyan"
+                    />
+                    <button
+                      type="submit"
+                      disabled={busyRoomAction || !newRoomName.trim()}
+                      className="min-h-9 px-3 rounded-lg border border-line bg-panel2 text-ink text-xs font-bold cursor-pointer hover:border-muted disabled:opacity-50"
+                    >
+                      Create
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </aside>
 
           <aside className="bg-panel border border-line rounded-2xl p-4">

@@ -7,6 +7,7 @@ import { Toast } from './components/Toast';
 import { TopBar } from './components/TopBar';
 import { useStreakByteStore } from './store/useStreakByteStore';
 import { AchievementsView } from './views/AchievementsView';
+import { ArenaView } from './views/ArenaView';
 import { CompleteView } from './views/CompleteView';
 import { CurriculumView } from './views/CurriculumView';
 import { DashboardView } from './views/DashboardView';
@@ -15,7 +16,6 @@ import { LeaderboardView } from './views/LeaderboardView';
 import { LessonPlayerView } from './views/LessonPlayerView';
 import { LoginView } from './views/LoginView';
 import { OnboardingView } from './views/OnboardingView';
-import { PracticeView } from './views/PracticeView';
 import { ProfileView } from './views/ProfileView';
 import { QuizView } from './views/QuizView';
 
@@ -30,6 +30,20 @@ export function App() {
   const loadUserData = useStreakByteStore((s) => s.loadUserData);
   const syncFromHash = useStreakByteStore((s) => s.syncFromHash);
   const loadCompletions = useStreakByteStore((s) => s.loadCompletions);
+  const setOnlineStatus = useStreakByteStore((s) => s.setOnlineStatus);
+  const refreshPendingSyncCount = useStreakByteStore((s) => s.refreshPendingSyncCount);
+
+  useEffect(() => {
+    void refreshPendingSyncCount();
+    const handleOnline = () => setOnlineStatus(true);
+    const handleOffline = () => setOnlineStatus(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [refreshPendingSyncCount, setOnlineStatus]);
 
   // Saved lesson progress (works offline) decides which lessons are done and unlocked.
   useEffect(() => {
@@ -120,7 +134,7 @@ export function App() {
             {view === 'curriculum' && <CurriculumView />}
             {view === 'lesson' && <LessonPlayerView />}
             {view === 'complete' && <CompleteView />}
-            {view === 'practice' && <PracticeView />}
+            {(view === 'arena' || view === 'practice') && <ArenaView />}
             {view === 'achievements' && <AchievementsView />}
             {view === 'leaderboard' && <LeaderboardView />}
             {view === 'profile' && <ProfileView />}

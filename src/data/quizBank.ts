@@ -179,3 +179,13 @@ export const QUIZ_BANK: Record<string, QuizQuestion[]> = {
       'Ping sends an ICMP echo request and shows the echo reply and the round-trip time. Ping the router first, then another computer.'),
   ],
 };
+
+export const ALL_QUIZ_QUESTIONS: readonly QuizQuestion[] = Object.values(QUIZ_BANK).flat();
+
+const QUIZ_QUESTION_BY_ID: Readonly<Record<string, QuizQuestion>> = Object.fromEntries(
+  ALL_QUIZ_QUESTIONS.map((item) => [item.id, item]),
+);
+
+export function getQuizQuestionById(id: string): QuizQuestion | undefined {
+  return QUIZ_QUESTION_BY_ID[id];
+}

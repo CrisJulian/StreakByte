@@ -1,14 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockGetSession, mockFrom } = vi.hoisted(() => ({
+const { mockGetSession, mockFrom, mockRpc } = vi.hoisted(() => ({
   mockGetSession: vi.fn(),
   mockFrom: vi.fn(),
+  mockRpc: vi.fn(),
 }));
 
 vi.mock('../supabaseClient', () => ({
   supabase: {
     auth: { getSession: mockGetSession },
     from: mockFrom,
+    rpc: mockRpc,
   },
 }));
 
@@ -134,6 +136,151 @@ describe('supabaseProgress adapter', () => {
         weeklyXp: 220,
         allTimeXp: 440,
         streakDays: 3,
+      },
+    ]);
+  });
+
+  it('calls restore_user_streak RPC when restoring signed-in user streak', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u-1' } } } });
+    mockRpc.mockResolvedValue({
+      data: [
+        {
+          streak_current: 5,
+          streak_longest: 5,
+          streak_last_active_day: '2026-11-25',
+          streak_restores_left: 0,
+        },
+      ],
+      error: null,
+    });
+
+    const restored = await supabaseProgress.restoreStreakServer('2026-11-25');
+    expect(mockRpc).toHaveBeenCalledWith('restore_user_streak', { p_today: '2026-11-25' });
+    expect(restored).toEqual({
+      current: 5,
+      longest: 5,
+      lastActiveDay: '2026-11-25',
+      restoresLeft: 0,
+    });
+
+    mockRpc.mockResolvedValueOnce({ data: null, error: { message: 'Streak cannot be restored' } });
+    await expect(supabaseProgress.restoreStreakServer('2026-11-25')).rejects.toThrow(
+      'Streak cannot be restored',
+    );
+  });
+
+  it('calls buy_streak_restore RPC and loads xp_spent for authenticated users', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u-1' } } } });
+    mockFrom.mockReturnValue({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { xp_spent: 200 },
+            error: null,
+          }),
+        }),
+      }),
+    });
+    mockRpc.mockResolvedValue({
+      data: [{ streak_restores_left: 2, xp_spent: 200 }],
+      error: null,
+    });
+
+    await expect(supabaseProgress.loadXpSpent()).resolves.toBe(200);
+    await expect(supabaseProgress.buyStreakRestore(300)).resolves.toMatchObject({
+      streak: { restoresLeft: 2 },
+      xpSpent: 200,
+    });
+    expect(mockRpc).toHaveBeenCalledWith('buy_streak_restore');
+
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'You need at least 200 XP to buy a streak restore' },
+    });
+    await expect(supabaseProgress.buyStreakRestore(50)).rejects.toThrow(
+      'You need at least 200 XP to buy a streak restore',
+    );
+  });
+
+  it('creates, joins, and scopes leaderboard by classroom members', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u-1' } } } });
+    const memberUpsert = vi.fn().mockResolvedValue({ error: null });
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'classrooms') {
+        return {
+          insert: (payload: { name: string; join_code: string; created_by: string }) => ({
+            select: () => ({
+              single: vi.fn().mockResolvedValue({
+                data: { id: 'c-1', name: payload.name, join_code: payload.join_code, created_by: payload.created_by },
+                error: null,
+              }),
+            }),
+          }),
+          select: () => ({
+            eq: () => ({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: { id: 'c-2', name: 'Net Study Group', join_code: 'NET123', created_by: 'u-2' },
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === 'classroom_members') {
+        return {
+          upsert: memberUpsert,
+          select: () => ({
+            eq: vi.fn().mockResolvedValue({
+              data: [{ user_id: 'u-1' }, { user_id: 'u-2' }],
+              error: null,
+            }),
+          }),
+        };
+      }
+      if (table === 'leaderboard_entries') {
+        return {
+          select: () => ({
+            in: vi.fn((col: string, ids: string[]) => {
+              expect(col).toBe('user_id');
+              expect(ids).toEqual(['u-1', 'u-2']);
+              return {
+                order: () => ({
+                  limit: vi.fn().mockResolvedValue({
+                    data: [
+                      {
+                        user_id: 'u-2',
+                        display_name: 'Grace Hopper',
+                        weekly_xp: 310,
+                        all_time_xp: 600,
+                        streak_days: 4,
+                      },
+                    ],
+                    error: null,
+                  }),
+                }),
+              };
+            }),
+          }),
+        };
+      }
+      return {};
+    });
+
+    const created = await supabaseProgress.createClassroom('Hardware Club');
+    expect(created.name).toBe('Hardware Club');
+    expect(created.joinCode).toMatch(/^[A-Z0-9]{6}$/);
+
+    const joined = await supabaseProgress.joinClassroom('net-123');
+    expect(joined).toMatchObject({ id: 'c-2', name: 'Net Study Group', joinCode: 'NET123', memberCount: 2 });
+
+    const scoped = await supabaseProgress.loadLeaderboard('w', 'c-2');
+    expect(scoped).toEqual([
+      {
+        userId: 'u-2',
+        displayName: 'Grace Hopper',
+        weeklyXp: 310,
+        allTimeXp: 600,
+        streakDays: 4,
       },
     ]);
   });

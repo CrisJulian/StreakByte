@@ -24,6 +24,7 @@ export function DashboardView() {
   const completions = useStreakByteStore((s) => s.completions);
   const streak = useStreakByteStore((s) => s.streak);
   const labBonusXp = useStreakByteStore((s) => s.labBonusXp);
+  const xpSpent = useStreakByteStore((s) => s.xpSpent);
   const dailyActivity = useStreakByteStore((s) => s.dailyActivity);
   const leaderboard = useStreakByteStore((s) => s.leaderboard);
   const authUser = useStreakByteStore((s) => s.authUser);
@@ -49,8 +50,8 @@ export function DashboardView() {
 
   const today = localDayString();
   const streakDays = effectiveStreak(streak, today);
-  const totalXp = calculateTotalXp(completions, LESSON_XP_BY_KEY, labBonusXp);
-  const weeklyXp = calculateWeeklyXp(completions, LESSON_XP_BY_KEY, new Date(), labBonusXp);
+  const totalXp = calculateTotalXp(completions, LESSON_XP_BY_KEY, labBonusXp, xpSpent);
+  const weeklyXp = calculateWeeklyXp(completions, LESSON_XP_BY_KEY, new Date(), labBonusXp, xpSpent);
 
   const ranked = mergeLeaderboard(
     isGuest ? [] : leaderboard,
@@ -161,18 +162,11 @@ export function DashboardView() {
             <div className="flex flex-wrap gap-2.5">
               <button
                 type="button"
-                onClick={() => openSetup(activeTrack.defaultTarget, nextLessonTitle)}
+                onClick={() => navigate(`learn/${nextLessonKey}`)}
                 className="inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-cyan rounded-[10px] bg-cyan text-cyan-ink font-semibold text-[0.9375rem] cursor-pointer transition-all hover:brightness-110 active:brightness-95"
               >
                 <Icon name="play" className="w-[18px] h-[18px]" />
                 Start lesson
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate(`learn/${nextLessonKey}`)}
-                className="inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-line rounded-[10px] bg-transparent text-ink font-semibold text-[0.9375rem] cursor-pointer transition-colors hover:bg-panel2 hover:border-muted"
-              >
-                Read lesson
               </button>
             </div>
           </div>

@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { canRestore, createInitialStreak, isBroken, recordActivity, restoreStreak } from '../streak';
+import {
+  buyRestore,
+  canBuyRestore,
+  canRestore,
+  createInitialStreak,
+  isBroken,
+  isWithinRestoreWindow,
+  MAX_STREAK_RESTORES,
+  recordActivity,
+  restoreStreak,
+  STREAK_RESTORE_COST_XP,
+} from '../streak';
 
 describe('streak rules', () => {
   it('starts at 1, then increments on consecutive days and ignores repeats', () => {
@@ -34,5 +45,21 @@ describe('streak rules', () => {
     const s = recordActivity(createInitialStreak(), '2026-11-10');
     expect(canRestore(s, '2026-11-23')).toBe(false);
     expect(restoreStreak(s, '2026-11-23')).toBe(s);
+  });
+
+  it('buys streak restores with XP up to the max cap and detects restore windows', () => {
+    const base = { ...createInitialStreak(), restoresLeft: 0, lastActiveDay: '2026-11-21', current: 3 };
+    expect(isWithinRestoreWindow(base, '2026-11-23')).toBe(true);
+    expect(canRestore(base, '2026-11-23')).toBe(false);
+    expect(canBuyRestore(base, STREAK_RESTORE_COST_XP - 1)).toBe(false);
+    expect(canBuyRestore(base, STREAK_RESTORE_COST_XP)).toBe(true);
+
+    const bought = buyRestore(base, 250);
+    expect(bought.bought).toBe(true);
+    expect(bought.cost).toBe(STREAK_RESTORE_COST_XP);
+    expect(bought.next.restoresLeft).toBe(1);
+
+    const capped = buyRestore({ ...base, restoresLeft: MAX_STREAK_RESTORES }, 1000);
+    expect(capped.bought).toBe(false);
   });
 });

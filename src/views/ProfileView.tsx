@@ -26,12 +26,13 @@ export function ProfileView() {
   const completions = useStreakByteStore((s) => s.completions);
   const streak = useStreakByteStore((s) => s.streak);
   const labBonusXp = useStreakByteStore((s) => s.labBonusXp);
+  const xpSpent = useStreakByteStore((s) => s.xpSpent);
   const logout = useStreakByteStore((s) => s.logout);
   const authUser = useStreakByteStore((s) => s.authUser);
 
   const fullName = settings.displayName.trim() || authUser?.displayName || 'Learner';
   const initial = (fullName[0] || 'L').toUpperCase();
-  const totalXp = calculateTotalXp(completions, LESSON_XP_BY_KEY, labBonusXp);
+  const totalXp = calculateTotalXp(completions, LESSON_XP_BY_KEY, labBonusXp, xpSpent);
   const level = deriveLevel(totalXp);
   const heatmap = deriveActivityHeatmap(completions);
   const achievements = deriveAchievements({

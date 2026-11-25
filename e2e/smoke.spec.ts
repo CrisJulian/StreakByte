@@ -28,9 +28,8 @@ test('learn to quiz completion persists across reload', async ({ page }) => {
   await page.goto('/');
   await enterAsGuest(page);
 
-  await page.evaluate(() => {
-    window.location.hash = '#learn/hw-1';
-  });
+  await expect(page.getByRole('button', { name: 'Read lesson' })).toHaveCount(0);
+  await page.getByRole('button', { name: /Start lesson/i }).click();
   await expect(page.getByRole('heading', { name: /Inside the PC/i, level: 1 })).toBeVisible();
   await page.getByRole('button', { name: 'Take the quiz' }).click();
 
@@ -67,7 +66,8 @@ test('real pointer drag-and-drop in PcBuildLab', async ({ page }) => {
   await page.goto('/');
   await enterAsGuest(page);
 
-  await page.getByRole('button', { name: /Start lesson/i }).click();
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Leaderboard' }).click();
+  await page.getByRole('button', { name: 'Earn XP: resume lesson' }).click();
   const setupDialog = page.getByRole('dialog', { name: 'Session setup' });
   await expect(setupDialog).toBeVisible();
   await setupDialog.getByRole('button', { name: 'Start lesson' }).click();

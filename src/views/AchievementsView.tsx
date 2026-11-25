@@ -17,6 +17,7 @@ export function AchievementsView() {
   const completions = useStreakByteStore((s) => s.completions);
   const streak = useStreakByteStore((s) => s.streak);
   const labBonusXp = useStreakByteStore((s) => s.labBonusXp);
+  const xpSpent = useStreakByteStore((s) => s.xpSpent);
   const leaderboard = useStreakByteStore((s) => s.leaderboard);
   const authUser = useStreakByteStore((s) => s.authUser);
   const isGuest = useStreakByteStore((s) => s.isGuest);
@@ -25,8 +26,8 @@ export function AchievementsView() {
   );
 
   const today = localDayString();
-  const totalXp = calculateTotalXp(completions, LESSON_XP_BY_KEY, labBonusXp);
-  const weeklyXp = calculateWeeklyXp(completions, LESSON_XP_BY_KEY, new Date(), labBonusXp);
+  const totalXp = calculateTotalXp(completions, LESSON_XP_BY_KEY, labBonusXp, xpSpent);
+  const weeklyXp = calculateWeeklyXp(completions, LESSON_XP_BY_KEY, new Date(), labBonusXp, xpSpent);
   const streakDays = effectiveStreak(streak, today);
 
   const ranked = mergeLeaderboard(

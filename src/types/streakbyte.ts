@@ -2,6 +2,7 @@ export type ViewId =
   | 'dashboard'
   | 'curriculum'
   | 'lesson'
+  | 'arena'
   | 'practice'
   | 'achievements'
   | 'leaderboard'

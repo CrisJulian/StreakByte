@@ -1,11 +1,13 @@
 import type {
   AuthService,
+  DuelService,
   ProgressRepository,
   ReminderScheduler,
   StudyBuddyService,
   SyncQueue,
 } from './application/ports';
 import { supabaseAuth } from './adapters/supabase/supabaseAuth';
+import { supabaseDuel } from './adapters/supabase/supabaseDuel';
 import { supabaseProgress } from './adapters/supabase/supabaseProgress';
 import { localReminders } from './adapters/local/localReminders';
 import { geminiStudyBuddy } from './adapters/gemini/geminiStudyBuddy';
@@ -14,6 +16,7 @@ import { localSyncQueue } from './adapters/local/localSyncQueue';
 export interface Services {
   auth: AuthService;
   progress: ProgressRepository;
+  duel: DuelService;
   studyBuddy: StudyBuddyService;
   reminders: ReminderScheduler;
   syncQueue: SyncQueue;
@@ -26,6 +29,7 @@ export interface Services {
 export const services: Services = {
   auth: supabaseAuth,
   progress: supabaseProgress,
+  duel: supabaseDuel,
   studyBuddy: geminiStudyBuddy,
   reminders: localReminders,
   syncQueue: localSyncQueue,

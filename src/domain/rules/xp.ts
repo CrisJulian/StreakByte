@@ -53,17 +53,18 @@ export function calculateLessonXp(completion: LessonCompletion, lessonXp: number
   return Math.round((lessonXp * completion.correct) / completion.total);
 }
 
-/** Total all-time XP from completed lessons plus any lab bonus XP. */
+/** Total all-time XP from completed lessons plus any lab bonus XP minus XP spent. */
 export function calculateTotalXp(
   completions: readonly LessonCompletion[],
   lessonXpByKey: Readonly<Record<string, number>>,
   bonusXp = 0,
+  spentXp = 0,
 ): number {
   const lessonTotal = completions.reduce(
     (sum, item) => sum + calculateLessonXp(item, lessonXpByKey[item.lessonKey] ?? 0),
     0,
   );
-  return lessonTotal + Math.max(0, bonusXp);
+  return Math.max(0, lessonTotal + Math.max(0, bonusXp) - Math.max(0, spentXp));
 }
 
 /** Start of the current week (Monday 00:00:00 local time). */
@@ -73,12 +74,13 @@ function startOfLocalWeek(now: Date): number {
   return start.getTime();
 }
 
-/** XP earned since Monday 00:00 local time of `now`'s week. */
+/** XP earned since Monday 00:00 local time of `now`'s week minus XP spent. */
 export function calculateWeeklyXp(
   completions: readonly LessonCompletion[],
   lessonXpByKey: Readonly<Record<string, number>>,
   now: Date = new Date(),
   weeklyBonusXp = 0,
+  spentXp = 0,
 ): number {
   const weekStart = startOfLocalWeek(now);
   const lessonTotal = completions.reduce((sum, item) => {
@@ -86,7 +88,7 @@ export function calculateWeeklyXp(
     if (Number.isNaN(ts) || ts < weekStart) return sum;
     return sum + calculateLessonXp(item, lessonXpByKey[item.lessonKey] ?? 0);
   }, 0);
-  return lessonTotal + Math.max(0, weeklyBonusXp);
+  return Math.max(0, lessonTotal + Math.max(0, weeklyBonusXp) - Math.max(0, spentXp));
 }
 
 /** Derives level number, rank title, and XP progress within the current level. */
@@ -116,6 +118,9 @@ export interface LeaderboardRowInput {
   weeklyXp: number;
   allTimeXp: number;
   streakDays: number;
+  duelWins?: number;
+  duelLosses?: number;
+  duelWinStreak?: number;
 }
 
 export interface RankedLeaderboardRow {
@@ -129,6 +134,9 @@ export interface RankedLeaderboardRow {
   streakDays: number;
   rank: number;
   isYou: boolean;
+  duelWins?: number;
+  duelLosses?: number;
+  duelWinStreak?: number;
 }
 
 function initialFor(name: string): string {
@@ -160,6 +168,9 @@ export function mergeLeaderboard(
     allTimeXp: row.allTimeXp,
     streakDays: row.streakDays,
     isYou: row.userId === currentUser.userId,
+    ...(row.duelWins ? { duelWins: row.duelWins } : {}),
+    ...(row.duelLosses ? { duelLosses: row.duelLosses } : {}),
+    ...(row.duelWinStreak ? { duelWinStreak: row.duelWinStreak } : {}),
   }));
 
   items.sort((a, b) => {

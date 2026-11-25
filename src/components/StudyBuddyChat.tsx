@@ -5,6 +5,7 @@ import { Icon } from './Icon';
 
 export function StudyBuddyChat() {
   const chat = useStreakByteStore((s) => s.chat);
+  const lastMistake = useStreakByteStore((s) => s.lastMistake);
   const setChatOpen = useStreakByteStore((s) => s.setChatOpen);
   const sendChatMessage = useStreakByteStore((s) => s.sendChatMessage);
   const [draft, setDraft] = useState('');
@@ -54,6 +55,12 @@ export function StudyBuddyChat() {
         }`}
       >
         <span className="buddy-logo w-12 h-12 max-[760px]:w-11 max-[760px]:h-11 block" aria-hidden="true" />
+        {!chat.open && lastMistake && (
+          <span
+            aria-hidden="true"
+            className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-amber border-2 border-panel"
+          />
+        )}
       </button>
 
       {chat.open && (
@@ -139,6 +146,23 @@ export function StudyBuddyChat() {
                   {prompt}
                 </button>
               ))}
+            </div>
+          )}
+
+          {lastMistake && (
+            <div className="px-3.5 pt-2.5 pb-1 border-t border-line bg-bg/50">
+              <button
+                type="button"
+                disabled={chat.isLoading}
+                onClick={() => sendChatMessage(lastMistake.prompt)}
+                className="w-full flex items-center justify-between gap-2 min-h-10 px-3 py-2 rounded-xl border border-cyan/40 bg-cyan/10 text-left text-ink cursor-pointer transition-colors hover:bg-cyan/20 disabled:opacity-50"
+              >
+                <span className="min-w-0">
+                  <b className="block text-xs text-cyan">Explain why I missed that</b>
+                  <small className="block text-xs text-muted truncate">{lastMistake.summary}</small>
+                </span>
+                <Icon name="send" className="w-4 h-4 text-cyan flex-none" />
+              </button>
             </div>
           )}
 
