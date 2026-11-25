@@ -8,7 +8,7 @@ describe('App integration', () => {
   beforeEach(() => {
     localStorage.clear();
     window.location.hash = '';
-    document.documentElement.setAttribute('data-theme', 'dark');
+    document.documentElement.setAttribute('data-theme', 'light');
     useStreakByteStore.getState().resetAll();
   });
 
@@ -37,10 +37,13 @@ describe('App integration', () => {
     expect(streakBtn).toHaveFocus();
 
     // Theme toggle updates <html data-theme>
-    const themeBtn = screen.getByRole('button', { name: 'Switch to light theme' });
+    const themeBtn = screen.getByRole('button', { name: 'Switch to dark theme' });
     await user.click(themeBtn);
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    const backToLightBtn = screen.getByRole('button', { name: 'Switch to light theme' });
+    expect(backToLightBtn).toBeInTheDocument();
+    await user.click(backToLightBtn);
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
-    expect(screen.getByRole('button', { name: 'Switch to dark theme' })).toBeInTheDocument();
 
     // Navigate to Curriculum and search
     const nav = screen.getByRole('navigation', { name: 'Main' });

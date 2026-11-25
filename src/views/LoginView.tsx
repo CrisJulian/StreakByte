@@ -1,9 +1,10 @@
 import { useEffect, useState, type SyntheticEvent } from 'react';
+import { CornerBrackets } from '../components/ByteMascotSvg';
 import { services } from '../composition';
 import { useStreakByteStore } from '../store/useStreakByteStore';
 
 const inputClass =
-  'w-full min-h-10 px-3.5 rounded-[10px] border border-line bg-bg text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-cyan text-sm';
+  'w-full min-h-10 px-3 border border-line bg-bg text-ink placeholder:text-muted focus-visible:outline-none focus-visible:border-ink text-xs font-mono';
 
 export function LoginView() {
   const navigate = useStreakByteStore((s) => s.navigate);
@@ -69,46 +70,52 @@ export function LoginView() {
   };
 
   return (
-    <div className="flex justify-center items-center w-full py-4">
-      {/* Single centered panel */}
-      <section
-        aria-labelledby="login-heading"
-        className="relative flex flex-col items-center gap-3 p-7 rounded-2xl border border-line bg-panel shadow-sm w-full max-w-[460px]"
-      >
-
-        {/* Mascot */}
-        <img
-          src="/buddy-logo.png"
-          alt="BYTE, the StreakByte mascot"
-          className="w-40 h-40 object-contain mt-2 drop-shadow-lg"
-        />
-
-        {/* Title */}
-        <div className="text-center">
-          <h1 id="login-heading" className="text-2xl font-extrabold text-ink tracking-tight">
-            {mode === 'login' ? 'Welcome back' : 'Create your account'}
-          </h1>
-          <p className="text-muted mt-1 text-sm">
-            {mode === 'login'
-              ? 'Log in to pick up your streak where you left off.'
-              : 'Use your school email to start your first streak.'}
+    <div className="w-full max-w-[920px] bg-panel border border-line grid grid-cols-[1fr_1.08fr] max-[820px]:grid-cols-1">
+      <div className="relative bg-[var(--dark-card)] text-white p-8 flex flex-col justify-between gap-6 border-r border-line max-[820px]:border-r-0 max-[820px]:border-b">
+        <CornerBrackets light />
+        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.09em] text-cyan">
+          <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
+          <span>STREAKBYTE // TRAINING TERMINAL</span>
+        </div>
+        <div className="grid place-items-center py-4">
+          <img
+            src="/buddy-logo.png"
+            alt="BYTE, the StreakByte mascot"
+            className="w-40 h-40 object-contain"
+          />
+        </div>
+        <div>
+          <div className="font-disp text-[30px] leading-[1.04] uppercase tracking-[-0.02em] mb-2">
+            BUILD HARDWARE.
+            <br />
+            MASTER NETWORKS.
+          </div>
+          <p className="m-0 text-xs text-white/70">
+            Daily 5-minute missions, hands-on PC &amp; LAN labs, and live class leagues.
           </p>
         </div>
+      </div>
 
-        {/* Tab switcher */}
+      <section aria-labelledby="login-heading" className="p-8 max-[560px]:p-5 flex flex-col justify-center gap-4">
         <div
           role="tablist"
           aria-label="Account mode"
-          className="inline-flex p-1 border border-line rounded-xl bg-bg gap-1"
+          className="inline-flex self-start border border-ink bg-panel"
         >
-          {(['login', 'signup'] as const).map((m) => (
+          {(['login', 'signup'] as const).map((m, idx) => (
             <button
               key={m}
               type="button"
               role="tab"
               aria-selected={mode === m}
-              onClick={() => { setMode(m); setError(null); }}
-              className={`min-h-9 px-5 rounded-lg font-semibold text-sm cursor-pointer transition-colors ${mode === m ? 'bg-cyan text-cyan-ink font-bold' : 'bg-transparent text-muted hover:text-ink'
+              onClick={() => {
+                setMode(m);
+                setError(null);
+              }}
+              className={`min-h-9 px-4 border-0 font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer transition-colors ${idx > 0 ? 'border-l border-ink' : ''
+                } ${mode === m
+                  ? 'bg-cyan text-cyan-ink'
+                  : 'bg-panel text-ink hover:bg-panel2'
                 }`}
             >
               {m === 'login' ? 'Log in' : 'Create account'}
@@ -116,9 +123,19 @@ export function LoginView() {
           ))}
         </div>
 
-        {/* Form */}
+        <div>
+          <h1 id="login-heading" className="m-0 sb-page-title text-[26px]">
+            {mode === 'login' ? 'Welcome back' : 'Create your account'}
+          </h1>
+          <p className="text-muted mt-1 mb-0 text-xs">
+            {mode === 'login'
+              ? 'Log in to pick up your streak where you left off.'
+              : 'Use your school email to start your first streak.'}
+          </p>
+        </div>
+
         <form onSubmit={submit} className="grid gap-3 w-full" noValidate>
-          <label className="grid gap-1.5 text-sm font-semibold text-ink">
+          <label className="grid gap-1.5 text-[10px] font-bold uppercase tracking-[0.07em] text-muted">
             Email or username
             <input
               type="text"
@@ -131,7 +148,10 @@ export function LoginView() {
           </label>
 
           <div className="grid gap-1">
-            <label htmlFor="login-password" className="text-sm font-semibold text-ink">
+            <label
+              htmlFor="login-password"
+              className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted"
+            >
               Password
             </label>
             <div className="relative">
@@ -141,14 +161,14 @@ export function LoginView() {
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={`${inputClass} pr-20`}
+                className={`${inputClass} pr-16`}
               />
               <button
                 type="button"
                 aria-pressed={showPassword}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 min-h-9 px-3 rounded-lg border-0 bg-transparent text-muted text-sm font-semibold cursor-pointer hover:text-ink"
+                className="absolute right-1 top-1/2 -translate-y-1/2 min-h-8 px-2.5 border-0 bg-transparent text-muted text-[10px] font-bold uppercase cursor-pointer hover:text-ink"
               >
                 {showPassword ? 'Hide' : 'Show'}
               </button>
@@ -158,7 +178,7 @@ export function LoginView() {
                 <button
                   type="button"
                   onClick={forgot}
-                  className="text-xs text-cyan hover:underline bg-transparent border-0 cursor-pointer font-medium"
+                  className="text-[11px] text-cyan hover:underline bg-transparent border-0 cursor-pointer font-bold"
                 >
                   Forgot password?
                 </button>
@@ -167,19 +187,19 @@ export function LoginView() {
           </div>
 
           {mode === 'login' && (
-            <label className="inline-flex items-center gap-2.5 text-[0.9375rem] text-ink/90 cursor-pointer select-none">
+            <label className="inline-flex items-center gap-2 text-xs text-ink cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={keepLoggedIn}
                 onChange={(e) => setKeepLoggedIn(e.target.checked)}
-                className="w-5 h-5 accent-cyan rounded cursor-pointer"
+                className="w-4 h-4 accent-cyan cursor-pointer"
               />
               Keep me logged in on this device
             </label>
           )}
 
           {error && (
-            <p role="alert" aria-live="polite" className="text-sm text-amber font-medium my-0">
+            <p role="alert" aria-live="polite" className="text-xs text-amber font-bold my-0">
               {error}
             </p>
           )}
@@ -187,16 +207,16 @@ export function LoginView() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full min-h-10 rounded-[10px] border-0 bg-cyan text-cyan-ink font-bold text-sm cursor-pointer hover:brightness-110 disabled:opacity-60 transition-all shadow-sm"
+            className="sb-cut w-full min-h-10 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00] disabled:opacity-60 transition-colors"
           >
             {busy ? 'Please wait…' : mode === 'login' ? 'Log in' : 'Create account'}
           </button>
 
-          <div className="relative flex items-center justify-center my-1">
+          <div className="relative flex items-center justify-center my-0.5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-line" />
             </div>
-            <span className="relative px-3 bg-panel text-xs text-muted font-semibold uppercase tracking-wider">
+            <span className="relative px-3 bg-panel text-[10px] text-muted font-bold uppercase tracking-wider">
               or
             </span>
           </div>
@@ -205,7 +225,7 @@ export function LoginView() {
             type="button"
             disabled={busy}
             onClick={handleGoogle}
-            className="w-full min-h-10 rounded-[10px] border border-line bg-bg text-ink font-semibold text-sm cursor-pointer transition-colors hover:border-cyan hover:text-cyan disabled:opacity-60 flex items-center justify-center gap-2.5"
+            className="w-full min-h-10 border border-line bg-panel text-ink font-bold text-[11px] uppercase tracking-[0.05em] cursor-pointer transition-colors hover:border-ink hover:bg-panel2 disabled:opacity-60 flex items-center justify-center gap-2.5"
           >
             <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -231,10 +251,10 @@ export function LoginView() {
           <button
             type="button"
             onClick={() => loginAsGuest()}
-            className="w-full min-h-9 rounded-[10px] border border-line bg-panel2 text-ink font-semibold text-sm cursor-pointer transition-colors hover:border-cyan hover:text-cyan flex items-center justify-center gap-2"
+            className="sb-cut w-full min-h-10 border border-[var(--dark-card)] bg-[var(--dark-card)] text-white font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-opacity hover:opacity-90 flex items-center justify-center gap-2"
           >
             <span>Continue as Guest</span>
-            <span className="text-[0.6875rem] px-2 py-0.5 rounded-full bg-cyan/15 text-cyan font-bold tracking-wide">
+            <span className="text-[9.5px] px-1.5 py-0.5 bg-cyan text-cyan-ink font-bold">
               Dev Mode
             </span>
           </button>

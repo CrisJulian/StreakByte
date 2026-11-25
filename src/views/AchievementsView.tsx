@@ -72,138 +72,155 @@ export function AchievementsView() {
   });
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="m-0 text-[2.125rem] font-bold leading-[1.15] tracking-[-0.025em]">
-          Achievements
-        </h1>
-        <p className="mt-1.5 mb-0 text-muted text-[1.0625rem]">
-          {unlockedCount} of {achievements.length} unlocked
-        </p>
-      </div>
-
-      <div className="bg-panel border border-line rounded-2xl p-[22px] grid grid-cols-[auto_minmax(0,1fr)] gap-4 items-center mb-5">
-        <div className="grid place-items-center w-11 h-11 rounded-xl bg-panel2 text-cyan flex-none">
-          <Icon name={nextLocked ? 'lock' : 'trophy'} />
-        </div>
+    <div className="w-full bg-panel">
+      <div className="p-6 max-[760px]:p-4 border-b border-line flex justify-between items-end gap-4 flex-wrap">
         <div>
-          {nextLocked ? (
-            <>
-              <h2 className="m-0 mb-1 text-[1.125rem] font-bold">
-                Next unlock: {nextLocked.title}
-              </h2>
-              <p className="m-0 mb-2.5 text-muted text-sm">{nextLocked.description}</p>
-              {nextLocked.progressPct !== undefined ? (
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-1.5 rounded-full bg-panel2 overflow-hidden">
-                    <i
-                      className="sb-bar-fill block h-full rounded-full bg-cyan"
-                      style={{ width: `${nextLocked.progressPct}%` }}
-                    />
-                  </div>
-                  <small className="num text-muted text-[0.8125rem] whitespace-nowrap">
-                    {nextLocked.progressText}
-                  </small>
-                </div>
-              ) : (
-                <p className="m-0 text-xs font-semibold text-muted">{nextLocked.statusText}</p>
-              )}
-            </>
-          ) : (
-            <>
-              <h2 className="m-0 mb-1 text-[1.125rem] font-bold">All achievements unlocked!</h2>
-              <p className="m-0 text-muted text-sm">
-                You earned every badge in Hardware and Networking.
-              </p>
-            </>
-          )}
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
+            <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
+            <span>BADGES · TROPHY WALL</span>
+          </div>
+          <h1 className="m-0 mt-1.5 sb-page-title text-[32px]">
+            Achievements
+          </h1>
+          <p className="mt-1.5 mb-0 text-muted text-[12px]">
+            {unlockedCount} of {achievements.length} unlocked
+          </p>
         </div>
-      </div>
 
-      <div role="group" aria-label="Filter achievements" className="flex gap-2 flex-wrap mb-4">
-        {filters.map((f) => {
-          const active = filter === f.id;
-          return (
-            <button
-              key={f.id}
-              type="button"
-              aria-pressed={active}
-              onClick={() => setFilter(f.id)}
-              className={`min-h-11 px-4 border rounded-full font-semibold text-sm cursor-pointer transition-colors ${
-                active
-                  ? 'bg-panel2 text-ink border-cyan'
-                  : 'bg-transparent text-muted border-line hover:text-ink hover:border-muted'
-              }`}
-            >
-              {f.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {visible.length === 0 ? (
-        <div className="p-6 border border-line rounded-2xl bg-panel text-sm text-muted">
-          No unlocked achievements yet. Complete a lesson to earn your first badge.
-        </div>
-      ) : (
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
-          {visible.map((ach) => (
-            <li
-              key={ach.id}
-              className="flex flex-col gap-1.5 p-5 border border-line rounded-2xl bg-panel transition-all duration-200 hover:-translate-y-0.5 hover:border-muted"
-            >
-              <div
-                className={`grid place-items-center w-[52px] h-[52px] mb-2 rounded-[14px] ${
-                  !ach.unlocked
-                    ? 'bg-panel2 text-muted'
-                    : ach.accent === 'amber'
-                      ? 'text-amber'
-                      : 'text-cyan'
-                }`}
-                style={
-                  ach.unlocked
-                    ? {
-                        background:
-                          ach.accent === 'amber'
-                            ? 'color-mix(in srgb, var(--amber) 16%, transparent)'
-                            : 'color-mix(in srgb, var(--cyan) 16%, transparent)',
-                      }
-                    : undefined
-                }
+        <div role="group" aria-label="Filter achievements" className="inline-flex border border-ink bg-panel">
+          {filters.map((f, idx) => {
+            const active = filter === f.id;
+            return (
+              <button
+                key={f.id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setFilter(f.id)}
+                className={`min-h-10 px-4 border-0 font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer transition-colors ${idx > 0 ? 'border-l border-ink' : ''
+                  } ${active
+                    ? 'bg-cyan text-cyan-ink'
+                    : 'bg-panel text-ink hover:bg-panel2'
+                  }`}
               >
-                <Icon name={ach.icon} className="w-6 h-6" />
-              </div>
+                {f.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-              <h3 className="m-0 text-base font-bold leading-snug">{ach.title}</h3>
-              <p className="m-0 text-muted text-sm flex-1">{ach.description}</p>
-
-              {ach.unlocked ? (
-                <span className="inline-flex items-center gap-1.5 mt-2.5 text-[0.8125rem] font-bold text-cyan">
-                  <Icon name="check" className="w-4 h-4" strokeWidth={2.5} />
-                  Unlocked
-                </span>
-              ) : ach.progressPct !== undefined ? (
-                <div className="flex items-center gap-3 mt-2.5">
-                  <div className="flex-1 h-1.5 rounded-full bg-panel2 overflow-hidden">
-                    <i
-                      className="sb-bar-fill block h-full rounded-full bg-cyan"
-                      style={{ width: `${ach.progressPct}%` }}
-                    />
-                  </div>
-                  <small className="num text-muted text-[0.8125rem] whitespace-nowrap">
-                    {ach.progressText}
-                  </small>
+      <div className="p-6 max-[760px]:p-4 border-b border-line bg-panel2">
+        <div className="bg-panel border border-line p-5 grid grid-cols-[auto_minmax(0,1fr)] gap-4 items-center">
+          <div className="grid place-items-center w-11 h-11 border border-line bg-panel2 text-cyan flex-none">
+            <Icon name={nextLocked ? 'lock' : 'trophy'} className="w-5 h-5" />
+          </div>
+          <div>
+            {nextLocked ? (
+              <>
+                <div className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted mb-0.5">
+                  NEXT UNLOCK TARGET
                 </div>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 mt-2.5 text-[0.8125rem] font-bold text-muted">
-                  {ach.statusText === 'Locked' && <Icon name="lock" className="w-4 h-4" strokeWidth={2.5} />}
-                  {ach.statusText}
-                </span>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+                <h2 className="m-0 mb-1 font-head text-[18px] font-bold">
+                  Next unlock: {nextLocked.title}
+                </h2>
+                <p className="m-0 mb-2.5 text-muted text-xs">{nextLocked.description}</p>
+                {nextLocked.progressPct !== undefined ? (
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 grid grid-cols-10 gap-0.5" aria-hidden="true">
+                      {Array.from({ length: 10 }, (_, idx) => (
+                        <i
+                          key={idx}
+                          className={`block h-2 ${idx < Math.round(((nextLocked.progressPct ?? 0) / 100) * 10)
+                              ? 'bg-cyan'
+                              : 'bg-panel3'
+                            }`}
+                        />
+                      ))}
+                    </div>
+                    <small className="num text-muted text-[11px] font-bold whitespace-nowrap">
+                      {nextLocked.progressText}
+                    </small>
+                  </div>
+                ) : (
+                  <p className="m-0 text-[10.5px] font-bold uppercase tracking-[0.05em] text-muted">
+                    {nextLocked.statusText}
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <h2 className="m-0 mb-1 font-head text-[18px] font-bold">
+                  All achievements unlocked!
+                </h2>
+                <p className="m-0 text-muted text-xs">
+                  You earned every badge in Hardware and Networking.
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6 max-[760px]:p-4">
+        {visible.length === 0 ? (
+          <div className="p-6 border border-line bg-panel2 text-xs text-muted">
+            No unlocked achievements yet. Complete a lesson to earn your first badge.
+          </div>
+        ) : (
+          <ul className="grid grid-cols-4 max-[1024px]:grid-cols-2 max-[560px]:grid-cols-1 border border-line">
+            {visible.map((ach) => (
+              <li
+                key={ach.id}
+                className={`flex flex-col gap-2 p-5 border-r border-b border-line ${ach.unlocked ? 'bg-panel' : 'bg-panel2 text-muted'
+                  }`}
+              >
+                <div
+                  className={`grid place-items-center w-11 h-11 mb-1 ${ach.unlocked
+                      ? 'bg-cyan text-cyan-ink'
+                      : 'border border-line bg-panel text-muted'
+                    }`}
+                >
+                  <Icon name={ach.icon} className="w-5 h-5" />
+                </div>
+
+                <h3 className="m-0 font-head text-[15px] font-bold leading-snug">{ach.title}</h3>
+                <p className="m-0 text-muted text-[11.5px] flex-1">{ach.description}</p>
+
+                {ach.unlocked ? (
+                  <span className="inline-flex items-center gap-1.5 mt-2 text-[10px] font-bold uppercase tracking-[0.06em] text-cyan">
+                    <Icon name="check" className="w-3.5 h-3.5" strokeWidth={2.5} />
+                    Unlocked
+                  </span>
+                ) : ach.progressPct !== undefined ? (
+                  <div className="flex items-center gap-2.5 mt-2">
+                    <div className="flex-1 grid grid-cols-5 gap-0.5" aria-hidden="true">
+                      {Array.from({ length: 5 }, (_, idx) => (
+                        <i
+                          key={idx}
+                          className={`block h-2 ${idx < Math.round(((ach.progressPct ?? 0) / 100) * 5)
+                              ? 'bg-cyan'
+                              : 'bg-panel3'
+                            }`}
+                        />
+                      ))}
+                    </div>
+                    <small className="num text-muted text-[10px] font-bold whitespace-nowrap">
+                      {ach.progressText}
+                    </small>
+                  </div>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 mt-2 text-[10px] font-bold uppercase tracking-[0.06em] text-muted">
+                    {ach.statusText === 'Locked' && (
+                      <Icon name="lock" className="w-3.5 h-3.5" strokeWidth={2.5} />
+                    )}
+                    {ach.statusText}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

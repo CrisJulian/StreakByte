@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { CornerBrackets } from '../components/ByteMascotSvg';
 import { LESSON_XP_BY_KEY, TRACKS } from '../data/curriculum';
 import { formatStreak, formatXp } from '../data/leaderboard';
 import {
@@ -79,24 +80,23 @@ export function LeaderboardView() {
     const lessonsNeeded = Math.max(1, Math.ceil(diff / 120));
     const lessonPhrase =
       lessonsNeeded === 1 ? 'One more lesson closes' : `${lessonsNeeded} more lessons close`;
-    gapCopy = `${formatXp(diff)} XP behind ${above.name}. ${lessonPhrase} the gap.${
-      below
+    gapCopy = `${formatXp(diff)} XP behind ${above.name}. ${lessonPhrase} the gap.${below
         ? ` ${below.name} is ${formatXp(sorted[meIndex].xp - below.xp)} XP behind you.`
         : ''
-    }`;
+      }`;
   }
 
   const podiumSlots =
     sorted.length >= 3
       ? [
-          { row: sorted[1], variant: 'p2' as const },
-          { row: sorted[0], variant: 'p1' as const },
-          { row: sorted[2], variant: 'p3' as const },
-        ]
+        { row: sorted[1], variant: 'p2' as const },
+        { row: sorted[0], variant: 'p1' as const },
+        { row: sorted[2], variant: 'p3' as const },
+      ]
       : sorted.map((row, idx) => ({
-          row,
-          variant: idx === 0 ? ('p1' as const) : ('p2' as const),
-        }));
+        row,
+        variant: idx === 0 ? ('p1' as const) : ('p2' as const),
+      }));
 
   const defaultLab = TRACKS[selectedTracks[0] ?? 'hw'].defaultTarget;
   const activeClassroom = classrooms.find((c) => c.id === selectedClassroomId) ?? null;
@@ -127,13 +127,17 @@ export function LeaderboardView() {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-end gap-4 flex-wrap mb-5">
+    <div className="w-full bg-panel">
+      <div className="p-6 max-[760px]:p-4 border-b border-line flex justify-between items-end gap-4 flex-wrap">
         <div>
-          <h1 className="m-0 text-[2.125rem] font-bold leading-[1.15] tracking-[-0.025em]">
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
+            <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
+            <span>CLASS LEAGUE · STANDINGS</span>
+          </div>
+          <h1 className="m-0 mt-1.5 sb-page-title text-[32px]">
             Leaderboard
           </h1>
-          <p className="mt-1.5 mb-0 text-muted text-[1.0625rem]">
+          <p className="mt-1.5 mb-0 text-muted text-[12px]">
             {activeClassroom
               ? `Classroom: ${activeClassroom.name} · Code ${activeClassroom.joinCode}`
               : period === 'a'
@@ -147,17 +151,16 @@ export function LeaderboardView() {
             <div
               role="group"
               aria-label="Board scope"
-              className="inline-flex p-1 border border-line rounded-xl bg-bg gap-1 flex-wrap"
+              className="inline-flex border border-ink bg-panel flex-wrap"
             >
               <button
                 type="button"
                 aria-pressed={selectedClassroomId === null}
                 onClick={() => selectClassroom(null)}
-                className={`min-h-10 px-3.5 border-0 rounded-lg font-semibold text-sm cursor-pointer transition-colors ${
-                  selectedClassroomId === null
+                className={`min-h-10 px-3.5 border-0 font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer transition-colors ${selectedClassroomId === null
                     ? 'bg-cyan text-cyan-ink'
-                    : 'bg-transparent text-muted hover:text-ink'
-                }`}
+                    : 'bg-panel text-ink hover:bg-panel2'
+                  }`}
               >
                 Global
               </button>
@@ -167,11 +170,10 @@ export function LeaderboardView() {
                   type="button"
                   aria-pressed={selectedClassroomId === room.id}
                   onClick={() => selectClassroom(room.id)}
-                  className={`min-h-10 px-3.5 border-0 rounded-lg font-semibold text-sm cursor-pointer transition-colors ${
-                    selectedClassroomId === room.id
+                  className={`min-h-10 px-3.5 border-0 border-l border-ink font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer transition-colors ${selectedClassroomId === room.id
                       ? 'bg-cyan text-cyan-ink'
-                      : 'bg-transparent text-muted hover:text-ink'
-                  }`}
+                      : 'bg-panel text-ink hover:bg-panel2'
+                    }`}
                 >
                   {room.name}
                 </button>
@@ -179,20 +181,15 @@ export function LeaderboardView() {
             </div>
           )}
 
-          <div
-            role="group"
-            aria-label="Period"
-            className="inline-flex p-1 border border-line rounded-xl bg-bg gap-1"
-          >
+          <div role="group" aria-label="Period" className="inline-flex border border-ink bg-panel">
             <button
               type="button"
               aria-pressed={period === 'w'}
               onClick={() => setPeriod('w')}
-              className={`min-h-10 px-4 border-0 rounded-lg font-semibold text-sm cursor-pointer transition-colors ${
-                period === 'w'
+              className={`min-h-10 px-4 border-0 font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer transition-colors ${period === 'w'
                   ? 'bg-cyan text-cyan-ink'
-                  : 'bg-transparent text-muted hover:text-ink'
-              }`}
+                  : 'bg-panel text-ink hover:bg-panel2'
+                }`}
             >
               This week
             </button>
@@ -200,11 +197,10 @@ export function LeaderboardView() {
               type="button"
               aria-pressed={period === 'a'}
               onClick={() => setPeriod('a')}
-              className={`min-h-10 px-4 border-0 rounded-lg font-semibold text-sm cursor-pointer transition-colors ${
-                period === 'a'
+              className={`min-h-10 px-4 border-0 border-l border-ink font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer transition-colors ${period === 'a'
                   ? 'bg-cyan text-cyan-ink'
-                  : 'bg-transparent text-muted hover:text-ink'
-              }`}
+                  : 'bg-panel text-ink hover:bg-panel2'
+                }`}
             >
               All time
             </button>
@@ -213,21 +209,21 @@ export function LeaderboardView() {
       </div>
 
       {isGuest && (
-        <p className="mb-4 px-4 py-3 rounded-xl border border-line bg-panel text-sm text-muted">
-          Guest mode shows only your local progress. Sign in with Google to appear on the live leaderboard.
+        <p className="m-0 px-6 py-3 border-b border-line bg-panel2 text-xs text-muted">
+          Guest mode shows only your local progress. Sign in with Google to appear on the live
+          leaderboard.
         </p>
       )}
 
-      <div className="grid grid-cols-[minmax(0,1fr)_290px] max-[1100px]:grid-cols-1 gap-5 items-start">
-        <div className="grid gap-5 min-w-0">
+      <div className="grid grid-cols-[minmax(0,1fr)_320px] max-[1050px]:grid-cols-1 items-stretch">
+        <div className="p-6 max-[760px]:p-4 border-r border-line max-[1050px]:border-r-0 max-[1050px]:border-b grid gap-5 content-start">
           <div
-            className={`grid gap-3.5 max-[760px]:gap-2 items-end mb-0 ${
-              podiumSlots.length >= 3
-                ? 'grid-cols-[1fr_1.1fr_1fr]'
+            className={`grid items-end border border-line ${podiumSlots.length >= 3
+                ? 'grid-cols-[1fr_1.12fr_1fr] max-[600px]:grid-cols-1'
                 : podiumSlots.length === 2
-                  ? 'grid-cols-2'
-                  : 'grid-cols-1 max-w-[320px]'
-            }`}
+                  ? 'grid-cols-2 max-[600px]:grid-cols-1'
+                  : 'grid-cols-1 max-w-[340px]'
+              }`}
           >
             {podiumSlots.map(({ row, variant }) => {
               const isFirst = variant === 'p1';
@@ -235,51 +231,46 @@ export function LeaderboardView() {
               return (
                 <article
                   key={row.userId}
-                  className={`grid justify-items-center gap-1.5 rounded-2xl text-center transition-transform duration-200 hover:-translate-y-0.5 ${
-                    isFirst
-                      ? 'py-8 px-3 max-[760px]:py-5 max-[760px]:px-1.5 bg-amber text-amber-ink border border-amber'
+                  className={`grid justify-items-center gap-1.5 text-center border-r last:border-r-0 max-[600px]:border-r-0 max-[600px]:border-b max-[600px]:last:border-b-0 border-line ${isFirst
+                      ? 'py-8 px-3 bg-cyan text-cyan-ink'
                       : isThird
-                        ? 'py-5 px-3 max-[760px]:py-3.5 max-[760px]:px-1.5 bg-panel border-2 border-cyan'
-                        : 'py-5 px-3 max-[760px]:py-3.5 max-[760px]:px-1.5 bg-panel border border-line'
-                  }`}
+                        ? 'py-5 px-3 bg-[var(--dark-card)] text-white'
+                        : 'py-5 px-3 bg-panel text-ink'
+                    }`}
                 >
-                  <span className="num text-[1.75rem] max-[760px]:text-[1.375rem] font-bold leading-none">
-                    {row.rank}
-                  </span>
+                  <span className="num font-disp text-[26px] leading-none">#{row.rank}</span>
                   {row.avatarUrl ? (
                     <img
                       src={row.avatarUrl}
                       alt=""
                       referrerPolicy="no-referrer"
-                      className="w-12 h-12 rounded-xl object-cover border border-black/15"
+                      className="w-11 h-11 object-cover border border-black/20"
                     />
                   ) : (
                     <span
-                      className={`grid place-items-center w-12 h-12 text-[1.125rem] font-bold rounded-xl ${
-                        isFirst
-                          ? 'bg-amber-ink text-amber'
+                      className={`grid place-items-center w-11 h-11 text-base font-bold ${isFirst
+                          ? 'bg-[var(--dark-card)] text-white'
                           : isThird
                             ? 'bg-cyan text-cyan-ink'
-                            : 'bg-panel2 text-ink'
-                      }`}
+                            : 'bg-panel2 text-ink border border-line'
+                        }`}
                     >
                       {row.initial}
                     </span>
                   )}
-                  <b className="text-base">{row.isYou ? `${row.name} (you)` : row.name}</b>
+                  <b className="font-head text-sm">{row.isYou ? `${row.name} (you)` : row.name}</b>
                   {row.duelWinStreak ? (
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[0.6875rem] font-bold ${
-                        isFirst ? 'bg-amber-ink/15 text-amber-ink' : 'bg-amber/18 text-amber'
-                      }`}
+                      className={`px-2 py-0.5 text-[10px] font-bold uppercase ${isFirst ? 'bg-[var(--dark-card)]/25 text-white' : 'bg-you text-cyan'
+                        }`}
                     >
                       🔥 {row.duelWinStreak}W Streak
                     </span>
                   ) : null}
-                  <span className="num">{formatXp(row.xp)} XP</span>
-                  <small className="opacity-85 text-[0.8125rem]">
+                  <span className="num font-disp text-base">{formatXp(row.xp)} XP</span>
+                  <small className="opacity-80 text-[10px] uppercase tracking-[0.04em]">
                     {formatStreak(row.streakDays)}
-                    {(row.duelWins || row.duelLosses)
+                    {row.duelWins || row.duelLosses
                       ? ` · ${row.duelWins ?? 0}W-${row.duelLosses ?? 0}L`
                       : ''}
                   </small>
@@ -289,103 +280,99 @@ export function LeaderboardView() {
           </div>
 
           {sorted.length > 3 && (
-            <ol className="bg-panel border border-line rounded-2xl p-2.5 grid gap-0.5">
+            <ol className="border border-line bg-panel">
               {sorted.slice(3).map((row) => (
                 <li
                   key={row.userId}
-                  className={`grid grid-cols-[28px_38px_minmax(0,1fr)_auto_auto] max-[760px]:grid-cols-[24px_36px_minmax(0,1fr)_auto] gap-3.5 items-center px-3 py-2.5 rounded-xl transition-colors hover:bg-panel2 ${
-                    row.isYou ? 'bg-you' : ''
-                  }`}
+                  className={`grid grid-cols-[28px_36px_minmax(0,1fr)_auto_auto] max-[760px]:grid-cols-[24px_34px_minmax(0,1fr)_auto] gap-3 items-center px-3.5 py-2.5 border-b border-line last:border-b-0 ${row.isYou ? 'bg-you' : 'hover:bg-panel2'
+                    }`}
                 >
-                  <span className="num text-muted text-sm text-center">{row.rank}</span>
+                  <span className="num text-muted text-xs text-center font-bold">{row.rank}</span>
                   {row.avatarUrl ? (
                     <img
                       src={row.avatarUrl}
                       alt=""
                       referrerPolicy="no-referrer"
-                      className="w-[38px] h-[38px] max-[760px]:w-9 max-[760px]:h-9 rounded-[10px] object-cover"
+                      className="w-9 h-9 object-cover border border-line"
                     />
                   ) : (
-                    <span className="grid place-items-center w-[38px] h-[38px] max-[760px]:w-9 max-[760px]:h-9 rounded-[10px] bg-panel2 text-ink font-bold text-sm">
+                    <span className="grid place-items-center w-9 h-9 border border-line bg-panel2 text-ink font-bold text-xs">
                       {row.initial}
                     </span>
                   )}
                   <div className="min-w-0 flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold overflow-hidden text-ellipsis whitespace-nowrap">
+                    <span className="font-head font-bold text-sm truncate">
                       {row.isYou ? `${row.name} (you)` : row.name}
                     </span>
                     {row.duelWinStreak ? (
-                      <span className="px-2 py-0.5 rounded-full bg-amber/18 text-amber text-[0.6875rem] font-bold whitespace-nowrap">
+                      <span className="px-2 py-0.5 bg-you text-cyan text-[10px] font-bold uppercase whitespace-nowrap">
                         🔥 {row.duelWinStreak}W
                       </span>
                     ) : null}
-                    {(row.duelWins || row.duelLosses) ? (
-                      <span className="text-xs text-muted whitespace-nowrap">
+                    {row.duelWins || row.duelLosses ? (
+                      <span className="text-[11px] text-muted whitespace-nowrap">
                         {row.duelWins ?? 0}W–{row.duelLosses ?? 0}L
                       </span>
                     ) : null}
                   </div>
-                  <span className="text-muted text-sm max-[760px]:hidden">
+                  <span className="text-muted text-[11px] max-[760px]:hidden">
                     {formatStreak(row.streakDays)}
                   </span>
-                  <b className="num">{formatXp(row.xp)} XP</b>
+                  <b className="num font-disp text-sm">{formatXp(row.xp)} XP</b>
                 </li>
               ))}
             </ol>
           )}
         </div>
 
-        <div className="grid gap-3.5 min-w-0">
-          <aside
-            className="border rounded-2xl p-4"
-            style={{
-              background: 'color-mix(in srgb, var(--cyan) 12%, var(--panel))',
-              borderColor: 'color-mix(in srgb, var(--cyan) 35%, var(--line))',
-            }}
-          >
-            <h2 className="m-0 mb-1 text-base font-bold">Your standing</h2>
-            <div className="num text-[2rem] font-bold leading-none mt-1">
+        <div className="p-6 max-[760px]:p-4 bg-panel2 grid gap-4 content-start">
+          <aside className="relative border border-[var(--dark-card)] bg-[var(--dark-card)] text-white p-5">
+            <CornerBrackets light />
+            <h2 className="m-0 mb-1 text-[10px] font-bold uppercase tracking-[0.09em] text-cyan">
+              Your standing
+            </h2>
+            <div className="num font-disp text-[34px] leading-none mt-1">
               #{meIndex + 1}
-              <small className="font-sans text-sm font-medium text-muted ml-1.5">
+              <small className="font-mono text-xs font-medium text-white/65 ml-2">
                 of {sorted.length} {sorted.length === 1 ? 'learner' : 'learners'}
               </small>
             </div>
-            <p className="my-2 mb-2.5 text-muted text-[0.8125rem] leading-[1.45]">{gapCopy}</p>
-            <div className="grid grid-cols-10 gap-1 my-2.5" aria-hidden="true">
+            <p className="my-2.5 text-white/75 text-[11.5px] leading-[1.45]">{gapCopy}</p>
+            <div className="grid grid-cols-10 gap-1 my-3" aria-hidden="true">
               {Array.from({ length: 10 }, (_, idx) => (
                 <i
                   key={idx}
-                  className={`h-1.5 rounded-[3px] ${idx < 10 - meIndex ? 'bg-amber' : 'bg-panel2'}`}
+                  className={`h-2 ${idx < 10 - meIndex ? 'bg-cyan' : 'bg-white/20'}`}
                 />
               ))}
             </div>
             <button
               type="button"
               onClick={() => openSetup(defaultLab)}
-              className="w-full inline-flex items-center justify-center min-h-[38px] px-4 border border-cyan rounded-[10px] bg-cyan text-cyan-ink font-semibold text-sm cursor-pointer transition-all hover:brightness-110"
+              className="sb-cut-sm w-full inline-flex items-center justify-center min-h-10 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00]"
             >
               Earn XP: resume lesson
             </button>
           </aside>
 
-          <aside className="bg-panel border border-line rounded-2xl p-4">
-            <h2 className="m-0 mb-1 text-base font-bold">Classrooms & Friends</h2>
+          <aside className="bg-panel border border-line p-4">
+            <h2 className="m-0 mb-1 font-head text-base font-bold">Classrooms &amp; Friends</h2>
             {isGuest ? (
-              <p className="m-0 text-muted text-[0.8125rem] leading-[1.45]">
+              <p className="m-0 text-muted text-[11.5px] leading-[1.45]">
                 Sign in with Google to create or join a classroom leaderboard with friends.
               </p>
             ) : (
-              <div className="grid gap-3 mt-2">
+              <div className="grid gap-3 mt-2.5">
                 {classrooms.length > 0 && (
                   <ul className="grid gap-2 m-0 p-0 list-none">
                     {classrooms.map((room) => (
                       <li
                         key={room.id}
-                        className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-line bg-bg"
+                        className="flex items-center justify-between gap-2 p-2.5 border border-line bg-panel2"
                       >
                         <div className="min-w-0">
-                          <b className="block text-sm truncate">{room.name}</b>
-                          <small className="block text-xs text-muted">
+                          <b className="block font-head text-xs truncate">{room.name}</b>
+                          <small className="block text-[10.5px] text-muted">
                             {room.memberCount} {room.memberCount === 1 ? 'member' : 'members'} ·{' '}
                             <code className="font-mono font-bold text-ink">{room.joinCode}</code>
                           </small>
@@ -394,14 +381,14 @@ export function LeaderboardView() {
                           <button
                             type="button"
                             onClick={() => handleCopyCode(room.joinCode)}
-                            className="min-h-8 px-2.5 rounded-lg border border-line bg-panel2 text-ink text-xs font-semibold cursor-pointer hover:border-muted"
+                            className="min-h-8 px-2 border border-line bg-panel text-ink text-[10px] font-bold uppercase cursor-pointer hover:border-ink"
                           >
                             Copy
                           </button>
                           <button
                             type="button"
                             onClick={() => void leaveClassroom(room.id)}
-                            className="min-h-8 px-2.5 rounded-lg border border-line bg-transparent text-muted text-xs font-semibold cursor-pointer hover:text-ink"
+                            className="min-h-8 px-2 border border-line bg-transparent text-muted text-[10px] font-bold uppercase cursor-pointer hover:text-ink"
                           >
                             Leave
                           </button>
@@ -412,7 +399,7 @@ export function LeaderboardView() {
                 )}
 
                 <form onSubmit={handleJoinSubmit} className="grid gap-1.5">
-                  <label htmlFor="classroom-join" className="text-xs font-bold text-muted">
+                  <label htmlFor="classroom-join" className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted">
                     Join by code
                   </label>
                   <div className="flex gap-1.5">
@@ -422,12 +409,12 @@ export function LeaderboardView() {
                       onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
                       placeholder="ABC123"
                       maxLength={8}
-                      className="flex-1 min-w-0 min-h-9 px-2.5 border border-line rounded-lg bg-bg text-ink text-sm font-mono uppercase focus-visible:outline-none focus-visible:border-cyan"
+                      className="flex-1 min-w-0 min-h-9 px-2.5 border border-line bg-bg text-ink text-xs font-mono uppercase focus-visible:outline-none focus-visible:border-ink"
                     />
                     <button
                       type="submit"
                       disabled={busyRoomAction || !joinCodeInput.trim()}
-                      className="min-h-9 px-3 rounded-lg border border-cyan bg-cyan text-cyan-ink text-xs font-bold cursor-pointer disabled:opacity-50"
+                      className="sb-cut-sm min-h-9 px-3 border border-cyan bg-cyan text-cyan-ink text-[10px] font-bold uppercase cursor-pointer disabled:opacity-50"
                     >
                       Join
                     </button>
@@ -435,7 +422,7 @@ export function LeaderboardView() {
                 </form>
 
                 <form onSubmit={handleCreateSubmit} className="grid gap-1.5">
-                  <label htmlFor="classroom-create" className="text-xs font-bold text-muted">
+                  <label htmlFor="classroom-create" className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted">
                     Create classroom
                   </label>
                   <div className="flex gap-1.5">
@@ -445,12 +432,12 @@ export function LeaderboardView() {
                       onChange={(e) => setNewRoomName(e.target.value)}
                       placeholder="e.g. CS 101"
                       maxLength={60}
-                      className="flex-1 min-w-0 min-h-9 px-2.5 border border-line rounded-lg bg-bg text-ink text-sm focus-visible:outline-none focus-visible:border-cyan"
+                      className="flex-1 min-w-0 min-h-9 px-2.5 border border-line bg-bg text-ink text-xs focus-visible:outline-none focus-visible:border-ink"
                     />
                     <button
                       type="submit"
                       disabled={busyRoomAction || !newRoomName.trim()}
-                      className="min-h-9 px-3 rounded-lg border border-line bg-panel2 text-ink text-xs font-bold cursor-pointer hover:border-muted disabled:opacity-50"
+                      className="min-h-9 px-3 border border-line bg-panel2 text-ink text-[10px] font-bold uppercase cursor-pointer hover:border-ink disabled:opacity-50"
                     >
                       Create
                     </button>
@@ -460,13 +447,13 @@ export function LeaderboardView() {
             )}
           </aside>
 
-          <aside className="bg-panel border border-line rounded-2xl p-4">
-            <h2 className="m-0 mb-1 text-base font-bold">How XP is earned</h2>
-            <p className="mt-1 mb-2 text-muted text-[0.8125rem] leading-[1.45]">
+          <aside className="bg-panel border border-line p-4">
+            <h2 className="m-0 mb-1 font-head text-base font-bold">How XP is earned</h2>
+            <p className="mt-1 mb-2 text-muted text-[11.5px] leading-[1.45]">
               Lesson quizzes award up to 150 XP based on your score. Completing the PC and Network
               labs adds bonus XP too.
             </p>
-            <p className="m-0 text-muted text-[0.8125rem] leading-[1.45]">
+            <p className="m-0 text-muted text-[11.5px] leading-[1.45]">
               The weekly board resets every Monday. All-time XP never resets.
             </p>
           </aside>

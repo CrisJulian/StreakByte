@@ -15,6 +15,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
+import { CornerBrackets } from '../../components/ByteMascotSvg';
 import { Icon } from '../../components/Icon';
 import {
   CABLE_COLORS,
@@ -72,20 +73,13 @@ function DraggableDeviceButton({
       {...listeners}
       aria-pressed={selected}
       onClick={onSelect}
-      className={`flex items-center gap-2.5 min-h-12 min-w-[116px] px-3 border rounded-xl font-semibold text-sm text-left cursor-pointer transition-colors touch-none ${
-        disabled ? 'opacity-45 cursor-not-allowed pointer-events-none' : ''
-      } ${isDragging ? 'opacity-40' : ''} ${
-        selected
-          ? 'border-cyan'
-          : 'border-line bg-panel hover:border-muted hover:bg-panel2'
-      }`}
-      style={
-        selected
-          ? { background: 'color-mix(in srgb, var(--cyan) 14%, var(--panel))' }
-          : undefined
-      }
+      className={`flex items-center gap-2 min-h-11 min-w-[116px] px-3 border font-bold text-xs text-left cursor-pointer transition-colors touch-none ${disabled ? 'opacity-45 cursor-not-allowed pointer-events-none' : ''
+        } ${isDragging ? 'opacity-40' : ''} ${selected
+          ? 'border-cyan bg-you text-ink'
+          : 'border-line bg-panel hover:border-ink hover:bg-panel2'
+        }`}
     >
-      <Icon name={icon} className="w-5 h-5 text-muted" />
+      <Icon name={icon} className="w-4 h-4 text-muted" />
       <span>{label}</span>
     </button>
   );
@@ -207,26 +201,21 @@ export function NetworkBuildLab() {
       onDragEnd={handleDragEnd}
       onDragCancel={() => setDraggingDev(null)}
     >
-      <section
-        aria-label="Build a network"
-        className="relative bg-panel border border-line rounded-2xl p-5"
-      >
+      <section aria-label="Build a network" className="relative bg-panel border border-line p-5">
         <div className="flex items-center justify-between gap-3 flex-wrap mb-3.5">
-          <p className="m-0 text-ink text-[0.9375rem]">
+          <p className="m-0 text-ink text-xs">
             Drag a device onto a dashed spot, or tap it and then tap the spot. Click a placed
             device to set it up.
           </p>
           <span
-            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-bold border ${
-              pcSaved && laptopSaved
-                ? 'border-green text-green bg-bg'
-                : 'border-line text-muted bg-bg'
-            }`}
+            className={`inline-flex items-center gap-2 px-3 py-1 text-[10.5px] font-mono font-bold uppercase tracking-[0.05em] border ${pcSaved && laptopSaved
+                ? 'border-green text-green bg-panel'
+                : 'border-line text-muted bg-panel2'
+              }`}
           >
             <i
-              className={`w-2 h-2 rounded-full ${
-                pcSaved && laptopSaved ? 'bg-green' : pcSaved || laptopSaved ? 'bg-amber' : 'bg-muted'
-              }`}
+              className={`w-2 h-2 ${pcSaved && laptopSaved ? 'bg-green' : pcSaved || laptopSaved ? 'bg-cyan' : 'bg-muted'
+                }`}
               aria-hidden="true"
             />
             {pcSaved && laptopSaved
@@ -241,9 +230,9 @@ export function NetworkBuildLab() {
           <button
             type="button"
             disabled
-            className="flex items-center gap-2.5 min-h-12 min-w-[116px] px-3 border border-line rounded-xl bg-panel font-semibold text-sm text-left opacity-45 cursor-not-allowed pointer-events-none"
+            className="flex items-center gap-2 min-h-11 min-w-[116px] px-3 border border-line bg-panel font-bold text-xs text-left opacity-45 cursor-not-allowed pointer-events-none"
           >
-            <Icon name="net" className="w-5 h-5 text-muted" />
+            <Icon name="net" className="w-4 h-4 text-muted" />
             Router
           </button>
 
@@ -260,7 +249,8 @@ export function NetworkBuildLab() {
           ))}
         </div>
 
-        <div className="relative border border-line rounded-[14px] bg-bg overflow-hidden">
+        <div className="relative sb-blueprint-dots border border-line overflow-hidden">
+          <CornerBrackets />
           <svg
             className="net"
             viewBox="0 0 680 410"
@@ -271,12 +261,12 @@ export function NetworkBuildLab() {
               <path d="M0 40H680M0 80H680M0 120H680M0 160H680M0 200H680M0 240H680M0 280H680M0 320H680M0 360H680M40 0V410M80 0V410M120 0V410M160 0V410M200 0V410M240 0V410M280 0V410M320 0V410M360 0V410M400 0V410M440 0V410M480 0V410M520 0V410M560 0V410M600 0V410M640 0V410" />
             </g>
 
-            <path d="M310 92V144" stroke="#3b82f6" strokeWidth="4" fill="none" />
+            <path d="M310 92V144" stroke="#ff5500" strokeWidth="4" fill="none" />
             {pcSaved && laptopSaved && (
               <path
                 className="sb-packet-flow"
                 d="M310 144V92"
-                stroke="#34d399"
+                stroke="#129954"
                 strokeWidth="3"
                 strokeLinecap="round"
                 fill="none"
@@ -290,7 +280,7 @@ export function NetworkBuildLab() {
                 stroke="var(--text)"
                 strokeWidth="2.2"
               />
-              <text x="310" y="62" style={{ fontSize: '16px' }}>
+              <text x="310" y="62" style={{ fontSize: '15px' }}>
                 Internet
               </text>
             </g>
@@ -301,24 +291,23 @@ export function NetworkBuildLab() {
                 y="130"
                 width="194"
                 height="64"
-                rx="10"
                 fill="var(--panel)"
-                stroke="var(--amber)"
+                stroke="var(--cyan)"
                 strokeWidth="2.2"
               />
-              <text x="125" y="154" style={{ fontSize: '13px', fill: 'var(--muted)' }}>
+              <text x="125" y="154" style={{ fontSize: '12px', fill: 'var(--muted)' }}>
                 Router IP address
               </text>
               <text
                 x="125"
                 y="180"
-                style={{ fontSize: '22px', fontFamily: 'var(--mono)', fontWeight: 700 }}
+                style={{ fontSize: '21px', fontFamily: 'var(--mono)', fontWeight: 700 }}
               >
                 192.168.1.1
               </text>
               <path
                 d="M222 162H256"
-                stroke="var(--amber)"
+                stroke="var(--cyan)"
                 strokeWidth="2.2"
                 strokeDasharray="4 4"
               />
@@ -330,17 +319,16 @@ export function NetworkBuildLab() {
                 y="144"
                 width="108"
                 height="38"
-                rx="8"
-                fill="var(--panel2)"
+                fill="#141414"
                 stroke="var(--text)"
                 strokeWidth="2"
               />
-              <circle cx="272" cy="163" r="4" fill="#34d399" />
-              <circle cx="284" cy="163" r="4" fill="#22d3ee" />
-              <g fill="var(--muted)">
-                <rect x="298" y="156" width="14" height="14" rx="2" />
-                <rect x="318" y="156" width="14" height="14" rx="2" />
-                <rect x="338" y="156" width="14" height="14" rx="2" />
+              <circle cx="272" cy="163" r="4" fill="#129954" />
+              <circle cx="284" cy="163" r="4" fill="#ff5500" />
+              <g fill="#666666">
+                <rect x="298" y="156" width="14" height="14" />
+                <rect x="318" y="156" width="14" height="14" />
+                <rect x="338" y="156" width="14" height="14" />
               </g>
               <path d="M270 144l-8-22M350 144l8-22" stroke="var(--text)" strokeWidth="3" />
               <text x="310" y="202">
@@ -358,7 +346,7 @@ export function NetworkBuildLab() {
               <path
                 className="sb-packet-flow"
                 d="M164 268V226H292V182"
-                stroke="#ffffff"
+                stroke="#ff5500"
                 strokeWidth="3"
                 strokeLinecap="round"
                 fill="none"
@@ -369,7 +357,7 @@ export function NetworkBuildLab() {
               <path
                 className="sb-packet-flow"
                 d="M310 268V182"
-                stroke="#ffffff"
+                stroke="#ff5500"
                 strokeWidth="3"
                 strokeLinecap="round"
                 fill="none"
@@ -382,7 +370,7 @@ export function NetworkBuildLab() {
               visible={!net.placed.hub}
               onActivate={() => placeNetworkDevice('hub')}
             >
-              <rect x="28" y="210" width="148" height="44" rx="8" />
+              <rect x="28" y="210" width="148" height="44" />
               <text x="102" y="237">
                 Hub spot (optional)
               </text>
@@ -394,7 +382,7 @@ export function NetworkBuildLab() {
               visible={!net.placed.pc}
               onActivate={() => placeNetworkDevice('pc')}
             >
-              <rect x="104" y="264" width="120" height="102" rx="10" />
+              <rect x="104" y="264" width="120" height="102" />
               <text x="164" y="320">
                 PC spot
               </text>
@@ -406,7 +394,7 @@ export function NetworkBuildLab() {
               visible={!net.placed.laptop}
               onActivate={() => placeNetworkDevice('laptop')}
             >
-              <rect x="248" y="264" width="124" height="102" rx="10" />
+              <rect x="248" y="264" width="124" height="102" />
               <text x="310" y="320">
                 Laptop spot
               </text>
@@ -426,14 +414,13 @@ export function NetworkBuildLab() {
                   }
                 }}
               >
-                <rect className="ring" x="24" y="206" width="156" height="52" rx="10" />
+                <rect className="ring" x="24" y="206" width="156" height="52" />
                 <rect
                   x="36"
                   y="214"
                   width="132"
                   height="36"
-                  rx="6"
-                  fill="var(--panel2)"
+                  fill="var(--panel)"
                   stroke="var(--text)"
                   strokeWidth="2"
                 />
@@ -457,14 +444,13 @@ export function NetworkBuildLab() {
                   }
                 }}
               >
-                <rect className="ring" x="100" y="258" width="128" height="114" rx="10" />
+                <rect className="ring" x="100" y="258" width="128" height="114" />
                 <rect
                   x="112"
                   y="272"
                   width="66"
                   height="46"
-                  rx="4"
-                  fill="#60a5fa"
+                  fill="#ff5500"
                   stroke="var(--text)"
                   strokeWidth="2.2"
                 />
@@ -474,8 +460,7 @@ export function NetworkBuildLab() {
                   y="272"
                   width="22"
                   height="58"
-                  rx="3"
-                  fill="var(--panel2)"
+                  fill="var(--panel)"
                   stroke="var(--text)"
                   strokeWidth="2"
                 />
@@ -499,20 +484,19 @@ export function NetworkBuildLab() {
                   }
                 }}
               >
-                <rect className="ring" x="244" y="258" width="132" height="114" rx="10" />
+                <rect className="ring" x="244" y="258" width="132" height="114" />
                 <rect
                   x="276"
                   y="274"
                   width="68"
                   height="44"
-                  rx="4"
-                  fill="#60a5fa"
+                  fill="#ff5500"
                   stroke="var(--text)"
                   strokeWidth="2.2"
                 />
                 <path
                   d="M266 322h88l-6 8h-76z"
-                  fill="var(--panel2)"
+                  fill="var(--panel)"
                   stroke="var(--text)"
                   strokeWidth="2.2"
                 />
@@ -529,23 +513,23 @@ export function NetworkBuildLab() {
             <form
               noValidate
               onSubmit={handleSave}
-              className="sb-pop absolute top-3.5 right-3.5 w-[min(310px,calc(100%-28px))] max-[760px]:static max-[760px]:w-auto max-[760px]:mt-3 p-[18px] border border-cyan rounded-[14px] bg-panel"
+              className="sb-pop absolute top-3.5 right-3.5 w-[min(320px,calc(100%-28px))] max-[760px]:static max-[760px]:w-auto max-[760px]:mt-3 p-[18px] border border-ink bg-panel shadow-[6px_6px_0_rgba(20,20,20,0.16)]"
             >
               <div className="flex justify-between items-center mb-1.5">
-                <h2 className="m-0 text-[1.125rem] font-bold">
+                <h2 className="m-0 font-head text-[17px] font-bold">
                   Set up: {NET_DEVICE_NAMES[net.openDevice]}
                 </h2>
                 <button
                   type="button"
                   onClick={closeNetworkConfig}
                   aria-label="Close setup"
-                  className="grid place-items-center w-10 h-10 flex-none border border-transparent rounded-full bg-panel2 text-ink cursor-pointer transition-colors hover:border-muted"
+                  className="grid place-items-center w-8 h-8 flex-none border border-line bg-panel2 text-ink cursor-pointer transition-colors hover:border-ink"
                 >
-                  <Icon name="x" />
+                  <Icon name="x" className="w-4 h-4" />
                 </button>
               </div>
 
-              <label htmlFor="f-ip" className="block mt-2.5 mb-1 font-semibold text-sm">
+              <label htmlFor="f-ip" className="block mt-2.5 mb-1 font-bold text-[10.5px] uppercase tracking-[0.06em] text-muted">
                 IP address
               </label>
               <input
@@ -557,17 +541,16 @@ export function NetworkBuildLab() {
                 inputMode="decimal"
                 autoComplete="off"
                 aria-invalid={Boolean(net.errors.ip)}
-                className={`w-full min-h-11 px-3 border rounded-[10px] bg-bg text-ink font-mono font-medium text-[0.9375rem] placeholder:text-muted focus-visible:outline-none focus-visible:border-cyan ${
-                  net.errors.ip ? 'border-danger' : 'border-line'
-                }`}
+                className={`w-full min-h-10 px-3 border bg-bg text-ink font-mono font-medium text-xs placeholder:text-muted focus-visible:outline-none focus-visible:border-ink ${net.errors.ip ? 'border-danger' : 'border-line'
+                  }`}
               />
               {net.errors.ip && (
-                <span className="block mt-1 text-danger text-[0.8125rem] font-semibold">
+                <span className="block mt-1 text-danger text-[11px] font-semibold">
                   {net.errors.ip}
                 </span>
               )}
 
-              <label htmlFor="f-mask" className="block mt-2.5 mb-1 font-semibold text-sm">
+              <label htmlFor="f-mask" className="block mt-2.5 mb-1 font-bold text-[10.5px] uppercase tracking-[0.06em] text-muted">
                 Subnet mask
               </label>
               <input
@@ -578,17 +561,16 @@ export function NetworkBuildLab() {
                 inputMode="decimal"
                 autoComplete="off"
                 aria-invalid={Boolean(net.errors.mask)}
-                className={`w-full min-h-11 px-3 border rounded-[10px] bg-bg text-ink font-mono font-medium text-[0.9375rem] placeholder:text-muted focus-visible:outline-none focus-visible:border-cyan ${
-                  net.errors.mask ? 'border-danger' : 'border-line'
-                }`}
+                className={`w-full min-h-10 px-3 border bg-bg text-ink font-mono font-medium text-xs placeholder:text-muted focus-visible:outline-none focus-visible:border-ink ${net.errors.mask ? 'border-danger' : 'border-line'
+                  }`}
               />
               {net.errors.mask && (
-                <span className="block mt-1 text-danger text-[0.8125rem] font-semibold">
+                <span className="block mt-1 text-danger text-[11px] font-semibold">
                   {net.errors.mask}
                 </span>
               )}
 
-              <label htmlFor="f-gw" className="block mt-2.5 mb-1 font-semibold text-sm">
+              <label htmlFor="f-gw" className="block mt-2.5 mb-1 font-bold text-[10.5px] uppercase tracking-[0.06em] text-muted">
                 Gateway
               </label>
               <input
@@ -599,20 +581,19 @@ export function NetworkBuildLab() {
                 inputMode="decimal"
                 autoComplete="off"
                 aria-invalid={Boolean(net.errors.gw)}
-                className={`w-full min-h-11 px-3 border rounded-[10px] bg-bg text-ink font-mono font-medium text-[0.9375rem] placeholder:text-muted focus-visible:outline-none focus-visible:border-cyan ${
-                  net.errors.gw ? 'border-danger' : 'border-line'
-                }`}
+                className={`w-full min-h-10 px-3 border bg-bg text-ink font-mono font-medium text-xs placeholder:text-muted focus-visible:outline-none focus-visible:border-ink ${net.errors.gw ? 'border-danger' : 'border-line'
+                  }`}
               />
               {net.errors.gw && (
-                <span className="block mt-1 text-danger text-[0.8125rem] font-semibold">
+                <span className="block mt-1 text-danger text-[11px] font-semibold">
                   {net.errors.gw}
                 </span>
               )}
 
-              <label id="cab-l" className="block mt-2.5 mb-1 font-semibold text-sm">
+              <label id="cab-l" className="block mt-2.5 mb-1 font-bold text-[10.5px] uppercase tracking-[0.06em] text-muted">
                 Cable to the router
               </label>
-              <div role="group" aria-labelledby="cab-l" className="flex gap-2 flex-wrap">
+              <div role="group" aria-labelledby="cab-l" className="flex gap-1.5 flex-wrap">
                 {CABLE_OPTIONS.map((opt) => {
                   const active = cab === opt.id;
                   return (
@@ -621,11 +602,10 @@ export function NetworkBuildLab() {
                       type="button"
                       aria-pressed={active}
                       onClick={() => setCab(opt.id)}
-                      className={`min-h-11 px-3 border rounded-[10px] font-semibold text-sm cursor-pointer transition-colors ${
-                        active
+                      className={`min-h-9 px-2.5 border font-bold text-[10.5px] cursor-pointer transition-colors ${active
                           ? 'bg-cyan text-cyan-ink border-cyan'
-                          : 'bg-transparent text-ink border-line hover:border-muted'
-                      }`}
+                          : 'bg-panel text-ink border-line hover:border-ink'
+                        }`}
                     >
                       {opt.label}
                     </button>
@@ -633,18 +613,18 @@ export function NetworkBuildLab() {
                 })}
               </div>
               {net.errors.cab && (
-                <span className="block mt-1 text-danger text-[0.8125rem] font-semibold">
+                <span className="block mt-1 text-danger text-[11px] font-semibold">
                   {net.errors.cab}
                 </span>
               )}
 
-              <p className="mt-2 mb-0 text-muted text-sm">
+              <p className="mt-2 mb-0 text-muted text-[11px]">
                 Hint: use a free number from 2 to 254.
               </p>
 
               <button
                 type="submit"
-                className="w-full mt-3 inline-flex items-center justify-center min-h-11 px-[18px] border border-cyan rounded-[10px] bg-cyan text-cyan-ink font-semibold text-[0.9375rem] cursor-pointer transition-all hover:brightness-110"
+                className="sb-cut w-full mt-3 inline-flex items-center justify-center min-h-10 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00] transition-colors"
               >
                 Save
               </button>
@@ -655,14 +635,14 @@ export function NetworkBuildLab() {
         <div className="mt-4 grid gap-2.5">
           <p
             role="status"
-            className="min-h-11 flex items-center m-0 px-3.5 py-2.5 rounded-[10px] bg-panel2 border border-line text-sm text-ink"
+            className="min-h-11 flex items-center m-0 px-3.5 py-2.5 bg-[var(--dark-card)] text-white border border-[var(--dark-line)] font-mono text-xs"
           >
             {net.message}
           </p>
           <button
             type="button"
             onClick={completeNetworkBuild}
-            className="w-full inline-flex items-center justify-center min-h-11 px-[18px] border border-cyan rounded-[10px] bg-cyan text-cyan-ink font-semibold text-[0.9375rem] cursor-pointer transition-all hover:brightness-110"
+            className="sb-cut w-full inline-flex items-center justify-center min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00] transition-colors"
           >
             Test connection
           </button>
@@ -671,8 +651,8 @@ export function NetworkBuildLab() {
 
       <DragOverlay dropAnimation={null}>
         {draggingMeta ? (
-          <div className="flex items-center gap-2.5 min-h-12 px-3.5 border-2 border-cyan rounded-xl bg-panel text-ink font-semibold text-sm shadow-xl">
-            <Icon name={draggingMeta.icon} className="w-5 h-5 text-cyan" />
+          <div className="flex items-center gap-2 min-h-11 px-3.5 border-2 border-cyan bg-panel text-ink font-bold text-xs shadow-xl">
+            <Icon name={draggingMeta.icon} className="w-4 h-4 text-cyan" />
             <span>{draggingMeta.label}</span>
           </div>
         ) : null}

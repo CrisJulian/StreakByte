@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { LESSON_XP_BY_KEY } from '../data/curriculum';
 import { formatXp } from '../data/leaderboard';
-import { canBuyRestore, canRestore, isWithinRestoreWindow, MAX_STREAK_RESTORES, STREAK_RESTORE_COST_XP } from '../domain/rules/streak';
+import {
+  canBuyRestore,
+  canRestore,
+  isWithinRestoreWindow,
+  MAX_STREAK_RESTORES,
+  STREAK_RESTORE_COST_XP,
+} from '../domain/rules/streak';
 import { calculateTotalXp, deriveWeekStrip, effectiveStreak, localDayString } from '../domain/rules/xp';
 import { useStreakByteStore } from '../store/useStreakByteStore';
 import type { IconName, ViewId } from '../types/streakbyte';
@@ -97,22 +103,24 @@ export function TopBar() {
   const nextThemeLabel = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
 
   return (
-    <header className="sticky top-0 z-20 grid grid-cols-[auto_1fr_auto] max-[760px]:grid-cols-[1fr_auto] items-center gap-3 h-[60px] px-6 max-[760px]:px-3.5 bg-panel border-b border-line">
+    <header className="sticky top-0 z-20 grid grid-cols-[auto_1fr_auto] max-[760px]:grid-cols-[1fr_auto] items-stretch min-h-[56px] bg-panel border-b border-line">
       <a
         href="#dashboard"
         onClick={(e) => {
           e.preventDefault();
           navigate('dashboard');
         }}
-        className="inline-flex items-center gap-2.5 font-bold text-[1.1875rem] tracking-[-0.01em] text-ink no-underline justify-self-start whitespace-nowrap"
+        className="inline-flex items-center gap-2.5 px-5 max-[760px]:px-3.5 text-ink no-underline justify-self-start whitespace-nowrap"
       >
-        <i className="buddy-logo block w-10 h-10" aria-hidden="true" />
-        <span className="max-[760px]:hidden">StreakByte</span>
+        <i className="buddy-logo block w-9 h-9 flex-none" aria-hidden="true" />
+        <span className="font-disp text-[14px] tracking-[0.02em] uppercase max-[760px]:hidden">
+          STREAK<span className="text-cyan">BYTE</span>
+        </span>
       </a>
 
       <nav
         aria-label="Main"
-        className="flex h-[60px] justify-center max-[760px]:fixed max-[760px]:left-0 max-[760px]:right-0 max-[760px]:bottom-0 max-[760px]:h-[calc(62px+env(safe-area-inset-bottom,0px))] max-[760px]:pb-[env(safe-area-inset-bottom,0px)] max-[760px]:bg-panel max-[760px]:border-t max-[760px]:border-line max-[760px]:z-30 max-[760px]:justify-stretch"
+        className="flex items-stretch justify-center gap-0.5 px-2 max-[760px]:fixed max-[760px]:left-0 max-[760px]:right-0 max-[760px]:bottom-0 max-[760px]:h-[calc(58px+env(safe-area-inset-bottom,0px))] max-[760px]:pb-[env(safe-area-inset-bottom,0px)] max-[760px]:bg-panel max-[760px]:border-t max-[760px]:border-line max-[760px]:z-30 max-[760px]:justify-stretch max-[760px]:px-0 max-[760px]:gap-0"
       >
         {NAV_TABS.map((tab) => {
           const isCurrent = activeNav === tab.id;
@@ -125,28 +133,26 @@ export function TopBar() {
                 e.preventDefault();
                 navigate(tab.id);
               }}
-              className={`relative flex items-center gap-2 px-4 max-[1100px]:px-3.5 max-[760px]:flex-1 max-[760px]:flex-col max-[760px]:justify-center max-[760px]:gap-0.5 max-[760px]:px-0 max-[760px]:text-[0.6875rem] font-semibold text-[0.9375rem] no-underline whitespace-nowrap transition-colors hover:text-ink hover:bg-panel2 ${
-                isCurrent ? 'text-ink' : 'text-muted'
-              }`}
-            >
-              <Icon name={tab.icon} className={`w-5 h-5 ${isCurrent ? 'text-cyan' : ''}`} />
-              <span className="max-[1100px]:sr-only max-[760px]:not-sr-only">{tab.label}</span>
-              <span
-                aria-hidden="true"
-                className={`absolute left-2.5 right-2.5 bottom-0 max-[760px]:top-0 max-[760px]:bottom-auto h-[3px] rounded-t-[3px] max-[760px]:rounded-t-none max-[760px]:rounded-b-[3px] bg-cyan transition-transform duration-200 ${
-                  isCurrent ? 'scale-x-100' : 'scale-x-0'
+              className={`relative flex items-center gap-2 px-3.5 max-[1100px]:px-3 max-[760px]:flex-1 max-[760px]:flex-col max-[760px]:justify-center max-[760px]:gap-0.5 max-[760px]:px-1 max-[760px]:border-r max-[760px]:border-line max-[760px]:last:border-r-0 text-[11px] max-[760px]:text-[9.5px] uppercase tracking-[0.07em] no-underline whitespace-nowrap transition-colors ${isCurrent
+                  ? 'bg-panel3 text-ink font-bold max-[760px]:shadow-[inset_0_3px_0_var(--cyan)]'
+                  : 'text-muted font-semibold hover:text-ink hover:bg-panel2'
                 }`}
+            >
+              <Icon
+                name={tab.icon}
+                className={`w-4 h-4 hidden max-[1100px]:block ${isCurrent ? 'text-cyan' : ''}`}
               />
+              <span className="max-[1100px]:sr-only max-[760px]:not-sr-only">{tab.label}</span>
             </a>
           );
         })}
       </nav>
 
-      <div className="flex justify-end items-center gap-2.5 flex-none">
+      <div className="flex justify-end items-center gap-2.5 px-4.5 max-[760px]:px-3 flex-none">
         {!isOnline ? (
           <span
             role="status"
-            className="inline-flex items-center gap-1.5 min-h-9 px-3 py-1 rounded-full border border-amber/45 bg-amber/12 text-amber text-xs font-bold whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 min-h-8 px-2.5 py-1 border border-amber bg-amber/10 text-amber text-[10.5px] font-bold uppercase tracking-[0.05em] whitespace-nowrap"
           >
             Offline{canShowSyncCount ? ` · ${pendingSyncCount} queued` : ''}
           </span>
@@ -155,7 +161,7 @@ export function TopBar() {
             type="button"
             disabled={isSyncing}
             onClick={() => void flushSyncQueue()}
-            className="inline-flex items-center gap-1.5 min-h-9 px-3 py-1 rounded-full border border-cyan/45 bg-cyan/12 text-cyan text-xs font-bold whitespace-nowrap cursor-pointer hover:brightness-110 disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 min-h-8 px-2.5 py-1 border border-cyan bg-cyan/10 text-cyan text-[10.5px] font-bold uppercase tracking-[0.05em] whitespace-nowrap cursor-pointer hover:bg-cyan hover:text-cyan-ink disabled:opacity-60"
           >
             {isSyncing ? 'Syncing…' : `Sync (${pendingSyncCount})`}
           </button>
@@ -171,15 +177,14 @@ export function TopBar() {
             aria-controls="streak-popover"
             aria-label={streakLabel}
             title={streakLabel}
-            className={`inline-flex items-center gap-2 min-h-10 px-3.5 py-2 border rounded-full bg-bg font-semibold text-sm text-ink whitespace-nowrap cursor-pointer transition-colors hover:border-muted ${
-              streakOpen ? 'border-cyan' : restorable ? 'border-amber' : 'border-line'
-            }`}
+            className={`inline-flex items-center gap-1.5 min-h-9 px-2.5 py-1.5 border bg-panel font-bold text-[11px] uppercase tracking-[0.05em] text-ink whitespace-nowrap cursor-pointer transition-colors hover:bg-panel2 ${streakOpen ? 'border-cyan' : restorable ? 'border-amber' : 'border-transparent hover:border-line'
+              }`}
           >
-            <Icon name="flame" className="w-[18px] h-[18px] text-amber" />
+            <span className="w-1.5 h-1.5 bg-cyan inline-block flex-none" aria-hidden="true" />
+            <span className="max-[1180px]:hidden">STREAK</span>
             <span className="num">{streakDays}</span>
-            <span className="max-[1180px]:hidden">day streak</span>
             {restorable && (
-              <span className="w-2 h-2 rounded-full bg-amber" aria-hidden="true" />
+              <span className="w-1.5 h-1.5 bg-amber" aria-hidden="true" />
             )}
           </button>
 
@@ -188,12 +193,12 @@ export function TopBar() {
               id="streak-popover"
               role="dialog"
               aria-label="Daily streak"
-              className="sb-pop absolute right-0 top-[calc(100%+10px)] z-50 w-[330px] max-w-[calc(100vw-24px)] max-[760px]:fixed max-[760px]:left-3 max-[760px]:right-3 max-[760px]:top-[68px] max-[760px]:w-auto bg-panel border border-line rounded-2xl p-[18px] shadow-[0_14px_34px_rgba(0,0,0,0.28)]"
+              className="sb-pop absolute right-0 top-[calc(100%+8px)] z-50 w-[320px] max-w-[calc(100vw-24px)] max-[760px]:fixed max-[760px]:left-3 max-[760px]:right-3 max-[760px]:top-[64px] max-[760px]:w-auto bg-panel border border-ink p-4 shadow-[6px_6px_0_rgba(20,20,20,0.18)]"
             >
               <div className="flex justify-between items-center gap-3">
-                <h2 className="m-0 text-base font-bold">{streakLabel}</h2>
-                <span className="text-[0.8125rem] font-semibold text-muted">
-                  {restorable ? 'Restorable' : streakDays > 0 ? 'On' : 'Start'}
+                <h2 className="m-0 font-head text-base font-bold">{streakLabel}</h2>
+                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] bg-cyan/12 text-cyan">
+                  {restorable ? 'Restorable' : streakDays > 0 ? 'Active' : 'Start'}
                 </span>
               </div>
               <WeekStrip
@@ -201,9 +206,9 @@ export function TopBar() {
                 todayIndex={weekStrip.todayIndex}
                 ariaLabel={weekStrip.ariaLabel}
               />
-              <p className="m-0 text-muted text-sm">{streakCopy}</p>
+              <p className="m-0 text-muted text-[11.5px]">{streakCopy}</p>
               <div className="mt-3 pt-3 border-t border-line grid gap-2">
-                <div className="flex items-center justify-between text-xs font-semibold">
+                <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.04em]">
                   <span className="text-muted">Streak restores</span>
                   <span className="num text-ink">
                     {streak.restoresLeft} / {MAX_STREAK_RESTORES} held
@@ -213,13 +218,13 @@ export function TopBar() {
                   <button
                     type="button"
                     onClick={() => void restoreCurrentStreak()}
-                    className="w-full inline-flex items-center justify-center min-h-10 px-4 border-0 rounded-xl bg-amber text-amber-ink font-bold text-sm cursor-pointer transition-all hover:brightness-110"
+                    className="sb-cut-sm w-full inline-flex items-center justify-center min-h-9 px-4 border-0 bg-amber text-amber-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-all hover:brightness-110"
                   >
                     Restore streak ({streak.restoresLeft} left)
                   </button>
                 )}
                 {inRestoreWindow && !restorable && (
-                  <p className="m-0 text-xs text-amber font-medium">
+                  <p className="m-0 text-[11px] text-amber font-semibold">
                     Your {streak.current}-day streak broke — buy a restore below to save it!
                   </p>
                 )}
@@ -227,7 +232,7 @@ export function TopBar() {
                   type="button"
                   disabled={!canAffordRestore}
                   onClick={() => void buyStreakRestore()}
-                  className="w-full inline-flex items-center justify-center min-h-9 px-3 border border-line rounded-xl bg-panel2 text-ink font-semibold text-xs cursor-pointer transition-colors hover:border-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full inline-flex items-center justify-center min-h-9 px-3 border border-line bg-panel2 text-ink font-bold text-[10.5px] uppercase tracking-[0.05em] cursor-pointer transition-colors hover:border-ink disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {atMaxRestores
                     ? 'Max restores held'
@@ -239,10 +244,9 @@ export function TopBar() {
         </div>
 
         <div
-          className="inline-flex items-center gap-2 min-h-10 px-3.5 py-2 border border-line rounded-full bg-bg font-semibold text-sm text-ink whitespace-nowrap flex-none"
+          className="inline-flex items-center gap-1.5 min-h-9 px-2 py-1.5 font-bold text-[11px] uppercase tracking-[0.05em] text-ink whitespace-nowrap flex-none"
           title="Total XP"
         >
-          <Icon name="bolt" className="w-[18px] h-[18px] text-cyan" />
           <span className="num">{formatXp(totalXp)}</span>
           <span className="max-[1180px]:hidden">XP</span>
         </div>
@@ -252,18 +256,18 @@ export function TopBar() {
           onClick={toggleTheme}
           aria-label={nextThemeLabel}
           title={nextThemeLabel}
-          className="max-[760px]:hidden grid place-items-center w-10 h-10 flex-none border border-transparent rounded-full bg-panel2 text-ink cursor-pointer transition-colors hover:border-muted"
+          className="max-[760px]:hidden grid place-items-center w-9 h-9 flex-none border border-line bg-panel2 text-ink cursor-pointer transition-colors hover:border-ink"
         >
-          <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-5 h-5" />
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4" />
         </button>
 
         <button
           type="button"
           onClick={() => showToast('No new notifications.')}
           aria-label="Notifications"
-          className="max-[760px]:hidden grid place-items-center w-10 h-10 flex-none border border-transparent rounded-full bg-panel2 text-ink cursor-pointer transition-colors hover:border-muted"
+          className="max-[760px]:hidden grid place-items-center w-9 h-9 flex-none border border-line bg-panel2 text-ink cursor-pointer transition-colors hover:border-ink"
         >
-          <Icon name="bell" className="w-5 h-5" />
+          <Icon name="bell" className="w-4 h-4" />
         </button>
 
         <a
@@ -273,7 +277,7 @@ export function TopBar() {
             e.preventDefault();
             navigate('profile');
           }}
-          className="grid place-items-center min-w-[112px] h-10 px-5 py-2 rounded-full bg-cyan text-cyan-ink font-bold text-sm flex-none no-underline whitespace-nowrap transition-all hover:brightness-110"
+          className="sb-cut-sm inline-flex items-center justify-center min-w-[96px] h-9 px-4 bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] flex-none no-underline whitespace-nowrap transition-colors hover:bg-[#e64b00]"
         >
           {shortName}
         </a>

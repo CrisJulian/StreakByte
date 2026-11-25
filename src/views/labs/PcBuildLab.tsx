@@ -15,6 +15,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
+import { CornerBrackets } from '../../components/ByteMascotSvg';
 import { Icon } from '../../components/Icon';
 import { useStreakByteStore } from '../../store/useStreakByteStore';
 import type { PcPartId, PcSlotId } from '../../types/streakbyte';
@@ -30,10 +31,10 @@ interface PcStep {
 }
 
 const PART_META: { id: PcPartId; swatch: string; label: string }[] = [
-  { id: 'ram', swatch: '#34d399', label: 'RAM stick' },
-  { id: 'm2', swatch: '#cbd5e1', label: 'M.2 SSD' },
-  { id: 'gpu', swatch: '#94a3b8', label: 'Graphics card' },
-  { id: 'psu', swatch: '#22d3ee', label: 'Power supply' },
+  { id: 'ram', swatch: '#129954', label: 'RAM stick' },
+  { id: 'm2', swatch: '#e5e5e5', label: 'M.2 SSD' },
+  { id: 'gpu', swatch: '#9e9e9e', label: 'Graphics card' },
+  { id: 'psu', swatch: '#ff5500', label: 'Power supply' },
 ];
 
 interface DraggablePartButtonProps {
@@ -68,21 +69,14 @@ function DraggablePartButton({
       {...listeners}
       aria-pressed={selected}
       onClick={onSelect}
-      className={`flex items-center gap-2.5 min-h-12 px-3 border rounded-xl font-semibold text-sm text-left cursor-pointer transition-colors touch-none ${
-        disabled ? 'opacity-45 cursor-not-allowed pointer-events-none' : ''
-      } ${isDragging ? 'opacity-40' : ''} ${
-        selected
-          ? 'border-cyan'
-          : 'border-line bg-panel hover:border-muted hover:bg-panel2'
-      }`}
-      style={
-        selected
-          ? { background: 'color-mix(in srgb, var(--cyan) 14%, var(--panel))' }
-          : undefined
-      }
+      className={`flex items-center gap-2.5 min-h-11 px-3 border font-bold text-[11.5px] text-left cursor-pointer transition-colors touch-none ${disabled ? 'opacity-45 cursor-not-allowed pointer-events-none' : ''
+        } ${isDragging ? 'opacity-40' : ''} ${selected
+          ? 'border-cyan bg-you text-ink'
+          : 'border-line bg-panel hover:border-ink hover:bg-panel2'
+        }`}
     >
       <i
-        className="w-[22px] h-3.5 rounded-[3px] flex-none border border-black/35"
+        className="w-[18px] h-3 flex-none border border-ink/50"
         style={{ background: swatch }}
       />
       <span>{label}</span>
@@ -226,11 +220,12 @@ export function PcBuildLab() {
       <div className="grid grid-cols-[minmax(0,1fr)_380px] max-[1100px]:grid-cols-1 gap-5 items-start">
         <section
           aria-label="Partly built PC"
-          className="bg-panel border border-line rounded-2xl p-4"
+          className="relative sb-blueprint-dots border border-line p-5"
         >
-          <div className="flex justify-between items-center gap-3 flex-wrap mb-3">
-            <h2 className="m-0 text-base font-bold">Partly built PC</h2>
-            <span className="text-muted text-sm">
+          <CornerBrackets />
+          <div className="flex justify-between items-center gap-3 flex-wrap mb-3.5">
+            <h2 className="m-0 font-head text-[17px] font-bold">Partly built PC</h2>
+            <span className="text-muted text-[11px]">
               Drag a part onto the board, or select it in the tray and tap a slot.
             </span>
           </div>
@@ -241,7 +236,7 @@ export function PcBuildLab() {
             role="group"
             aria-label="Motherboard with slots for RAM, M.2 SSD, graphics card and power"
           >
-            <rect className="bd" x="8" y="8" width="624" height="424" rx="14" />
+            <rect className="bd" x="8" y="8" width="624" height="424" />
             <circle className="hole" cx="30" cy="30" r="8" />
             <circle className="hole" cx="610" cy="30" r="8" />
             <circle className="hole" cx="30" cy="410" r="8" />
@@ -252,19 +247,18 @@ export function PcBuildLab() {
               y="54"
               width="76"
               height="114"
-              rx="4"
-              fill="#cbd5e1"
-              stroke="#0b1020"
+              fill="#dfdfdf"
+              stroke="#0c0c0c"
               strokeWidth="1.5"
             />
-            <g stroke="#64748b" strokeWidth="1.5">
+            <g stroke="#666666" strokeWidth="1.5">
               <path d="M52 72h68M52 90h68M52 108h68M52 126h68M52 144h68" />
             </g>
             <text className="lab" x="86" y="186">
               Rear I/O
             </text>
 
-            <rect className="part" x="136" y="54" width="16" height="114" rx="2" />
+            <rect className="part" x="136" y="54" width="16" height="114" />
             <text className="lab" x="144" y="186">
               VRM
             </text>
@@ -274,20 +268,19 @@ export function PcBuildLab() {
               y="44"
               width="150"
               height="134"
-              rx="12"
-              fill="#eef2ec"
-              stroke="#0b1020"
+              fill="#f3f3f3"
+              stroke="#0c0c0c"
               strokeWidth="1.5"
             />
             <g transform="translate(243 111)">
-              <circle r="48" fill="#ffffff" stroke="#0b1020" strokeWidth="1.5" />
-              <g fill="#34a371" stroke="#0b1020" strokeWidth="1.2">
+              <circle r="48" fill="#ffffff" stroke="#141414" strokeWidth="1.5" />
+              <g fill="#ff5500" stroke="#141414" strokeWidth="1.2">
                 <path d="M0 0C-8-24 8-40 22-34 22-14 12-4 0 0z" />
                 <path d="M0 0C24-8 40 8 34 22 14 22 4 12 0 0z" />
                 <path d="M0 0C8 24-8 40-22 34-22 14-12 4 0 0z" />
                 <path d="M0 0C-24 8-40-8-34-22-14-22-4-12 0 0z" />
               </g>
-              <circle r="10" fill="#1e7a56" />
+              <circle r="10" fill="#141414" />
             </g>
             <StepBadge cx={188} cy={64} num={1} done />
             <text className="lab" x="243" y="198">
@@ -302,7 +295,7 @@ export function PcBuildLab() {
               hintTick={pc.hintTick}
               onActivate={() => placePcPart('A1')}
             >
-              <rect className="sh" x="344" y="44" width="22" height="134" rx="3" />
+              <rect className="sh" x="344" y="44" width="22" height="134" />
             </DroppableSlot>
             <DroppableSlot
               slotId="A2"
@@ -312,7 +305,7 @@ export function PcBuildLab() {
               hintTick={pc.hintTick}
               onActivate={() => placePcPart('A2')}
             >
-              <rect className="sh" x="376" y="44" width="22" height="134" rx="3" />
+              <rect className="sh" x="376" y="44" width="22" height="134" />
             </DroppableSlot>
             <DroppableSlot
               slotId="B1"
@@ -322,7 +315,7 @@ export function PcBuildLab() {
               hintTick={pc.hintTick}
               onActivate={() => placePcPart('B1')}
             >
-              <rect className="sh" x="408" y="44" width="22" height="134" rx="3" />
+              <rect className="sh" x="408" y="44" width="22" height="134" />
             </DroppableSlot>
             <DroppableSlot
               slotId="B2"
@@ -332,7 +325,7 @@ export function PcBuildLab() {
               hintTick={pc.hintTick}
               onActivate={() => placePcPart('B2')}
             >
-              <rect className="sh" x="440" y="44" width="22" height="134" rx="3" />
+              <rect className="sh" x="440" y="44" width="22" height="134" />
             </DroppableSlot>
 
             <text className="lab" x="355" y="194">
@@ -360,7 +353,7 @@ export function PcBuildLab() {
               hintTick={pc.hintTick}
               onActivate={() => placePcPart('PWR')}
             >
-              <rect className="sh" x="500" y="56" width="92" height="106" rx="4" />
+              <rect className="sh" x="500" y="56" width="92" height="106" />
               <g fill="#f4f7ef" stroke="none" opacity="0.65">
                 {[76, 96, 116, 136].flatMap((cy) =>
                   [520, 538, 556, 574].map((cx) => (
@@ -382,16 +375,16 @@ export function PcBuildLab() {
               hintTick={pc.hintTick}
               onActivate={() => placePcPart('M2')}
             >
-              <rect className="sh" x="130" y="254" width="210" height="24" rx="3" />
-              <circle cx="142" cy="266" r="4" fill="#22d3ee" />
+              <rect className="sh" x="130" y="254" width="210" height="24" />
+              <circle cx="142" cy="266" r="4" fill="#ff5500" />
             </DroppableSlot>
             <StepBadge cx={240} cy={266} num={4} done={pc.m2} />
             <text className="lab" x="185" y="298">
               M.2 slot (SSD)
             </text>
 
-            <rect className="part" x="424" y="246" width="104" height="88" rx="3" />
-            <g stroke="#334155" strokeWidth="2">
+            <rect className="part" x="424" y="246" width="104" height="88" />
+            <g stroke="#555555" strokeWidth="2">
               <path d="M436 254v72M448 254v72M460 254v72M472 254v72M484 254v72M496 254v72M508 254v72M520 254v72" />
             </g>
             <text className="lab" x="476" y="354">
@@ -406,27 +399,20 @@ export function PcBuildLab() {
               hintTick={pc.hintTick}
               onActivate={() => placePcPart('PCIE')}
             >
-              <rect className="sh" x="48" y="336" width="320" height="22" rx="3" />
+              <rect className="sh" x="48" y="336" width="320" height="22" />
             </DroppableSlot>
             <StepBadge cx={208} cy={347} num={5} done={pc.gpu} />
             <text className="lab" x="115" y="378">
               PCIe x16 (graphics card)
             </text>
 
-            <circle
-              cx="268"
-              cy="396"
-              r="15"
-              fill="#d6dbd2"
-              stroke="#0b1020"
-              strokeWidth="1.5"
-            />
+            <circle cx="268" cy="396" r="15" fill="#dfdfdf" stroke="#0c0c0c" strokeWidth="1.5" />
             <text className="lab" x="332" y="401">
               CMOS battery
             </text>
 
-            <rect className="part" x="424" y="374" width="36" height="14" rx="2" />
-            <rect className="part" x="468" y="374" width="36" height="14" rx="2" />
+            <rect className="part" x="424" y="374" width="36" height="14" />
+            <rect className="part" x="468" y="374" width="36" height="14" />
             <text className="lab" x="444" y="408">
               SATA
             </text>
@@ -434,7 +420,7 @@ export function PcBuildLab() {
           {allInstalled && (
             <div
               role="status"
-              className="sb-pop mt-3 px-3.5 py-2 rounded-xl border border-green bg-bg text-green font-mono text-xs font-bold flex items-center justify-between gap-2 flex-wrap"
+              className="sb-pop mt-3 px-3.5 py-2 border border-green bg-panel text-green font-mono text-xs font-bold flex items-center justify-between gap-2 flex-wrap"
             >
               <span>
                 POST READY · Dual-channel {pc.ram.A2 && pc.ram.B2 ? 'OK (A2/B2)' : 'SINGLE'}
@@ -445,26 +431,24 @@ export function PcBuildLab() {
         </section>
 
         <div className="grid gap-4">
-          <section aria-label="Build checklist" className="bg-panel border border-line rounded-2xl p-[22px]">
-            <h2 className="m-0 mb-1 text-[1.125rem] font-bold">Build checklist</h2>
+          <section aria-label="Build checklist" className="bg-panel border border-line p-5">
+            <h2 className="m-0 mb-1 font-head text-[17px] font-bold">Build checklist</h2>
             <ol className="grid gap-2.5 mt-3">
               {steps.map((step, idx) => {
                 const isCur = idx === firstUndoneIdx;
                 return (
                   <li
                     key={step.label}
-                    className={`flex items-center gap-2.5 font-semibold ${
-                      step.done || isCur ? 'text-ink' : 'text-muted'
-                    }`}
+                    className={`flex items-center gap-2.5 font-semibold text-xs ${step.done || isCur ? 'text-ink' : 'text-muted'
+                      }`}
                   >
                     <span
-                      className={`grid place-items-center w-6 h-6 rounded-full font-bold text-xs font-mono flex-none ${
-                        step.done
-                          ? 'bg-green text-green-ink'
+                      className={`grid place-items-center w-6 h-6 border font-bold text-[11px] font-mono flex-none ${step.done
+                          ? 'bg-green border-green text-green-ink'
                           : isCur
-                            ? 'bg-amber text-amber-ink'
-                            : 'bg-panel2 text-muted'
-                      }`}
+                            ? 'bg-cyan border-cyan text-cyan-ink'
+                            : 'bg-panel2 border-line text-muted'
+                        }`}
                     >
                       {step.done ? (
                         <Icon name="check" className="w-3.5 h-3.5" strokeWidth={3} />
@@ -479,41 +463,35 @@ export function PcBuildLab() {
             </ol>
           </section>
 
-          <section aria-label="Learn" className="bg-panel border border-line rounded-2xl p-[22px]">
-            <h2 className="m-0 mb-1 text-[1.125rem] font-bold flex items-center gap-2">
-              <Icon name="book" className="w-[18px] h-[18px] text-cyan" />
+          <section aria-label="Learn" className="bg-panel border border-line p-5">
+            <h2 className="m-0 mb-1 font-head text-[17px] font-bold flex items-center gap-2">
+              <Icon name="book" className="w-4 h-4 text-cyan" />
               Learn: RAM (memory)
             </h2>
-            <p className="mt-2 mb-0 text-muted text-[0.9375rem]">
+            <p className="mt-2 mb-0 text-muted text-[12px]">
               RAM is the computer’s short-term memory. It holds the programs and files you are using
               right now.
             </p>
-            <p className="mt-2 mb-0 text-muted text-[0.9375rem]">
+            <p className="mt-2 mb-0 text-muted text-[12px]">
               Why slots A2 and B2? Two matching sticks in the right slots run in dual-channel mode,
               which moves data faster.
             </p>
-            <div
-              className="mt-3 px-3.5 py-3 rounded-xl border text-sm text-ink"
-              style={{
-                background: 'color-mix(in srgb, var(--amber) 12%, var(--panel))',
-                borderColor: 'color-mix(in srgb, var(--amber) 40%, var(--line))',
-              }}
-            >
+            <div className="mt-3 px-3 py-2.5 border border-cyan bg-you text-xs text-ink">
               <b>Tip:</b> match the notch, then press both ends evenly until the clips click.
             </div>
           </section>
 
           <p
             role="status"
-            className="min-h-11 flex items-center m-0 px-3.5 py-2.5 rounded-[10px] bg-panel2 border border-line text-sm text-ink"
+            className="min-h-11 flex items-center m-0 px-3.5 py-2.5 bg-panel2 border border-line text-xs text-ink"
           >
             {pc.message}
           </p>
 
-          <div role="group" aria-label="Parts tray" className="grid grid-cols-2 gap-2.5">
+          <div role="group" aria-label="Parts tray" className="grid grid-cols-2 gap-2">
             <DraggablePartButton
               partId="ram"
-              swatch="#34d399"
+              swatch="#129954"
               label={ramLeft > 0 ? `RAM stick ${ramLeft}x` : 'RAM installed'}
               selected={pc.selectedPart === 'ram'}
               disabled={ramLeft <= 0}
@@ -521,7 +499,7 @@ export function PcBuildLab() {
             />
             <DraggablePartButton
               partId="m2"
-              swatch="#cbd5e1"
+              swatch="#e5e5e5"
               label="M.2 SSD"
               selected={pc.selectedPart === 'm2'}
               disabled={pc.m2}
@@ -529,7 +507,7 @@ export function PcBuildLab() {
             />
             <DraggablePartButton
               partId="gpu"
-              swatch="#94a3b8"
+              swatch="#9e9e9e"
               label="Graphics card"
               selected={pc.selectedPart === 'gpu'}
               disabled={pc.gpu}
@@ -537,7 +515,7 @@ export function PcBuildLab() {
             />
             <DraggablePartButton
               partId="psu"
-              swatch="#22d3ee"
+              swatch="#ff5500"
               label="Power supply"
               selected={pc.selectedPart === 'psu'}
               disabled={pc.psu}
@@ -545,32 +523,26 @@ export function PcBuildLab() {
             />
           </div>
 
-          <div className="grid grid-cols-[auto_1fr] gap-2.5">
+          <div className="grid grid-cols-[auto_1fr] gap-2">
             <button
               type="button"
               onClick={triggerPcHint}
-              className="inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-line rounded-[10px] bg-transparent text-ink font-semibold text-[0.9375rem] cursor-pointer transition-colors hover:bg-panel2 hover:border-muted"
+              className="inline-flex items-center justify-center gap-2 min-h-11 px-4 border border-line bg-panel text-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors hover:border-ink hover:bg-panel2"
             >
-              <Icon name="bulb" className="w-[18px] h-[18px]" />
+              <Icon name="bulb" className="w-4 h-4" />
               Hint
             </button>
             <button
               type="button"
               onClick={completePcBuild}
-              className="inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-cyan rounded-[10px] bg-cyan text-cyan-ink font-semibold text-[0.9375rem] cursor-pointer transition-all hover:brightness-110 active:brightness-95"
+              className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors hover:bg-[#e64b00]"
             >
               Check build
             </button>
           </div>
 
-          <div
-            className="flex items-start gap-3 px-3.5 py-3 rounded-xl border text-sm"
-            style={{
-              background: 'color-mix(in srgb, var(--amber) 12%, var(--panel))',
-              borderColor: 'color-mix(in srgb, var(--amber) 40%, var(--line))',
-            }}
-          >
-            <Icon name="warn" className="w-5 h-5 text-amber" />
+          <div className="flex items-start gap-2.5 px-3.5 py-3 border border-line bg-panel2 text-xs">
+            <Icon name="warn" className="w-4 h-4 text-cyan flex-none mt-0.5" />
             <span>
               <b>Safety first:</b> touch the bare metal case to discharge static before handling
               parts.
@@ -581,9 +553,9 @@ export function PcBuildLab() {
 
       <DragOverlay dropAnimation={null}>
         {draggingMeta ? (
-          <div className="flex items-center gap-2.5 min-h-12 px-3.5 border-2 border-cyan rounded-xl bg-panel text-ink font-semibold text-sm shadow-xl">
+          <div className="flex items-center gap-2.5 min-h-11 px-3.5 border-2 border-cyan bg-panel text-ink font-bold text-xs shadow-xl">
             <i
-              className="w-[22px] h-3.5 rounded-[3px] flex-none border border-black/35"
+              className="w-[18px] h-3 flex-none border border-ink/50"
               style={{ background: draggingMeta.swatch }}
             />
             <span>{draggingMeta.label}</span>

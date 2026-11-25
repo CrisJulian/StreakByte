@@ -414,7 +414,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
       pendingSyncCount: 0,
       isSyncing: false,
       activeLab: 'pc',
-      theme: 'dark',
+      theme: 'light',
       track: 'hw',
       searchQuery: '',
       practiceFilter: 'all',
@@ -735,19 +735,19 @@ export const useStreakByteStore = create<StreakByteStore>()(
               : state.profileSettings.selectedTracks;
             const nextSettings: ProfileSettings = remoteSettings
               ? {
-                  ...state.profileSettings,
-                  ...remoteSettings,
-                  selectedTracks,
-                  displayName: remoteSettings.displayName || currentAuth.displayName || 'Learner',
-                  email: remoteSettings.email || currentAuth.email || '',
-                }
+                ...state.profileSettings,
+                ...remoteSettings,
+                selectedTracks,
+                displayName: remoteSettings.displayName || currentAuth.displayName || 'Learner',
+                email: remoteSettings.email || currentAuth.email || '',
+              }
               : {
-                  ...state.profileSettings,
-                  displayName: currentAuth.displayName || state.profileSettings.displayName,
-                  email: currentAuth.email || state.profileSettings.email,
-                  selectedTracks: ['hw', 'net'],
-                  onboardingCompleted: false,
-                };
+                ...state.profileSettings,
+                displayName: currentAuth.displayName || state.profileSettings.displayName,
+                email: currentAuth.email || state.profileSettings.email,
+                selectedTracks: ['hw', 'net'],
+                onboardingCompleted: false,
+              };
 
             return {
               completions: mergedCompletions,
@@ -1439,10 +1439,10 @@ export const useStreakByteStore = create<StreakByteStore>()(
               passMark: DEFAULT_PASS_MARK,
               next: following
                 ? [
-                    lessonLabel(following, lessonIdx + 1),
-                    followingLock ?? following.subtitle,
-                    followingMeta,
-                  ]
+                  lessonLabel(following, lessonIdx + 1),
+                  followingLock ?? following.subtitle,
+                  followingMeta,
+                ]
                 : ['Back to the curriculum', 'Pick your next lesson', 'Keep your streak going'],
             },
             name,
@@ -1604,7 +1604,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
           pendingSyncCount: 0,
           isSyncing: false,
           activeLab: 'pc',
-          theme: 'dark',
+          theme: 'light',
           track: 'hw',
           searchQuery: '',
           practiceFilter: 'all',

@@ -81,7 +81,7 @@ export function App() {
     document.documentElement.setAttribute('data-theme', theme);
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
-      metaTheme.setAttribute('content', theme === 'light' ? '#f1f5f9' : '#0b1020');
+      metaTheme.setAttribute('content', theme === 'light' ? '#ffffff' : '#111111');
     }
   }, [theme]);
 
@@ -105,7 +105,7 @@ export function App() {
     <>
       <a
         href="#main"
-        className="fixed top-2.5 left-3.5 z-[100] px-4 py-2.5 rounded-[10px] bg-cyan text-cyan-ink font-bold no-underline -translate-y-[140%] focus-visible:translate-y-0 transition-transform duration-200"
+        className="fixed top-2.5 left-3.5 z-[100] px-4 py-2.5 bg-cyan text-cyan-ink font-bold text-xs uppercase tracking-[0.06em] no-underline -translate-y-[140%] focus-visible:translate-y-0 transition-transform duration-200"
       >
         Skip to main content
       </a>
@@ -116,8 +116,8 @@ export function App() {
         id="main"
         className={
           !showAppShell
-            ? 'max-w-[1040px] mx-auto px-6 py-6 min-h-screen flex items-center justify-center max-[760px]:px-4 max-[760px]:py-4'
-            : 'max-w-[1180px] mx-auto px-6 pt-7 pb-16 max-[760px]:px-4 max-[760px]:pt-5 max-[760px]:pb-8'
+            ? 'w-full min-h-screen bg-panel2 px-4 py-6 flex items-center justify-center'
+            : 'w-full min-h-[calc(100dvh-56px)] bg-panel pb-12 max-[760px]:pb-20'
         }
       >
         {needsAuthScreen ? (
