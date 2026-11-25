@@ -211,10 +211,31 @@ export function NetworkBuildLab() {
         aria-label="Build a network"
         className="relative bg-panel border border-line rounded-2xl p-5"
       >
-        <p className="m-0 mb-3.5 text-ink text-[0.9375rem]">
-          Drag a device onto a dashed spot, or tap it and then tap the spot. Click a placed device to
-          set it up.
-        </p>
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-3.5">
+          <p className="m-0 text-ink text-[0.9375rem]">
+            Drag a device onto a dashed spot, or tap it and then tap the spot. Click a placed
+            device to set it up.
+          </p>
+          <span
+            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-bold border ${
+              pcSaved && laptopSaved
+                ? 'border-green text-green bg-bg'
+                : 'border-line text-muted bg-bg'
+            }`}
+          >
+            <i
+              className={`w-2 h-2 rounded-full ${
+                pcSaved && laptopSaved ? 'bg-green' : pcSaved || laptopSaved ? 'bg-amber' : 'bg-muted'
+              }`}
+              aria-hidden="true"
+            />
+            {pcSaved && laptopSaved
+              ? 'Link up · 2/2 hosts pinging'
+              : pcSaved || laptopSaved
+                ? '1/2 hosts linked'
+                : 'Configure devices to send packets'}
+          </span>
+        </div>
 
         <div role="group" aria-label="Devices" className="flex gap-2 flex-wrap mb-3.5">
           <button
@@ -251,6 +272,16 @@ export function NetworkBuildLab() {
             </g>
 
             <path d="M310 92V144" stroke="#3b82f6" strokeWidth="4" fill="none" />
+            {pcSaved && laptopSaved && (
+              <path
+                className="sb-packet-flow"
+                d="M310 144V92"
+                stroke="#34d399"
+                strokeWidth="3"
+                strokeLinecap="round"
+                fill="none"
+              />
+            )}
 
             <g>
               <path
@@ -323,7 +354,27 @@ export function NetworkBuildLab() {
               stroke={pcCableColor}
               fill="none"
             />
+            {pcSaved && (
+              <path
+                className="sb-packet-flow"
+                d="M164 268V226H292V182"
+                stroke="#ffffff"
+                strokeWidth="3"
+                strokeLinecap="round"
+                fill="none"
+              />
+            )}
             <path className="cab" d="M310 182V268" stroke={laptopCableColor} fill="none" />
+            {laptopSaved && (
+              <path
+                className="sb-packet-flow"
+                d="M310 268V182"
+                stroke="#ffffff"
+                strokeWidth="3"
+                strokeLinecap="round"
+                fill="none"
+              />
+            )}
 
             <DroppableSpot
               spotId="hub"

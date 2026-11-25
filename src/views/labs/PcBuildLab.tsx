@@ -183,6 +183,7 @@ export function PcBuildLab() {
 
   const ramCount = Object.keys(pc.ram).length;
   const ramLeft = 2 - ramCount;
+  const allInstalled = ramCount >= 2 && pc.m2 && pc.gpu && pc.psu;
 
   const steps: PcStep[] = [
     { label: 'Install the CPU', done: true },
@@ -430,6 +431,17 @@ export function PcBuildLab() {
               SATA
             </text>
           </svg>
+          {allInstalled && (
+            <div
+              role="status"
+              className="sb-pop mt-3 px-3.5 py-2 rounded-xl border border-green bg-bg text-green font-mono text-xs font-bold flex items-center justify-between gap-2 flex-wrap"
+            >
+              <span>
+                POST READY · Dual-channel {pc.ram.A2 && pc.ram.B2 ? 'OK (A2/B2)' : 'SINGLE'}
+              </span>
+              <span>Press Check build to boot</span>
+            </div>
+          )}
         </section>
 
         <div className="grid gap-4">

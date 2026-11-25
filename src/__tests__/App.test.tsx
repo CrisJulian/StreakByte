@@ -76,6 +76,13 @@ describe('App integration', () => {
     const chatDialog = screen.getByRole('dialog', { name: 'Study buddy chat' });
     await user.click(within(chatDialog).getByRole('button', { name: 'Explain the RAM key notch' }));
     expect(within(chatDialog).getByText(/off-centre on the gold pins/i)).toBeInTheDocument();
+
+    // Navigate back to Dashboard and claim the Daily Quest reward earned from chatting with BYTE
+    await user.click(within(nav).getByRole('link', { name: 'Dashboard' }));
+    const quests = screen.getByRole('region', { name: 'Daily quests' });
+    await user.click(within(quests).getByRole('button', { name: 'Claim +25 XP' }));
+    expect(within(quests).getByText('Claimed')).toBeInTheDocument();
+    expect(screen.getByTitle('Total XP')).toHaveTextContent('25');
   });
 
   it('displays signed-in Google user name, real XP/level, and avatar across Dashboard, TopBar, and Profile', async () => {

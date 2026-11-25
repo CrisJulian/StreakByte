@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { services } from './composition';
+import { LevelUpBanner } from './components/LevelUpBanner';
 import { SessionSetupModal } from './components/SessionSetupModal';
 import { StudyBuddyChat } from './components/StudyBuddyChat';
 import { Toast } from './components/Toast';
@@ -130,6 +131,7 @@ export function App() {
       </main>
 
       <SessionSetupModal />
+      <LevelUpBanner />
       {showAppShell && <StudyBuddyChat />}
       <Toast />
     </>

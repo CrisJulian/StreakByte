@@ -185,6 +185,93 @@
   }
 }
 
+@keyframes sb-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+  75% {
+    transform: translateX(-3px);
+  }
+}
+
+@keyframes sb-xp-float {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+  }
+  25% {
+    opacity: 1;
+    transform: translateY(0) scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1);
+  }
+}
+
+@keyframes sb-packet-flow {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+@keyframes sb-trace-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes sb-confetti-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.6) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(38px) scale(1) rotate(140deg);
+  }
+}
+
+.sb-shake {
+  animation: sb-shake 0.24s ease-in-out;
+}
+
+.sb-xp-float {
+  animation: sb-xp-float 0.45s var(--ease) both;
+}
+
+.sb-packet-flow {
+  stroke-dasharray: 8 12;
+  animation: sb-packet-flow 1.1s linear infinite;
+}
+
+.sb-trace-pulse {
+  animation: sb-trace-pulse 1.8s ease-in-out infinite;
+}
+
+.sb-spark {
+  animation: sb-confetti-drop 1.4s ease-out infinite;
+}
+
+.sb-pcb-grid {
+  background-image: radial-gradient(color-mix(in srgb, var(--cyan) 14%, transparent) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
 /* Interactive SVG: PC Build motherboard */
 svg.pcb {
   width: 100%;

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
+import { playSfx } from '../audio/soundEffects';
 import { QUIZ_BANK } from '../data/quizBank';
 import { getTrackProgress, isLessonKeyLocked, LESSON_XP_BY_KEY, lessonLabel, TRACKS } from '../data/curriculum';
 import { LESSON_CONTENT } from '../data/lessons';
@@ -7,6 +8,7 @@ import type { LessonCompletion } from '../domain/entities/progress';
 import type { QuizSession } from '../domain/entities/quiz';
 import { DEFAULT_PASS_MARK, isQuizPassed, recordCompletion } from '../domain/rules/lessonProgress';
 import {
+  currentCombo,
   isFinished,
   nextQuestion,
   parseLessonKey,
@@ -19,11 +21,19 @@ import { services } from '../composition';
 import type { AuthUser, LeaderboardEntry } from '../application/ports';
 import { createInitialNetState, placeDevice, saveDeviceConfig, selectDevice } from '../domain/rules/network';
 import { createInitialPcState, nextHint, placePart, selectPart } from '../domain/rules/pcBuild';
+import {
+  claimDailyQuest as claimDailyQuestRule,
+  createDailyActivity,
+  ensureDailyActivity,
+  type DailyActivityState,
+  type DailyQuestId,
+} from '../domain/rules/dailyQuests';
 import { createInitialStreak, recordActivity, type StreakState } from '../domain/rules/streak';
 import { summarizeNetworkBuild, summarizePcBuild, summarizeQuiz } from '../domain/rules/summaries';
 import {
   calculateTotalXp,
   calculateWeeklyXp,
+  deriveLevel,
   effectiveStreak,
   localDayString,
 } from '../domain/rules/xp';
@@ -127,6 +137,16 @@ function learnerFirstName(profileSettings: ProfileSettings, authUser: AuthUser |
   return full.split(/\s+/)[0] || 'Learner';
 }
 
+function maybeLevelUp(prevXp: number, nextXp: number, soundEnabled: boolean) {
+  const prev = deriveLevel(prevXp);
+  const next = deriveLevel(nextXp);
+  if (next.level > prev.level) {
+    playSfx('levelUp', { enabled: soundEnabled });
+    return { level: next.level, title: next.title, tick: Date.now() };
+  }
+  return null;
+}
+
 function createInitialChatState(): ChatState {
   return {
     open: false,
@@ -166,12 +186,16 @@ export interface StreakByteStore {
   completions: LessonCompletion[];
   streak: StreakState;
   labBonusXp: number;
+  dailyActivity: DailyActivityState;
   leaderboard: LeaderboardEntry[];
   profileLoaded: boolean;
   profileSettings: ProfileSettings;
   chat: ChatState;
   toastMessage: string | null;
   toastTick: number;
+  levelUpEvent: { level: number; title: string; tick: number } | null;
+  dismissLevelUp: () => void;
+  claimDailyQuest: (questId: DailyQuestId) => void;
 
   // Auth & session
   setAuthUser: (user: AuthUser | null) => void;
@@ -296,12 +320,53 @@ export const useStreakByteStore = create<StreakByteStore>()(
       completions: [],
       streak: createInitialStreak(),
       labBonusXp: 0,
+      dailyActivity: createDailyActivity(localDayString()),
       leaderboard: [],
       profileLoaded: false,
       profileSettings: createInitialProfileSettings(),
       chat: createInitialChatState(),
       toastMessage: null,
       toastTick: 0,
+      levelUpEvent: null,
+      dismissLevelUp: () => set({ levelUpEvent: null }),
+
+      claimDailyQuest: (questId) => {
+        const current = get();
+        const today = localDayString();
+        const normalized = ensureDailyActivity(current.dailyActivity, today);
+        const { next, rewardXp } = claimDailyQuestRule(normalized, questId);
+        if (rewardXp <= 0) return;
+
+        const prevXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, current.labBonusXp);
+        const nextBonus = current.labBonusXp + rewardXp;
+        const nextXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, nextBonus);
+        const levelUp = maybeLevelUp(prevXp, nextXp, current.profileSettings.soundEffects);
+        if (!levelUp) {
+          playSfx('combo', { enabled: current.profileSettings.soundEffects, combo: 4 });
+        }
+
+        set({
+          dailyActivity: next,
+          labBonusXp: nextBonus,
+          ...(levelUp ? { levelUpEvent: levelUp } : {}),
+        });
+        void services.progress.saveLabBonusXp(nextBonus).catch(() => undefined);
+
+        if (!current.isGuest && current.authUser) {
+          void services.progress
+            .syncLeaderboardEntry({
+              displayName:
+                current.profileSettings.displayName || current.authUser.displayName || 'Learner',
+              avatarUrl: current.authUser.avatarUrl,
+              weeklyXp: calculateWeeklyXp(current.completions, LESSON_XP_BY_KEY, new Date(), nextBonus),
+              allTimeXp: nextXp,
+              streakDays: effectiveStreak(current.streak, today),
+            })
+            .then(() => get().refreshLeaderboard())
+            .catch(() => undefined);
+        }
+        get().showToast(`+${rewardXp} XP claimed!`);
+      },
 
       setAuthUser: (user) => {
         set({ authUser: user, isGuest: false });
@@ -353,8 +418,10 @@ export const useStreakByteStore = create<StreakByteStore>()(
           completions: [],
           streak: createInitialStreak(),
           labBonusXp: 0,
+          dailyActivity: createDailyActivity(localDayString()),
           leaderboard: [],
           profileLoaded: false,
+          levelUpEvent: null,
           profileSettings: createInitialProfileSettings(),
         });
         get().showToast('Logged out.');
@@ -638,19 +705,32 @@ export const useStreakByteStore = create<StreakByteStore>()(
       placePcPart: (slotId, draggedPart) => {
         const { state, placed } = placePart(get().pc, slotId, draggedPart);
         set({ pc: state });
+        playSfx(placed ? 'snap' : 'error', { enabled: get().profileSettings.soundEffects });
         return placed;
       },
 
       triggerPcHint: () => set((state) => ({ pc: nextHint(state.pc) })),
 
       completePcBuild: () => {
-        const name = learnerFirstName(get().profileSettings, get().authUser);
-        const nextBonus = get().labBonusXp + 120;
-        const nextStreak = recordActivity(get().streak, localDayString());
+        const current = get();
+        const today = localDayString();
+        const name = learnerFirstName(current.profileSettings, current.authUser);
+        const prevXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, current.labBonusXp);
+        const nextBonus = current.labBonusXp + 120;
+        const nextXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, nextBonus);
+        const nextStreak = recordActivity(current.streak, today);
+        const prevDaily = ensureDailyActivity(current.dailyActivity, today);
+        const nextDaily = { ...prevDaily, labsCompleted: prevDaily.labsCompleted + 1 };
+        const levelUp = maybeLevelUp(prevXp, nextXp, current.profileSettings.soundEffects);
+        if (!levelUp) {
+          playSfx('postBeep', { enabled: current.profileSettings.soundEffects });
+        }
         set({
-          completion: summarizePcBuild(get().pc, name),
+          completion: summarizePcBuild(current.pc, name),
           labBonusXp: nextBonus,
           streak: nextStreak,
+          dailyActivity: nextDaily,
+          ...(levelUp ? { levelUpEvent: levelUp } : {}),
         });
         void services.progress.saveLabBonusXp(nextBonus).catch(() => undefined);
         void services.progress.saveStreak(nextStreak).catch(() => undefined);
@@ -662,7 +742,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
               displayName: state.profileSettings.displayName || state.authUser?.displayName || 'Learner',
               avatarUrl: state.authUser?.avatarUrl,
               weeklyXp: calculateWeeklyXp(state.completions, LESSON_XP_BY_KEY, new Date(), nextBonus),
-              allTimeXp: calculateTotalXp(state.completions, LESSON_XP_BY_KEY, nextBonus),
+              allTimeXp: nextXp,
               streakDays: effectiveStreak(nextStreak, localDayString()),
             })
             .then(() => get().refreshLeaderboard())
@@ -677,6 +757,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
       placeNetworkDevice: (spot, draggedDevice) => {
         const { state, placed } = placeDevice(get().net, spot, draggedDevice);
         set({ net: state });
+        playSfx(placed ? 'snap' : 'error', { enabled: get().profileSettings.soundEffects });
         return placed;
       },
 
@@ -712,17 +793,30 @@ export const useStreakByteStore = create<StreakByteStore>()(
       saveNetworkConfig: (config) => {
         const { state, saved } = saveDeviceConfig(get().net, config);
         set({ net: state });
+        playSfx(saved ? 'ping' : 'error', { enabled: get().profileSettings.soundEffects });
         return saved;
       },
 
       completeNetworkBuild: () => {
-        const name = learnerFirstName(get().profileSettings, get().authUser);
-        const nextBonus = get().labBonusXp + 150;
-        const nextStreak = recordActivity(get().streak, localDayString());
+        const current = get();
+        const today = localDayString();
+        const name = learnerFirstName(current.profileSettings, current.authUser);
+        const prevXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, current.labBonusXp);
+        const nextBonus = current.labBonusXp + 150;
+        const nextXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, nextBonus);
+        const nextStreak = recordActivity(current.streak, today);
+        const prevDaily = ensureDailyActivity(current.dailyActivity, today);
+        const nextDaily = { ...prevDaily, labsCompleted: prevDaily.labsCompleted + 1 };
+        const levelUp = maybeLevelUp(prevXp, nextXp, current.profileSettings.soundEffects);
+        if (!levelUp) {
+          playSfx('ping', { enabled: current.profileSettings.soundEffects });
+        }
         set({
-          completion: summarizeNetworkBuild(get().net, name),
+          completion: summarizeNetworkBuild(current.net, name),
           labBonusXp: nextBonus,
           streak: nextStreak,
+          dailyActivity: nextDaily,
+          ...(levelUp ? { levelUpEvent: levelUp } : {}),
         });
         void services.progress.saveLabBonusXp(nextBonus).catch(() => undefined);
         void services.progress.saveStreak(nextStreak).catch(() => undefined);
@@ -734,7 +828,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
               displayName: state.profileSettings.displayName || state.authUser?.displayName || 'Learner',
               avatarUrl: state.authUser?.avatarUrl,
               weeklyXp: calculateWeeklyXp(state.completions, LESSON_XP_BY_KEY, new Date(), nextBonus),
-              allTimeXp: calculateTotalXp(state.completions, LESSON_XP_BY_KEY, nextBonus),
+              allTimeXp: nextXp,
               streakDays: effectiveStreak(nextStreak, localDayString()),
             })
             .then(() => get().refreshLeaderboard())
@@ -746,8 +840,22 @@ export const useStreakByteStore = create<StreakByteStore>()(
       selectQuizChoice: (choiceIndex) =>
         set((state) => (state.quiz ? { quiz: selectChoice(state.quiz, choiceIndex) } : {})),
 
-      submitQuizAnswer: () =>
-        set((state) => (state.quiz ? { quiz: submitAnswer(state.quiz) } : {})),
+      submitQuizAnswer: () => {
+        const current = get();
+        if (!current.quiz) return;
+        const nextQuiz = submitAnswer(current.quiz);
+        if (nextQuiz === current.quiz) return;
+        set({ quiz: nextQuiz });
+        const last = nextQuiz.answers[nextQuiz.answers.length - 1];
+        if (last?.correct) {
+          playSfx('combo', {
+            enabled: current.profileSettings.soundEffects,
+            combo: currentCombo(nextQuiz.answers),
+          });
+        } else {
+          playSfx('error', { enabled: current.profileSettings.soundEffects });
+        }
+      },
 
       nextQuizQuestion: () => {
         const session = get().quiz;
@@ -824,11 +932,25 @@ export const useStreakByteStore = create<StreakByteStore>()(
           total,
           completedAt: new Date().toISOString(),
         };
-        const nextStreak = recordActivity(get().streak, localDayString());
-        set((state) => ({
-          completions: recordCompletion(state.completions, completion),
+        const current = get();
+        const today = localDayString();
+        const prevXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, current.labBonusXp);
+        const nextCompletions = recordCompletion(current.completions, completion);
+        const nextXp = calculateTotalXp(nextCompletions, LESSON_XP_BY_KEY, current.labBonusXp);
+        const nextStreak = recordActivity(current.streak, today);
+        const prevDaily = ensureDailyActivity(current.dailyActivity, today);
+        const nextDaily = {
+          ...prevDaily,
+          quizzesPassed: prevDaily.quizzesPassed + 1,
+          perfectQuizzes: prevDaily.perfectQuizzes + (correct === total ? 1 : 0),
+        };
+        const levelUp = maybeLevelUp(prevXp, nextXp, current.profileSettings.soundEffects);
+        set({
+          completions: nextCompletions,
           streak: nextStreak,
-        }));
+          dailyActivity: nextDaily,
+          ...(levelUp ? { levelUpEvent: levelUp } : {}),
+        });
         void services.progress.saveLessonCompletion(completion).catch(() => undefined);
         void services.progress.saveStreak(nextStreak).catch(() => undefined);
         void services.syncQueue
@@ -880,6 +1002,12 @@ export const useStreakByteStore = create<StreakByteStore>()(
       sendChatMessage: (raw) => {
         const text = raw.trim();
         if (!text) return;
+
+        const today = localDayString();
+        const prevDaily = ensureDailyActivity(get().dailyActivity, today);
+        set({
+          dailyActivity: { ...prevDaily, studyBuddyMessages: prevDaily.studyBuddyMessages + 1 },
+        });
 
         const appendBot = (reply: string) =>
           set((state) => ({
@@ -950,8 +1078,10 @@ export const useStreakByteStore = create<StreakByteStore>()(
           completions: [],
           streak: createInitialStreak(),
           labBonusXp: 0,
+          dailyActivity: createDailyActivity(localDayString()),
           leaderboard: [],
           profileLoaded: false,
+          levelUpEvent: null,
           profileSettings: createInitialProfileSettings(),
           chat: createInitialChatState(),
           toastMessage: null,
@@ -966,6 +1096,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
         profileSettings: state.profileSettings,
         authUser: state.authUser,
         isGuest: state.isGuest,
+        dailyActivity: state.dailyActivity,
       }),
     },
   ),

@@ -38,15 +38,18 @@ export function CompleteView() {
         }}
       >
         <div>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 mb-2 rounded-full bg-green/20 text-green font-mono text-xs font-bold uppercase tracking-wider">
+            Systems online
+          </span>
           <h1 className="m-0 mb-1.5 text-[2.125rem] font-bold leading-[1.15] tracking-[-0.025em]">
             {completion.title}
           </h1>
           <p className="m-0 text-muted text-[1.0625rem]">{completion.subtitle}</p>
 
           <div className="flex gap-7 max-[760px]:gap-4 max-[760px]:flex-wrap mt-[22px]">
-            <div>
+            <div className="sb-pop">
               <small className="block text-muted text-[0.8125rem] font-semibold">XP earned</small>
-              <b className="num text-[1.75rem] leading-tight">{completion.xp}</b>
+              <b className="num text-[1.75rem] leading-tight text-green">{completion.xp}</b>
             </div>
             <div className="pl-7 max-[760px]:pl-4 border-l border-line">
               <small className="block text-muted text-[0.8125rem] font-semibold">Accuracy</small>

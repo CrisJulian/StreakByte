@@ -199,6 +199,34 @@ describe('useStreakByteStore', () => {
     expect(state.streak.current).toBe(1);
   });
 
+  it('triggers levelUpEvent when XP crosses 300 and clears it with dismissLevelUp', () => {
+    useStreakByteStore.getState().recordLessonResult('hw-1', 4, 4); // +110 XP
+    useStreakByteStore.getState().recordLessonResult('hw-2', 4, 4); // +110 XP (220)
+    expect(useStreakByteStore.getState().levelUpEvent).toBeNull();
+
+    useStreakByteStore.getState().recordLessonResult('hw-3', 4, 4); // +120 XP (340 -> Level 2)
+    expect(useStreakByteStore.getState().levelUpEvent).toMatchObject({
+      level: 2,
+      title: 'Beginner',
+    });
+
+    useStreakByteStore.getState().dismissLevelUp();
+    expect(useStreakByteStore.getState().levelUpEvent).toBeNull();
+  });
+
+  it('tracks daily quest completion and awards XP once per claim', () => {
+    useStreakByteStore.getState().claimDailyQuest('daily-buddy');
+    expect(useStreakByteStore.getState().labBonusXp).toBe(0);
+
+    useStreakByteStore.getState().sendChatMessage('Explain the RAM key notch');
+    useStreakByteStore.getState().claimDailyQuest('daily-buddy');
+    expect(useStreakByteStore.getState().labBonusXp).toBe(25);
+
+    // Double-claim is ignored
+    useStreakByteStore.getState().claimDailyQuest('daily-buddy');
+    expect(useStreakByteStore.getState().labBonusXp).toBe(25);
+  });
+
   it('syncs avatarUrl and profileSettings on setAuthUser and loadAuthUser', async () => {
     const googleUser = {
       id: 'g-123',

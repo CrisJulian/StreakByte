@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { QuizQuestion } from '../../entities/quiz';
 import {
+  comboTier,
+  currentCombo,
   currentQuestion,
   isFinished,
+  maxCombo,
   nextQuestion,
   parseLessonKey,
   quizXp,
@@ -69,5 +72,22 @@ describe('quiz rules', () => {
     expect(parseLessonKey('hw-3')).toEqual({ trackId: 'hw', number: 3 });
     expect(parseLessonKey('net-12')).toEqual({ trackId: 'net', number: 12 });
     expect(parseLessonKey('nope')).toBeNull();
+  });
+
+  it('tracks currentCombo, maxCombo, and comboTier multipliers', () => {
+    const answers = [
+      { questionId: '1', choiceIndex: 0, correct: true },
+      { questionId: '2', choiceIndex: 1, correct: true },
+      { questionId: '3', choiceIndex: 2, correct: false },
+      { questionId: '4', choiceIndex: 0, correct: true },
+      { questionId: '5', choiceIndex: 1, correct: true },
+      { questionId: '6', choiceIndex: 2, correct: true },
+    ];
+    expect(currentCombo(answers)).toBe(3);
+    expect(maxCombo(answers)).toBe(3);
+    expect(comboTier(1)).toEqual({ label: '', multiplier: 1, overclocked: false });
+    expect(comboTier(2)).toEqual({ label: 'Combo 1.25x', multiplier: 1.25, overclocked: false });
+    expect(comboTier(3)).toEqual({ label: 'Turbo 1.5x', multiplier: 1.5, overclocked: false });
+    expect(comboTier(4)).toEqual({ label: 'OVERCLOCKED', multiplier: 2, overclocked: true });
   });
 });

@@ -1,6 +1,6 @@
 import { Icon } from '../components/Icon';
-import { lessonLabel, TRACKS } from '../data/curriculum';
-import { currentQuestion, parseLessonKey } from '../domain/rules/quiz';
+import { LESSON_XP_BY_KEY, lessonLabel, TRACKS } from '../data/curriculum';
+import { comboTier, currentCombo, currentQuestion, parseLessonKey } from '../domain/rules/quiz';
 import { useStreakByteStore } from '../store/useStreakByteStore';
 
 const LETTERS = ['A', 'B', 'C', 'D'] as const;
@@ -26,6 +26,9 @@ export function QuizView() {
   const total = quiz.questions.length;
   const isLast = quiz.index === total - 1;
   const wasCorrect = quiz.submitted && quiz.selected === question.correctIndex;
+  const streak = currentCombo(quiz.answers);
+  const tier = comboTier(streak);
+  const stepXp = Math.round((LESSON_XP_BY_KEY[quiz.lessonKey] ?? 120) / Math.max(1, total));
 
   return (
     <div className="max-w-[760px] mx-auto">
@@ -41,9 +44,24 @@ export function QuizView() {
           <Icon name="back" className="w-[18px] h-[18px]" />
           Exit
         </a>
-        <span className="inline-flex items-center min-h-10 px-3.5 py-2 border border-line rounded-full bg-panel font-semibold text-sm">
-          Question <span className="num mx-1">{quiz.index + 1}</span> of <span className="num ml-1">{total}</span>
-        </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          {streak >= 2 && (
+            <span
+              className={`sb-pop inline-flex items-center gap-1.5 min-h-10 px-3.5 py-2 rounded-full font-bold text-sm ${
+                tier.overclocked
+                  ? 'bg-amber text-amber-ink'
+                  : 'border border-cyan text-cyan bg-panel'
+              }`}
+            >
+              <Icon name="bolt" className="w-4 h-4" />
+              {streak}x streak · {tier.label}
+            </span>
+          )}
+          <span className="inline-flex items-center min-h-10 px-3.5 py-2 border border-line rounded-full bg-panel font-semibold text-sm">
+            Question <span className="num mx-1">{quiz.index + 1}</span> of{' '}
+            <span className="num ml-1">{total}</span>
+          </span>
+        </div>
       </div>
 
       <div className="grid gap-1 mb-5" style={{ gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` }} aria-hidden="true">
@@ -60,7 +78,12 @@ export function QuizView() {
         })}
       </div>
 
-      <section key={question.id} className="bg-panel border border-line rounded-2xl p-[22px]">
+      <section
+        key={question.id}
+        className={`bg-panel border border-line rounded-2xl p-[22px] ${
+          quiz.submitted && !wasCorrect ? 'sb-shake' : ''
+        }`}
+      >
         <p className="m-0 mb-1 text-muted text-sm font-semibold">{quizLabel}</p>
         <h1 id="quiz-prompt" className="m-0 mb-5 text-[1.375rem] font-bold leading-snug">
           {question.prompt}
@@ -132,12 +155,19 @@ export function QuizView() {
         {quiz.submitted && (
           <div
             role="status"
-            className="mt-5 p-4 rounded-[12px] border border-line bg-bg"
+            className="mt-5 p-4 rounded-[12px] border border-line bg-bg flex items-start justify-between gap-3"
           >
-            <b className={wasCorrect ? 'text-green' : 'text-amber'}>
-              {wasCorrect ? 'Correct!' : 'Not quite.'}
-            </b>{' '}
-            <span className="text-muted">{question.explanation}</span>
+            <div>
+              <b className={wasCorrect ? 'text-green' : 'text-amber'}>
+                {wasCorrect ? 'Correct!' : 'Not quite.'}
+              </b>{' '}
+              <span className="text-muted">{question.explanation}</span>
+            </div>
+            {wasCorrect && (
+              <span className="sb-xp-float shrink-0 px-2.5 py-1 rounded-full bg-green/15 text-green font-bold text-xs num">
+                +{stepXp} XP
+              </span>
+            )}
           </div>
         )}
 

@@ -94,99 +94,122 @@ export function CurriculumView() {
       </div>
 
       <div className="grid grid-cols-[minmax(0,1fr)_360px] max-[1100px]:grid-cols-1 gap-5 items-start">
-        <ol className="grid gap-2.5">
-          {filteredLessons.length === 0 ? (
-            <li className="bg-panel border border-line rounded-2xl p-[22px] text-muted text-sm">
-              No lessons match your search. Clear the search box to see all lessons in this track.
-            </li>
-          ) : (
-            filteredLessons.map(({ lesson, idx }) => {
-              const derived = progress.lessons[idx];
-              const key = lessonKeyFor(activeTrackId, idx);
-              const label = lessonLabel(lesson, idx);
-              const isDone = derived.status === 'done';
-              const isCur = derived.status === 'cur';
-              const isLock = derived.status === 'lock';
+        <div className="sb-pcb-grid rounded-2xl border border-line bg-bg/40 p-3">
+          <ol className="grid gap-3">
+            {filteredLessons.length === 0 ? (
+              <li className="bg-panel border border-line rounded-2xl p-[22px] text-muted text-sm">
+                No lessons match your search. Clear the search box to see all lessons in this track.
+              </li>
+            ) : (
+              filteredLessons.map(({ lesson, idx }, listIdx) => {
+                const derived = progress.lessons[idx];
+                const key = lessonKeyFor(activeTrackId, idx);
+                const label = lessonLabel(lesson, idx);
+                const isDone = derived.status === 'done';
+                const isCur = derived.status === 'cur';
+                const isLock = derived.status === 'lock';
+                const hasNextTrace = !q && listIdx < filteredLessons.length - 1;
 
-              return (
-                <li
-                  key={lesson.title}
-                  data-status={derived.status}
-                  className={`grid grid-cols-[40px_minmax(0,1fr)_auto_auto_auto] max-[760px]:grid-cols-[36px_minmax(0,1fr)_auto] gap-3.5 items-center px-[18px] py-4 border rounded-[14px] transition-all ${
-                    isLock
-                      ? 'border-dashed border-line bg-transparent text-muted'
-                      : 'bg-panel border-line hover:border-muted'
-                  }`}
-                  style={
-                    isCur
-                      ? { borderColor: 'color-mix(in srgb, var(--amber) 70%, var(--line))' }
-                      : undefined
-                  }
-                >
-                  <span
-                    className={`grid place-items-center w-9 h-9 rounded-full font-bold text-sm font-mono ${
-                      isDone
-                        ? 'bg-green text-green-ink'
-                        : isCur
-                          ? 'bg-amber text-amber-ink'
-                          : 'bg-panel2 text-muted'
+                return (
+                  <li
+                    key={lesson.title}
+                    data-status={derived.status}
+                    className={`relative grid grid-cols-[40px_minmax(0,1fr)_auto_auto_auto] max-[760px]:grid-cols-[36px_minmax(0,1fr)_auto] gap-3.5 items-center px-[18px] py-4 border rounded-[14px] transition-all ${
+                      isLock
+                        ? 'border-dashed border-line bg-panel/40 text-muted'
+                        : 'bg-panel border-line hover:border-muted'
                     }`}
+                    style={
+                      isCur
+                        ? { borderColor: 'color-mix(in srgb, var(--cyan) 70%, var(--line))' }
+                        : undefined
+                    }
                   >
-                    {isDone ? (
-                      <Icon name="check" className="w-[18px] h-[18px]" strokeWidth={2.5} />
-                    ) : (
-                      idx + 1
+                    {hasNextTrace && (
+                      <span
+                        aria-hidden="true"
+                        className={`absolute left-[37px] max-[760px]:left-[35px] top-[calc(50%+18px)] h-[calc(100%+12px-18px)] w-0.5 z-0 ${
+                          isDone
+                            ? 'bg-green'
+                            : isCur
+                              ? 'bg-cyan sb-trace-pulse'
+                              : 'border-l-2 border-dashed border-line bg-transparent'
+                        }`}
+                      />
                     )}
-                  </span>
 
-                  <div>
-                    <h3 className="m-0 text-base font-bold leading-snug">{lesson.title}</h3>
-                    <p className="mt-0.5 mb-0 text-muted text-sm">{lesson.subtitle}</p>
-                    {isLock && derived.lockMessage && (
-                      <p className="mt-1 mb-0 inline-flex items-center gap-1.5 text-sm font-semibold">
-                        <Icon name="lock" className="w-4 h-4" />
-                        {derived.lockMessage}
-                      </p>
-                    )}
-                  </div>
+                    <span
+                      className={`relative z-10 grid place-items-center w-9 h-9 rounded-full font-bold text-sm font-mono ${
+                        isDone
+                          ? 'bg-green text-green-ink ring-2 ring-green/35 ring-offset-2 ring-offset-panel'
+                          : isCur
+                            ? 'bg-cyan text-cyan-ink ring-2 ring-cyan/40 ring-offset-2 ring-offset-panel'
+                            : 'bg-panel2 text-muted'
+                      }`}
+                    >
+                      {isDone ? (
+                        <Icon name="check" className="w-[18px] h-[18px]" strokeWidth={2.5} />
+                      ) : (
+                        idx + 1
+                      )}
+                    </span>
 
-                  <span className="num text-sm text-muted whitespace-nowrap max-[760px]:hidden">
-                    {lesson.minutes} min
-                  </span>
-                  <span className="num text-sm text-muted whitespace-nowrap max-[760px]:hidden">
-                    +{lesson.xp} XP
-                  </span>
+                    <div>
+                      <h3 className="m-0 text-base font-bold leading-snug flex items-center gap-2 flex-wrap">
+                        <span>{lesson.title}</span>
+                        {lesson.kind === 'final' && (
+                          <span className="text-[0.6875rem] font-mono font-bold px-2 py-0.5 rounded-full bg-panel2 border border-line text-amber">
+                            Final Boss Lab
+                          </span>
+                        )}
+                      </h3>
+                      <p className="mt-0.5 mb-0 text-muted text-sm">{lesson.subtitle}</p>
+                      {isLock && derived.lockMessage && (
+                        <p className="mt-1 mb-0 inline-flex items-center gap-1.5 text-sm font-semibold">
+                          <Icon name="lock" className="w-4 h-4" />
+                          {derived.lockMessage}
+                        </p>
+                      )}
+                    </div>
 
-                  <span className="inline-flex items-center justify-end gap-2 min-w-[104px] flex-wrap">
-                    {isLock && <span className="text-muted font-semibold text-sm">Locked</span>}
-                    {isDone && <span className="text-green font-bold text-sm">Completed</span>}
-                    {isCur && <span className="text-amber font-bold text-sm">Up next</span>}
-                    {!isLock && (
-                      <button
-                        type="button"
-                        aria-label={`${isDone ? 'Review' : 'Open'} ${label}`}
-                        onClick={() => navigate(`learn/${key}`)}
-                        className="min-h-9 px-3 border border-line rounded-lg bg-transparent text-ink font-semibold text-sm cursor-pointer hover:bg-panel2 hover:border-muted"
-                      >
-                        {isDone ? 'Review' : 'Open'}
-                      </button>
-                    )}
-                    {isDone && (
-                      <button
-                        type="button"
-                        aria-label={`Quiz for ${label}`}
-                        onClick={() => navigate(`quiz/${key}`)}
-                        className="min-h-9 px-3 border border-line rounded-lg bg-transparent text-ink font-semibold text-sm cursor-pointer hover:bg-panel2 hover:border-muted"
-                      >
-                        Quiz
-                      </button>
-                    )}
-                  </span>
-                </li>
-              );
-            })
-          )}
-        </ol>
+                    <span className="num text-sm text-muted whitespace-nowrap max-[760px]:hidden">
+                      {lesson.minutes} min
+                    </span>
+                    <span className="num text-sm text-muted whitespace-nowrap max-[760px]:hidden">
+                      +{lesson.xp} XP
+                    </span>
+
+                    <span className="inline-flex items-center justify-end gap-2 min-w-[104px] flex-wrap">
+                      {isLock && <span className="text-muted font-semibold text-sm">Locked</span>}
+                      {isDone && <span className="text-green font-bold text-sm">Completed</span>}
+                      {isCur && <span className="text-amber font-bold text-sm">Up next</span>}
+                      {!isLock && (
+                        <button
+                          type="button"
+                          aria-label={`${isDone ? 'Review' : 'Open'} ${label}`}
+                          onClick={() => navigate(`learn/${key}`)}
+                          className="min-h-9 px-3 border border-line rounded-lg bg-transparent text-ink font-semibold text-sm cursor-pointer hover:bg-panel2 hover:border-muted"
+                        >
+                          {isDone ? 'Review' : 'Open'}
+                        </button>
+                      )}
+                      {isDone && (
+                        <button
+                          type="button"
+                          aria-label={`Quiz for ${label}`}
+                          onClick={() => navigate(`quiz/${key}`)}
+                          className="min-h-9 px-3 border border-line rounded-lg bg-transparent text-ink font-semibold text-sm cursor-pointer hover:bg-panel2 hover:border-muted"
+                        >
+                          Quiz
+                        </button>
+                      )}
+                    </span>
+                  </li>
+                );
+              })
+            )}
+          </ol>
+        </div>
 
         <div className="grid gap-5 min-w-0">
           <aside aria-label="Track progress" className="bg-panel border border-line rounded-2xl p-[22px]">

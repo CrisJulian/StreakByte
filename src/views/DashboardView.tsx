@@ -3,6 +3,7 @@ import { WelcomeMascot } from '../components/WelcomeMascot';
 import { getTrackProgress, LESSON_XP_BY_KEY, lessonLabel, TRACKS } from '../data/curriculum';
 import { formatXp, initialsFor } from '../data/leaderboard';
 import { lessonKeyFor } from '../domain/rules/lessonProgress';
+import { deriveDailyQuests, ensureDailyActivity } from '../domain/rules/dailyQuests';
 import { deriveAchievements } from '../domain/rules/progressViews';
 import {
   calculateTotalXp,
@@ -17,10 +18,13 @@ export function DashboardView() {
   const openSetup = useStreakByteStore((s) => s.openSetup);
   const setTrack = useStreakByteStore((s) => s.setTrack);
   const navigate = useStreakByteStore((s) => s.navigate);
+  const setChatOpen = useStreakByteStore((s) => s.setChatOpen);
+  const claimDailyQuest = useStreakByteStore((s) => s.claimDailyQuest);
   const track = useStreakByteStore((s) => s.track);
   const completions = useStreakByteStore((s) => s.completions);
   const streak = useStreakByteStore((s) => s.streak);
   const labBonusXp = useStreakByteStore((s) => s.labBonusXp);
+  const dailyActivity = useStreakByteStore((s) => s.dailyActivity);
   const leaderboard = useStreakByteStore((s) => s.leaderboard);
   const authUser = useStreakByteStore((s) => s.authUser);
   const isGuest = useStreakByteStore((s) => s.isGuest);
@@ -72,6 +76,18 @@ export function DashboardView() {
   });
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
   const previewAchievements = achievements.slice(0, 4);
+  const dailyQuests = deriveDailyQuests(ensureDailyActivity(dailyActivity, today));
+  const completedQuestsCount = dailyQuests.filter((q) => q.completed).length;
+
+  const triggerQuestAction = (id: (typeof dailyQuests)[number]['id']) => {
+    if (id === 'daily-quiz') {
+      navigate('curriculum');
+    } else if (id === 'daily-lab') {
+      openSetup(activeTrack.defaultTarget, nextLessonTitle);
+    } else {
+      setChatOpen(true);
+    }
+  };
   const above = me && me.rank > 1 ? ranked[me.rank - 2] : null;
   const heroSubtitle = above
     ? `You’re ${formatXp(above.xp - me.xp)} XP behind ${above.name} this week.`
@@ -441,6 +457,107 @@ export function DashboardView() {
           </a>
         </section>
       </div>
+
+      {/* Row 3: Daily Quests */}
+      <section aria-label="Daily quests" className="grid gap-3 mt-1">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <h2 className="m-0 text-[1.125rem] font-bold leading-snug tracking-[-0.01em]">
+            Daily quests
+          </h2>
+          <div className="flex items-center gap-2">
+            <span className="num text-[0.8125rem] font-semibold text-muted">
+              {completedQuestsCount} of {dailyQuests.length} done
+            </span>
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-panel2 text-muted">
+              Resets daily
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 max-[900px]:grid-cols-1 gap-4">
+          {dailyQuests.map((q) => {
+            const pct = q.target > 0 ? Math.round((q.progress / q.target) * 100) : 0;
+            const actionLabel =
+              q.id === 'daily-quiz'
+                ? 'Go to lessons'
+                : q.id === 'daily-lab'
+                  ? 'Open lab'
+                  : 'Ask BYTE';
+            return (
+              <article
+                key={q.id}
+                className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-3"
+                style={
+                  q.completed && !q.claimed
+                    ? { borderColor: 'color-mix(in srgb, var(--cyan) 65%, var(--line))' }
+                    : undefined
+                }
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div
+                      className={`grid place-items-center w-9 h-9 rounded-[10px] flex-none ${
+                        q.completed ? 'text-cyan bg-panel2' : 'text-muted bg-panel2'
+                      }`}
+                    >
+                      <Icon name={q.icon} className="w-[18px] h-[18px]" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="m-0 text-sm font-bold leading-snug">{q.title}</h3>
+                      <p className="m-0 text-xs text-muted">{q.description}</p>
+                    </div>
+                  </div>
+                  <span className="num shrink-0 text-xs font-bold px-2 py-0.5 rounded-full bg-cyan/15 text-cyan">
+                    +{q.xpReward} XP
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <div className="flex-1 h-1.5 rounded-full bg-panel2 overflow-hidden">
+                    <i
+                      className="sb-bar-fill block h-full rounded-full"
+                      style={{
+                        width: `${pct}%`,
+                        background: q.claimed
+                          ? 'var(--green)'
+                          : q.completed
+                            ? 'var(--cyan)'
+                            : 'var(--muted)',
+                      }}
+                    />
+                  </div>
+                  <small className="num text-xs text-muted font-semibold">
+                    {q.progress} / {q.target}
+                  </small>
+                </div>
+
+                {q.claimed ? (
+                  <span className="mt-auto inline-flex items-center justify-center gap-1.5 min-h-10 px-3 rounded-[10px] bg-green/15 text-green font-bold text-sm">
+                    <Icon name="check" className="w-4 h-4" strokeWidth={2.5} />
+                    Claimed
+                  </span>
+                ) : q.completed ? (
+                  <button
+                    type="button"
+                    onClick={() => claimDailyQuest(q.id)}
+                    className="mt-auto w-full inline-flex items-center justify-center gap-1.5 min-h-10 px-3 border border-cyan rounded-[10px] bg-cyan text-cyan-ink font-bold text-sm cursor-pointer hover:brightness-110 transition-all"
+                  >
+                    Claim +{q.xpReward} XP
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => triggerQuestAction(q.id)}
+                    className="mt-auto w-full inline-flex items-center justify-center min-h-10 px-3 border border-line rounded-[10px] bg-transparent text-ink font-semibold text-sm cursor-pointer hover:bg-panel2 hover:border-muted transition-colors"
+                  >
+                    {actionLabel}
+                  </button>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }
