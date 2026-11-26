@@ -8,55 +8,50 @@ import { img } from './helpers';
  */
 
 const COMMONS = 'https://commons.wikimedia.org/wiki/';
+const PDF_CREDIT = 'Source: StreakByte Hardware Basics reference guide (hardware.pdf)';
+const pdfImg = (file: string, alt: string, caption: string) =>
+  img(file, alt, caption, { available: true, credit: PDF_CREDIT });
 
 // Pictures that are reused on more than one page.
-const m2Slot = img(
+const m2Slot = pdfImg(
   'hw2-m2-slot.jpg',
-  'Close-up of an M.2 slot on a motherboard with its screw post.',
-  'An M.2 slot: a small edge-connector slot with a screw post at the far end.',
-  { sourcePage: 'https://commons.wikimedia.org/wiki/Category:M.2' },
+  'Close-up of an M.2 slot on a motherboard.',
+  'An M.2 slot on a motherboard.',
 );
-const ramStick = img(
+const dimmSlots = pdfImg(
+  'hw2-dimm-slots.jpg',
+  'Desktop DIMM slots with RAM sticks and locking clips visible.',
+  'DIMM slots on a desktop board with clips visible.',
+);
+const ramStick = pdfImg(
   'hw3-ram-stick.jpg',
-  'A DDR4 memory stick: a narrow board with chips and a row of gold contacts.',
-  'A RAM stick (DDR4).',
-  { sourcePage: `${COMMONS}File:RAM_Module_(SDRAM-DDR4).jpg` },
+  'Desktop RAM sticks with memory chips and gold contacts.',
+  'Desktop RAM sticks (DIMMs).',
 );
-const m2Ssd = img(
+const m2Ssd = pdfImg(
   'hw4-m2-ssd.jpg',
-  'An NVMe M.2 SSD: a short stick with memory chips.',
-  'An NVMe M.2 SSD.',
-  {
-    sourcePage:
-      'https://commons.wikimedia.org/wiki/File:Samsung_980_PRO_PCIe_4.0_NVMe_SSD_1TB-top_PNr%C2%B00915.jpg',
-  },
+  'An NVMe M.2 2280 SSD: a short stick with memory chips.',
+  'An NVMe M.2 2280 SSD.',
 );
-const plug24 = img(
+const plug24 = pdfImg(
   'hw5-24pin.jpg',
-  'A wide two-row 24-pin ATX power plug.',
-  'The 24-pin ATX power plug.',
-  { sourcePage: `${COMMONS}File:24-pin_ATX_power_plug_from_a_Seasonic_PSU_20131105.jpg` },
+  'A wide two-row 24-pin (20+4) ATX power connector.',
+  'The 24-pin (20+4) ATX power connector.',
 );
-const thermalPaste = img(
+const thermalPaste = pdfImg(
   'hw1-thermal-paste.jpg',
-  'A tube of thermal paste.',
-  'Thermal paste.',
-  { sourcePage: `${COMMONS}File:2023_Thermal_Grizzly_Kryonaut.jpg` },
+  'A syringe of thermal paste.',
+  'A syringe of thermal paste.',
 );
-const cpuCooler = img(
+const cpuCooler = pdfImg(
   'hw1-cpu-cooler.jpg',
-  'A tower CPU cooler: a block of thin metal fins with a fan.',
-  'A tower CPU cooler.',
-  {
-    sourcePage:
-      'https://commons.wikimedia.org/wiki/File:Alpenf%C3%B6hn_Nordwand_%E2%80%93_CPU_tower_cooler-front_oblique_PNr%C2%B00303.jpg',
-  },
+  'A tower air CPU cooler with metal fins and fans.',
+  'A tower air CPU cooler.',
 );
-const cpu = img(
+const cpu = pdfImg(
   'hw1-cpu.jpg',
-  'The top of an Intel Core i7-12700K processor: a small square chip.',
-  'A CPU (Intel Core i7-12700K, top view).',
-  { sourcePage: `${COMMONS}File:Intel_CPU_Core_i7_12700K_Alder_Lake_top.jpg` },
+  'A desktop CPU seated in its motherboard socket.',
+  'A desktop CPU in its socket.',
 );
 
 export const HW_LESSONS: Record<string, LessonContent> = {
@@ -91,11 +86,15 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         does: 'Holds the parts together, protects them from dust and damage, and shapes airflow and cable routing.',
         looksLike: 'A tower box with side panels. A mid-tower is the most common size and fits ATX boards.',
         images: [
-          img(
+          pdfImg(
             'hw1-case.jpg',
             'A computer case with the side panel open and parts inside.',
             'A PC case with parts inside.',
-            { sourcePage: `${COMMONS}File:ATX_computer_case.jpg` },
+          ),
+          pdfImg(
+            'hw1-case-sizes.jpg',
+            'Comparison of PC case sizes from small form factor to full tower.',
+            'PC case form factors compared by size.',
           ),
         ],
       },
@@ -104,13 +103,15 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         does: 'Connects every other part so they can work together.',
         looksLike: 'A flat board covered in slots, sockets and connectors.',
         images: [
-          img(
+          pdfImg(
             'hw1-motherboard.jpg',
-            'A top-down view of a modern ATX motherboard.',
-            'A motherboard, seen from above.',
-            {
-              todo: 'NO FREE IMAGE FOUND yet. Look for a clear, top-down photo of a modern ATX board. Lead: https://commons.wikimedia.org/wiki/Category:ASUS_motherboards (category page; check each file’s license).',
-            },
+            'A modern ATX motherboard.',
+            'A modern ATX motherboard.',
+          ),
+          pdfImg(
+            'hw1-motherboard-sizes.jpg',
+            'Comparison of ATX, Micro-ATX, and Mini-ITX motherboard sizes.',
+            'Motherboard form factors: ATX, Micro-ATX, and Mini-ITX.',
           ),
         ],
       },
@@ -126,13 +127,27 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         does: 'Removes heat so the CPU stays at a safe temperature.',
         looksLike:
           'A block of thin metal fins with a fan, or a pump cap with tubes running to a radiator.',
-        images: [cpuCooler],
+        images: [
+          cpuCooler,
+          pdfImg(
+            'hw1-aio-cooler.jpg',
+            'An all-in-one (AIO) liquid CPU cooler with pump block, tubes, and radiator fans.',
+            'An AIO liquid CPU cooler.',
+          ),
+        ],
       },
       {
         name: 'Thermal paste',
         does: 'Improves heat transfer from CPU to cooler.',
         looksLike: 'A grey or white paste sold in a syringe or tube.',
-        images: [thermalPaste],
+        images: [
+          thermalPaste,
+          pdfImg(
+            'hw1-thermal-paste-clean.jpg',
+            'Cleaning old thermal paste off a cooler base with a cloth.',
+            'Wiping off old thermal paste before applying new paste.',
+          ),
+        ],
       },
     ],
     keyPoints: [
@@ -213,28 +228,23 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         does: 'Holds the CPU; only a matching CPU fits (example: AM5 for Ryzen 7000, LGA 1700 for Intel Alder and Raptor Lake).',
         looksLike: 'A square frame, with pins either in the socket or on the CPU.',
         images: [
-          img('hw2-socket-am5.jpg', 'An open AM5 CPU socket.', 'An AM5 socket, open.', { sourcePage: `${COMMONS}File:AM5_Socket_Open.jpg` }),
-          img('hw2-socket-lga1700.jpg', 'An LGA 1700 CPU socket.', 'An LGA 1700 socket.', { sourcePage: `${COMMONS}File:2023_Podstawka_LGA_1700.jpg` }),
+          pdfImg('hw2-socket-am5.jpg', 'An AMD AM5 CPU socket.', 'An AM5 socket (AMD LGA).'),
+          pdfImg('hw2-socket-am4.jpg', 'An AMD AM4 CPU socket.', 'An AM4 socket (AMD PGA).'),
+          pdfImg('hw2-socket-lga1700.jpg', 'An Intel LGA 1700 CPU socket.', 'An LGA 1700 socket (Intel LGA).'),
         ],
       },
       {
         name: 'DIMM slots',
         does: 'Hold the RAM sticks.',
         looksLike: 'Long thin slots next to the CPU with a clip at one or both ends.',
-        images: [
-          img('hw2-dimm-slots.jpg', 'Desktop DIMM slots with the clips visible.', 'DIMM slots on a desktop board.', {
-            todo: 'NO FREE IMAGE FOUND yet. Look for a desktop board photo with the clips visible. Do not use the DDR4 SO-DIMM slot photo on Commons: it is a laptop slot.',
-          }),
-        ],
+        images: [dimmSlots],
       },
       {
         name: 'PCIe x16 slot',
         does: 'Holds a graphics card.',
         looksLike: 'The longest slot, often with a release latch.',
         images: [
-          img('hw2-pcie-x16.jpg', 'A PCIe x16 slot with its release latch.', 'A PCIe x16 slot.', {
-            todo: 'NO FREE IMAGE FOUND yet. Look for a modern board close-up. Older PCI photos on Commons do not show PCIe x16 clearly.',
-          }),
+          pdfImg('hw2-pcie-x16.jpg', 'PCIe x16 expansion slots on a motherboard.', 'PCIe x16 slots on a motherboard.'),
         ],
       },
       {
@@ -247,18 +257,15 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         name: 'SATA ports',
         does: 'Connect SATA drives with cables.',
         looksLike: 'Small L-shaped connectors in a row.',
-        images: [img('hw2-sata-ports.jpg', 'A row of small L-shaped SATA ports.', 'SATA ports.')],
+        images: [
+          pdfImg('hw2-sata-ports.jpg', 'A row of SATA ports along the edge of a motherboard.', 'SATA ports on a motherboard.'),
+        ],
       },
       {
         name: '24-pin power connector',
         does: 'Brings main power from the PSU.',
         looksLike: 'The largest plug-in block on the board, near the edge.',
-        images: [
-          img('hw2-24pin-board.jpg', 'The 24-pin power connector on a motherboard.', 'The 24-pin power connector on a board.', {
-            sourcePage: `${COMMONS}File:ATX_Power_connectors_24pin_8pin_4pin_Motherboard.jpg`,
-            todo: 'Lead only: verify the license (author Tobias Maier). It is a server board, not a consumer board.',
-          }),
-        ],
+        images: [plug24],
       },
       {
         name: 'Chipset, VRM and rear I/O panel',
@@ -266,9 +273,9 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         looksLike:
           'Chipset: a chip under a heatsink. VRM: a block of small coils and heatsinks around the CPU socket. Rear I/O: a metal plate of ports.',
         images: [
-          img('hw2-chipset.jpg', 'A chipset under a heatsink on a motherboard.', 'The chipset.'),
-          img('hw2-vrm.jpg', 'Coils and heatsinks around a CPU socket (the VRM).', 'The VRM.'),
-          img('hw2-rear-io.jpg', 'The metal rear I/O plate with USB, video, audio and network ports.', 'The rear I/O panel.'),
+          pdfImg('hw2-chipset.jpg', 'A motherboard chipset chip.', 'The chipset.'),
+          pdfImg('hw2-vrm.jpg', 'Voltage regulator components including coil and capacitors.', 'Voltage regulator module (VRM) components.'),
+          pdfImg('hw2-rear-io.jpg', 'The metal rear I/O plate with USB, video, audio and network ports.', 'The rear I/O panel.'),
         ],
       },
       {
@@ -276,9 +283,7 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         does: 'Keeps BIOS settings.',
         looksLike: 'A silver coin cell in a round holder.',
         images: [
-          img('hw2-cmos-battery.jpg', 'A silver coin cell battery in its round holder on a motherboard.', 'A CMOS battery in its holder.', {
-            sourcePage: `${COMMONS}File:Asus_P5PL2_-_Newsun_CR2032-0428.jpg`,
-          }),
+          pdfImg('hw2-cmos-battery.jpg', 'A silver coin cell battery in its round holder on a motherboard.', 'A CMOS battery in its holder.'),
         ],
       },
     ],
@@ -331,20 +336,18 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         does: 'Makes sure only the right memory type fits. On DDR5 the notch sits farther left than on DDR4 when the sticks are side by side.',
         looksLike: 'A small cut in the gold contact edge.',
         images: [
-          img('hw3-key-notch.jpg', 'Close-up of the gold contact edge of a RAM stick with the key notch in view.', 'The key notch on a RAM stick.', {
-            todo: 'NO FREE IMAGE FOUND for a desktop DDR4/DDR5 side-by-side. Look for a close-up of the contact edge with the notch in view.',
-          }),
+          pdfImg(
+            'hw3-key-notch.jpg',
+            'DDR4 RAM sticks showing the key notch along the gold contact edge.',
+            'DDR4 RAM sticks showing the key notch on the gold contact edge.',
+          ),
         ],
       },
       {
         name: 'DIMM slot with clips',
         does: 'Holds the stick. The clips at each end lock it in place.',
         looksLike: 'A long slot with a ridge that matches the notch and plastic clips at the ends.',
-        images: [
-          img('hw3-dimm-slot.jpg', 'A DIMM slot with its ridge and plastic clips at both ends.', 'A DIMM slot with clips.', {
-            todo: 'NO FREE IMAGE FOUND (same search as Lesson 2: a desktop board photo with the clips visible).',
-          }),
-        ],
+        images: [dimmSlots],
       },
     ],
     steps: [
@@ -410,9 +413,8 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         looksLike: 'A metal box. Inside, one or more shiny discs and an arm.',
         verify: 'Add a maker page that states the HDD-versus-SSD speed difference.',
         images: [
-          img('hw4-hdd.jpg', 'An open 3.5-inch hard drive showing the platters and the head arm.', 'An open 3.5-inch HDD showing platters and heads.', {
-            sourcePage: `${COMMONS}File:3.5_inch_hard_disk_drive,_side_view.jpg`,
-          }),
+          pdfImg('hw4-hdd-closed.jpg', 'A closed 3.5-inch hard disk drive.', 'A 3.5-inch hard disk drive (HDD).'),
+          pdfImg('hw4-hdd.jpg', 'An open 3.5-inch hard drive showing the platters and the head arm.', 'An open 3.5-inch HDD showing platters and heads.'),
         ],
       },
       {
@@ -420,11 +422,7 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         does: 'Flash storage with no moving parts, connected by cable.',
         looksLike: 'A thin 2.5-inch case.',
         images: [
-          img('hw4-sata-ssd.jpg', 'A thin 2.5-inch SATA SSD in its case.', 'A 2.5-inch SATA SSD.', {
-            sourcePage:
-              'https://commons.wikimedia.org/wiki/File:WDC_WDS200T2B0A-00SM50_2000,3_GB_SATA_Vorderseite_20211008_SSD024corr.png',
-            todo: 'Document says CC BY 4.0 (copyright statement in page metadata; VERIFY). Credit if confirmed: "Scan: PantheraLeo1359531, CC BY 4.0, Wikimedia Commons".',
-          }),
+          pdfImg('hw4-sata-ssd.jpg', 'A thin 2.5-inch SATA SSD in its case.', 'A 2.5-inch SATA SSD.'),
         ],
       },
       {
@@ -437,7 +435,7 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         name: 'M.2 slot',
         does: 'Holds the M.2 SSD with no cable.',
         looksLike: 'A small slot on the board.',
-        images: [{ ...m2Slot, file: 'hw4-m2-slot.jpg' }],
+        images: [m2Slot],
       },
     ],
     notes: [
@@ -509,9 +507,11 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         looksLike: 'Bundles of colored wires ending in plugs of different shapes.',
         verify: 'Corsair’s article does not list these cables; the source is a Commons photo description.',
         images: [
-          img('hw5-other-cables.jpg', 'PSU cables ending in CPU, PCIe, SATA and Molex plugs.', 'PSU cables: CPU, PCIe, SATA and Molex.', {
-            sourcePage: `${COMMONS}File:PC-Netzteilanschluesse_ATX2_numbered_IMGP2167_smial_wp.jpg`,
-          }),
+          pdfImg(
+            'hw5-other-cables.jpg',
+            'PSU power cables with CPU and PCIe connectors.',
+            'PSU power cables (CPU and PCIe connectors).',
+          ),
         ],
       },
     ],

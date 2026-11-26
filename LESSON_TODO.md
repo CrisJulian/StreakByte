@@ -12,87 +12,62 @@ Generated from `src/data/lessons/*.ts`. Nothing here was invented: every item is
 
 ### Lesson 1: Inside the PC (hw-1)
 
-- [ ] `hw1-case.jpg` (Case) source: https://commons.wikimedia.org/wiki/File:ATX_computer_case.jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
-- [ ] `hw1-motherboard.jpg` (Motherboard)
-  - NO FREE IMAGE FOUND yet. Look for a clear, top-down photo of a modern ATX board. Lead: https://commons.wikimedia.org/wiki/Category:ASUS_motherboards (category page; check each file’s license).
-- [ ] `hw1-cpu.jpg` (CPU) source: https://commons.wikimedia.org/wiki/File:Intel_CPU_Core_i7_12700K_Alder_Lake_top.jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
-- [ ] `hw1-cpu-cooler.jpg` (CPU cooler) source: https://commons.wikimedia.org/wiki/File:Alpenf%C3%B6hn_Nordwand_%E2%80%93_CPU_tower_cooler-front_oblique_PNr%C2%B00303.jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
-- [ ] `hw1-thermal-paste.jpg` (Thermal paste) source: https://commons.wikimedia.org/wiki/File:2023_Thermal_Grizzly_Kryonaut.jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
+- [x] `hw1-case.jpg` (Case) — populated from `ads/hardware.pdf`
+- [x] `hw1-case-sizes.jpg` (Case sizes) — populated from `ads/hardware.pdf`
+- [x] `hw1-motherboard.jpg` (Motherboard) — populated from `ads/hardware.pdf`
+- [x] `hw1-motherboard-sizes.jpg` (Motherboard sizes) — populated from `ads/hardware.pdf`
+- [x] `hw1-cpu.jpg` (CPU) — populated from `ads/hardware.pdf`
+- [x] `hw1-cpu-cooler.jpg` (CPU cooler) — populated from `ads/hardware.pdf`
+- [x] `hw1-aio-cooler.jpg` (AIO liquid cooler) — populated from `ads/hardware.pdf`
+- [x] `hw1-thermal-paste.jpg` (Thermal paste) — populated from `ads/hardware.pdf`
+- [x] `hw1-thermal-paste-clean.jpg` (Thermal paste cleanup) — populated from `ads/hardware.pdf`
 
 ### Lesson 2: The motherboard (hw-2)
 
-- [ ] `hw2-socket-am5.jpg` (CPU socket) source: https://commons.wikimedia.org/wiki/File:AM5_Socket_Open.jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
-- [ ] `hw2-socket-lga1700.jpg` (CPU socket) source: https://commons.wikimedia.org/wiki/File:2023_Podstawka_LGA_1700.jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
-- [ ] `hw2-dimm-slots.jpg` (DIMM slots)
-  - NO FREE IMAGE FOUND yet. Look for a desktop board photo with the clips visible. Do not use the DDR4 SO-DIMM slot photo on Commons: it is a laptop slot.
-- [ ] `hw2-pcie-x16.jpg` (PCIe x16 slot)
-  - NO FREE IMAGE FOUND yet. Look for a modern board close-up. Older PCI photos on Commons do not show PCIe x16 clearly.
-- [ ] `hw2-m2-slot.jpg` (M.2 slot) source: https://commons.wikimedia.org/wiki/Category:M.2
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
-- [ ] `hw2-sata-ports.jpg` (SATA ports)
-  - NO FREE IMAGE FOUND yet. Find a clear picture (CC0, public domain, CC BY or CC BY-SA), save it under this file name and add its credit line.
-- [ ] `hw2-24pin-board.jpg` (24-pin power connector) source: https://commons.wikimedia.org/wiki/File:ATX_Power_connectors_24pin_8pin_4pin_Motherboard.jpg
-  - Lead only: verify the license (author Tobias Maier). It is a server board, not a consumer board.
-- [ ] `hw2-chipset.jpg` (Chipset, VRM and rear I/O panel)
-  - NO FREE IMAGE FOUND yet. Find a clear picture (CC0, public domain, CC BY or CC BY-SA), save it under this file name and add its credit line.
-- [ ] `hw2-vrm.jpg` (Chipset, VRM and rear I/O panel)
-  - NO FREE IMAGE FOUND yet. Find a clear picture (CC0, public domain, CC BY or CC BY-SA), save it under this file name and add its credit line.
-- [ ] `hw2-rear-io.jpg` (Chipset, VRM and rear I/O panel)
-  - NO FREE IMAGE FOUND yet. Find a clear picture (CC0, public domain, CC BY or CC BY-SA), save it under this file name and add its credit line.
-- [ ] `hw2-cmos-battery.jpg` (CMOS battery) source: https://commons.wikimedia.org/wiki/File:Asus_P5PL2_-_Newsun_CR2032-0428.jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
+- [x] `hw2-socket-am5.jpg` (CPU socket) — populated from `ads/hardware.pdf`
+- [x] `hw2-socket-am4.jpg` (CPU socket) — populated from `ads/hardware.pdf`
+- [x] `hw2-socket-lga1700.jpg` (CPU socket) — populated from `ads/hardware.pdf`
+- [x] `hw2-dimm-slots.jpg` (DIMM slots) — populated from `ads/hardware.pdf`
+- [x] `hw2-pcie-x16.jpg` (PCIe x16 slot) — populated from `ads/hardware.pdf`
+- [x] `hw2-m2-slot.jpg` (M.2 slot) — populated from `ads/hardware.pdf`
+- [x] `hw2-sata-ports.jpg` (SATA ports) — populated from `ads/hardware.pdf`
+- [x] `hw5-24pin.jpg` (24-pin power connector, shared) — populated from `ads/hardware.pdf`
+- [x] `hw2-chipset.jpg` (Chipset, VRM and rear I/O panel) — populated from `ads/hardware.pdf`
+- [x] `hw2-vrm.jpg` (Chipset, VRM and rear I/O panel) — populated from `ads/hardware.pdf`
+- [x] `hw2-rear-io.jpg` (Chipset, VRM and rear I/O panel) — populated from `ads/hardware.pdf`
+- [x] `hw2-cmos-battery.jpg` (CMOS battery) — populated from `ads/hardware.pdf`
 
 ### Lesson 3: Memory (RAM) (hw-3)
 
-- [ ] `hw3-ram-stick.jpg` (RAM stick) source: https://commons.wikimedia.org/wiki/File:RAM_Module_(SDRAM-DDR4).jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
-- [ ] `hw3-key-notch.jpg` (Key notch)
-  - NO FREE IMAGE FOUND for a desktop DDR4/DDR5 side-by-side. Look for a close-up of the contact edge with the notch in view.
-- [ ] `hw3-dimm-slot.jpg` (DIMM slot with clips)
-  - NO FREE IMAGE FOUND (same search as Lesson 2: a desktop board photo with the clips visible).
+- [x] `hw3-ram-stick.jpg` (RAM stick) — populated from `ads/hardware.pdf`
+- [x] `hw3-key-notch.jpg` (Key notch) — populated from `ads/hardware.pdf`
+- [x] `hw2-dimm-slots.jpg` (DIMM slot with clips, shared) — populated from `ads/hardware.pdf`
 
 ### Lesson 4: Storage (hw-4)
 
-- [ ] `hw4-hdd.jpg` (HDD) source: https://commons.wikimedia.org/wiki/File:3.5_inch_hard_disk_drive,_side_view.jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
-- [ ] `hw4-sata-ssd.jpg` (SATA SSD) source: https://commons.wikimedia.org/wiki/File:WDC_WDS200T2B0A-00SM50_2000,3_GB_SATA_Vorderseite_20211008_SSD024corr.png
-  - Document says CC BY 4.0 (copyright statement in page metadata; VERIFY). Credit if confirmed: "Scan: PantheraLeo1359531, CC BY 4.0, Wikimedia Commons".
-- [ ] `hw4-m2-ssd.jpg` (M.2 SSD) source: https://commons.wikimedia.org/wiki/File:Samsung_980_PRO_PCIe_4.0_NVMe_SSD_1TB-top_PNr%C2%B00915.jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
-- [ ] `hw4-m2-slot.jpg` (M.2 slot) source: https://commons.wikimedia.org/wiki/Category:M.2
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
+- [x] `hw4-hdd-closed.jpg` (HDD) — populated from `ads/hardware.pdf`
+- [x] `hw4-hdd.jpg` (HDD) — populated from `ads/hardware.pdf`
+- [x] `hw4-sata-ssd.jpg` (SATA SSD) — populated from `ads/hardware.pdf`
+- [x] `hw4-m2-ssd.jpg` (M.2 SSD) — populated from `ads/hardware.pdf`
+- [x] `hw2-m2-slot.jpg` (M.2 slot, shared) — populated from `ads/hardware.pdf`
 
 ### Lesson 5: Power supply (hw-5)
 
 - [ ] `hw5-psu.jpg` (PSU) source: https://commons.wikimedia.org/wiki/File:ATX_Computer_power_supply_unit.jpg
-  - Document says CC BY-SA 4.0 (page metadata; VERIFY). Credit if confirmed: "Photo: Dmitry Makeev, CC BY-SA 4.0, Wikimedia Commons".
-- [ ] `hw5-24pin.jpg` (24-pin connector) source: https://commons.wikimedia.org/wiki/File:24-pin_ATX_power_plug_from_a_Seasonic_PSU_20131105.jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
-- [ ] `hw5-other-cables.jpg` (Other power cables) source: https://commons.wikimedia.org/wiki/File:PC-Netzteilanschluesse_ATX2_numbered_IMGP2167_smial_wp.jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
+  - Not present in `ads/hardware.pdf`. Document says CC BY-SA 4.0 (page metadata; VERIFY). Credit if confirmed: "Photo: Dmitry Makeev, CC BY-SA 4.0, Wikimedia Commons".
+- [x] `hw5-24pin.jpg` (24-pin connector) — populated from `ads/hardware.pdf`
+- [x] `hw5-other-cables.jpg` (Other power cables) — populated from `ads/hardware.pdf`
 
 ### Final Lesson: Build a PC (hw-6)
 
-- [ ] `hw1-cpu.jpg` (CPU and cooler) source: https://commons.wikimedia.org/wiki/File:Intel_CPU_Core_i7_12700K_Alder_Lake_top.jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
-- [ ] `hw1-cpu-cooler.jpg` (CPU and cooler) source: https://commons.wikimedia.org/wiki/File:Alpenf%C3%B6hn_Nordwand_%E2%80%93_CPU_tower_cooler-front_oblique_PNr%C2%B00303.jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
-- [ ] `hw1-thermal-paste.jpg` (CPU and cooler) source: https://commons.wikimedia.org/wiki/File:2023_Thermal_Grizzly_Kryonaut.jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
-- [ ] `hw3-ram-stick.jpg` (RAM) source: https://commons.wikimedia.org/wiki/File:RAM_Module_(SDRAM-DDR4).jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
-- [ ] `hw4-m2-ssd.jpg` (M.2 SSD) source: https://commons.wikimedia.org/wiki/File:Samsung_980_PRO_PCIe_4.0_NVMe_SSD_1TB-top_PNr%C2%B00915.jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
+- [x] `hw1-cpu.jpg` (CPU and cooler) — populated from `ads/hardware.pdf`
+- [x] `hw1-cpu-cooler.jpg` (CPU and cooler) — populated from `ads/hardware.pdf`
+- [x] `hw1-thermal-paste.jpg` (CPU and cooler) — populated from `ads/hardware.pdf`
+- [x] `hw3-ram-stick.jpg` (RAM) — populated from `ads/hardware.pdf`
+- [x] `hw4-m2-ssd.jpg` (M.2 SSD) — populated from `ads/hardware.pdf`
 - [ ] `hw6-graphics-card.jpg` (Graphics card)
-  - The document does not name a graphics-card picture. Find one (CC0, public domain, CC BY or CC BY-SA) and add its credit line.
-- [ ] `hw5-24pin.jpg` (Power cables) source: https://commons.wikimedia.org/wiki/File:24-pin_ATX_power_plug_from_a_Seasonic_PSU_20131105.jpg
-  - Open the source page, confirm the license (CC0, public domain, CC BY or CC BY-SA), author and credit line, save the picture under this file name, then set available to true.
+  - Not present in `ads/hardware.pdf`. The document does not name a graphics-card picture. Find one (CC0, public domain, CC BY or CC BY-SA) and add its credit line.
+- [x] `hw5-24pin.jpg` (Power cables) — populated from `ads/hardware.pdf`
 
 ### Lesson 1: What is a network? (net-1)
 
