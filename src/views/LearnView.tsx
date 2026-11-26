@@ -101,7 +101,7 @@ export function LearnView() {
         </div>
       </header>
 
-      <section aria-labelledby="learn-definitions" className="max-w-[1060px] mx-auto px-6 pt-7 max-[760px]:px-4">
+      <section aria-labelledby="learn-definitions" className="px-[10%] pt-7 max-[760px]:px-4">
         <h2 id="learn-definitions" className={h2Class}>
           Definitions
         </h2>
@@ -123,7 +123,7 @@ export function LearnView() {
         )}
       </section>
 
-      <section aria-labelledby="learn-parts" className={`${sectionClass} max-w-[1060px] mx-auto px-6 max-[760px]:px-4`}>
+      <section aria-labelledby="learn-parts" className={`${sectionClass} px-[10%] max-[760px]:px-4`}>
         <h2 id="learn-parts" className={h2Class}>
           Necessary parts
         </h2>
@@ -154,7 +154,7 @@ export function LearnView() {
       </section>
 
       {content.steps && content.steps.length > 0 && (
-        <section aria-labelledby="learn-steps" className={`${sectionClass} max-w-[1060px] mx-auto px-6 max-[760px]:px-4`}>
+        <section aria-labelledby="learn-steps" className={`${sectionClass} px-[10%] max-[760px]:px-4`}>
           <h2 id="learn-steps" className={h2Class}>
             {isFinal ? 'Build steps' : 'How to install'}
           </h2>
@@ -169,7 +169,7 @@ export function LearnView() {
       )}
 
       {content.notes && content.notes.length > 0 && (
-        <section aria-labelledby="learn-notes" className={`${sectionClass} max-w-[1060px] mx-auto px-6 max-[760px]:px-4`}>
+        <section aria-labelledby="learn-notes" className={`${sectionClass} px-[10%] max-[760px]:px-4`}>
           <h2 id="learn-notes" className={h2Class}>
             Good to know
           </h2>
@@ -184,7 +184,7 @@ export function LearnView() {
         </section>
       )}
 
-      <div className="max-w-[1060px] mx-auto px-6 max-[760px]:px-4 mt-8">
+      <div className="px-[10%] max-[760px]:px-4 mt-8">
         <div className="grid grid-cols-2 max-[760px]:grid-cols-1 border border-line">
           <section aria-labelledby="learn-key-points" className="p-5 border-r border-line max-[760px]:border-r-0 max-[760px]:border-b">
             <h2 id="learn-key-points" className={h2Class}>
@@ -211,7 +211,7 @@ export function LearnView() {
       </div>
 
       {isFinal ? (
-        <section aria-labelledby="learn-lab" className={`${sectionClass} max-w-[1060px] mx-auto px-6 max-[760px]:px-4`}>
+        <section aria-labelledby="learn-lab" className={`${sectionClass} px-[10%] max-[760px]:px-4`}>
           <div className="p-6 border border-[var(--dark-card)] bg-[var(--dark-card)] text-white flex items-center justify-between gap-4 flex-wrap">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-white/60">
@@ -238,7 +238,7 @@ export function LearnView() {
       ) : (
         <section
           aria-labelledby="learn-quiz"
-          className="mt-8 max-w-[1060px] mx-auto px-6 max-[760px]:px-4"
+          className="mt-8 px-[10%] max-[760px]:px-4"
         >
           <div className="p-6 border border-[var(--dark-card)] bg-[var(--dark-card)] text-white flex items-center justify-between gap-4 flex-wrap">
             <div>
@@ -260,7 +260,7 @@ export function LearnView() {
         </section>
       )}
 
-      <section aria-labelledby="learn-references" className="mt-8 max-w-[1060px] mx-auto px-6 pb-8 max-[760px]:px-4">
+      <section aria-labelledby="learn-references" className="mt-8 px-[10%] pb-8 max-[760px]:px-4">
         <div className="pt-5 border-t border-line">
           <h2
             id="learn-references"
