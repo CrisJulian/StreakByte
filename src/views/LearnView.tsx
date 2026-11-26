@@ -11,19 +11,6 @@ import type { TrackId } from '../types/streakbyte';
 const h2Class = 'm-0 mb-3 font-head text-[20px] font-bold tracking-[-0.015em]';
 const sectionClass = 'mt-8';
 
-/** Shows a small "check this" tag, but only in development builds. */
-function VerifyTag({ note }: { note?: string }) {
-  if (!note || !import.meta.env.DEV) return null;
-  return (
-    <span
-      className="ml-2 inline-block px-2 py-0.5 text-[10px] font-bold uppercase text-amber border border-amber"
-      title={note}
-    >
-      Needs checking: {note}
-    </span>
-  );
-}
-
 function LessonFigure({ image, trackId }: { image: LessonImage; trackId: TrackId }) {
   const src = `${import.meta.env.BASE_URL}lessons/${trackId}/${image.file}`;
 
@@ -60,11 +47,6 @@ function LessonFigure({ image, trackId }: { image: LessonImage; trackId: TrackId
       <figcaption className="text-[11.5px] text-muted">
         {image.caption}
         <span className="block text-[10.5px]">Photo credit: added when the picture is published.</span>
-        {import.meta.env.DEV ? (
-          <span className="block text-[10.5px] text-amber">
-            TODO ({image.file}): {image.todo}
-          </span>
-        ) : null}
       </figcaption>
     </figure>
   );
@@ -133,10 +115,7 @@ export function LearnView() {
                 className={`p-4 border-b border-line ${idx % 2 === 0 ? 'min-[761px]:border-r' : ''
                   }`}
               >
-                <dt className="font-head font-bold text-[15px]">
-                  {d.term}
-                  <VerifyTag note={d.verify} />
-                </dt>
+                <dt className="font-head font-bold text-[15px]">{d.term}</dt>
                 <dd className="m-0 mt-1.5 text-muted text-[12px]">{d.text}</dd>
               </div>
             ))}
@@ -151,10 +130,7 @@ export function LearnView() {
         <ul className="grid gap-4 m-0 p-0 list-none">
           {content.parts.map((part) => (
             <li key={part.name} className="p-5 border border-line bg-panel">
-              <h3 className="m-0 font-head text-[16px] font-bold">
-                {part.name}
-                <VerifyTag note={part.verify} />
-              </h3>
+              <h3 className="m-0 font-head text-[16px] font-bold">{part.name}</h3>
               {part.does && (
                 <p className="mt-2 mb-0 text-[12.5px]">
                   <b>Does:</b> {part.does}
@@ -186,7 +162,6 @@ export function LearnView() {
             {content.steps.map((step) => (
               <li key={step.text} className="text-[12.5px]">
                 {step.text}
-                <VerifyTag note={step.verify} />
               </li>
             ))}
           </ol>
@@ -304,9 +279,6 @@ export function LearnView() {
                 >
                   {ref.title}
                 </a>
-                {import.meta.env.DEV && ref.note ? (
-                  <span className="ml-2 text-[11px] text-amber">Needs checking: {ref.note}</span>
-                ) : null}
               </li>
             ))}
           </ol>

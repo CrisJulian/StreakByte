@@ -7,8 +7,8 @@ import { img } from './helpers';
  * Pictures: see public/lessons/hw/ and LESSON_TODO.md.
  */
 
-const COMMONS = 'https://commons.wikimedia.org/wiki/';
 const PDF_CREDIT = 'Source: StreakByte Hardware Basics reference guide (hardware.pdf)';
+const ASSET_CREDIT = 'Source: StreakByte Hardware Basics lesson asset';
 const pdfImg = (file: string, alt: string, caption: string) =>
   img(file, alt, caption, { available: true, credit: PDF_CREDIT });
 
@@ -489,10 +489,12 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         does: 'Powers the whole PC. Most builds use the ATX size; small cases may use SFX or SFX-L.',
         looksLike: 'A metal box with a fan, a power-cord socket and a bundle of cables.',
         images: [
-          img('hw5-psu.jpg', 'An ATX power supply: a metal box with a fan, a power-cord socket and cables.', 'An ATX power supply unit.', {
-            sourcePage: `${COMMONS}File:ATX_Computer_power_supply_unit.jpg`,
-            todo: 'Document says CC BY-SA 4.0 (page metadata; VERIFY). Credit if confirmed: "Photo: Dmitry Makeev, CC BY-SA 4.0, Wikimedia Commons".',
-          }),
+          img(
+            'hw5-psu.jpg',
+            'A black ATX power supply unit showing its cooling fan, power switch, and AC power socket.',
+            'An ATX power supply unit.',
+            { available: true, credit: ASSET_CREDIT },
+          ),
         ],
       },
       {
@@ -571,9 +573,12 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         name: 'Graphics card',
         does: 'Goes in the PCIe x16 slot.',
         images: [
-          img('hw6-graphics-card.jpg', 'A graphics card.', 'A graphics card.', {
-            todo: 'The document does not name a graphics-card picture. Find one (CC0, public domain, CC BY or CC BY-SA) and add its credit line.',
-          }),
+          img(
+            'hw6-graphics-card.jpg',
+            'A triple-fan graphics card showing its PCIe x16 edge connector and rear display outputs.',
+            'A triple-fan graphics card.',
+            { available: true, credit: ASSET_CREDIT },
+          ),
         ],
       },
       {

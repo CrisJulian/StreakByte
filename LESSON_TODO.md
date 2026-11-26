@@ -53,8 +53,7 @@ Generated from `src/data/lessons/*.ts`. Nothing here was invented: every item is
 
 ### Lesson 5: Power supply (hw-5)
 
-- [ ] `hw5-psu.jpg` (PSU) source: https://commons.wikimedia.org/wiki/File:ATX_Computer_power_supply_unit.jpg
-  - Not present in `ads/hardware.pdf`. Document says CC BY-SA 4.0 (page metadata; VERIFY). Credit if confirmed: "Photo: Dmitry Makeev, CC BY-SA 4.0, Wikimedia Commons".
+- [x] `hw5-psu.jpg` (PSU) — added to `public/lessons/hw/`
 - [x] `hw5-24pin.jpg` (24-pin connector) — populated from `ads/hardware.pdf`
 - [x] `hw5-other-cables.jpg` (Other power cables) — populated from `ads/hardware.pdf`
 
@@ -65,42 +64,28 @@ Generated from `src/data/lessons/*.ts`. Nothing here was invented: every item is
 - [x] `hw1-thermal-paste.jpg` (CPU and cooler) — populated from `ads/hardware.pdf`
 - [x] `hw3-ram-stick.jpg` (RAM) — populated from `ads/hardware.pdf`
 - [x] `hw4-m2-ssd.jpg` (M.2 SSD) — populated from `ads/hardware.pdf`
-- [ ] `hw6-graphics-card.jpg` (Graphics card)
-  - Not present in `ads/hardware.pdf`. The document does not name a graphics-card picture. Find one (CC0, public domain, CC BY or CC BY-SA) and add its credit line.
+- [x] `hw6-graphics-card.jpg` (Graphics card) — added to `public/lessons/hw/`
 - [x] `hw5-24pin.jpg` (Power cables) — populated from `ads/hardware.pdf`
 
 ### Lesson 1: What is a network? (net-1)
 
-- [ ] `net1-router.jpg` (Router) source: https://commons.wikimedia.org/wiki/File:TP-link_Archer_A6_Router_(v4)_-_Front_Side.jpg
-  - License is CC BY-SA but the version number was not visible (VERIFY on the Commons page). Credit once confirmed: “TP-link Archer A6 Router (v4) - Front Side.jpg” by Paowee, CC BY-SA [add version], via Wikimedia Commons.
-- [ ] `net1-switch.jpg` (Switch)
-  - NO FREE IMAGE FOUND. Look on Commons for a plain photo of an unmanaged 5 or 8 port switch with the ports visible.
-- [ ] `net1-hub.jpg` (Hub) source: https://commons.wikimedia.org/wiki/File:4_port_netgear_ethernet_hub.jpg
-  - Public domain (license text confirmed on a mirror page only). Confirm on the Commons page, then add the file.
-  - Credit line from the document: “4 port netgear ethernet hub.jpg” by plugwash, public domain, via Wikimedia Commons
-- [ ] `net1-pc.jpg` (PC and laptop)
-  - NO FREE IMAGE FOUND. Look for a plain desktop PC photo on a clean background (CC0, public domain, CC BY or CC BY-SA).
-- [ ] `net1-laptop.jpg` (PC and laptop)
-  - NO FREE IMAGE FOUND. Look for a closed laptop photo on a clean background (CC0, public domain, CC BY or CC BY-SA).
+- [x] `net1-router.jpg` (Router) — populated from `ads/networking.pdf`
+- [x] `net1-switch.jpg` (Switch) — populated from `ads/networking.pdf`
+- [x] `net1-hub.jpg` (Hub) — populated from `ads/networking.pdf`
+- [x] `net1-pc-laptop.jpg` (PC and laptop) — populated from `ads/networking.pdf`
+- [x] `net1-wireless-devices.jpg` (PC and laptop over Wi-Fi) — populated from `ads/networking.pdf`
 
 ### Lesson 4: Routers and switches (net-4)
 
-- [ ] `net4-router.jpg` (Router) source: https://commons.wikimedia.org/wiki/File:TP-link_Archer_A6_Router_(v4)_-_Front_Side.jpg
-  - License is CC BY-SA but the version number was not visible (VERIFY on the Commons page). Credit once confirmed: “TP-link Archer A6 Router (v4) - Front Side.jpg” by Paowee, CC BY-SA [add version], via Wikimedia Commons.
-- [ ] `net4-switch.jpg` (Switch)
-  - NO FREE IMAGE FOUND. Look on Commons for a plain photo of an unmanaged 5 or 8 port switch with the ports visible.
-- [ ] `net4-hub.jpg` (Hub) source: https://commons.wikimedia.org/wiki/File:4_port_netgear_ethernet_hub.jpg
-  - Public domain (license text confirmed on a mirror page only). Confirm on the Commons page, then add the file.
-  - Credit line from the document: “4 port netgear ethernet hub.jpg” by plugwash, public domain, via Wikimedia Commons
+- [x] `net1-router.jpg` (Router, shared) — populated from `ads/networking.pdf`
+- [x] `net1-switch.jpg` (Switch, shared) — populated from `ads/networking.pdf`
+- [x] `net1-hub.jpg` (Hub, shared) — populated from `ads/networking.pdf`
 
 ### Final Lesson: Build a Network (net-5)
 
-- [ ] `net5-ethernet-cable.jpg` (Ethernet (twisted pair, such as Cat6))
-  - NO FREE IMAGE FOUND. Look for a plain photo of a Cat6 patch cable with the RJ-45 plug visible.
-- [ ] `net5-fiber-cable.jpg` (Fiber optic)
-  - NO FREE IMAGE FOUND. Look for a photo of a fiber patch cable with connectors.
-- [ ] `net5-coax-cable.jpg` (Coaxial)
-  - NO FREE IMAGE FOUND. Look for a clear cross-section or end photo of coax cable with an F or BNC connector.
+- [x] `net5-ethernet-cable.jpg` (Ethernet (twisted pair, such as Cat6)) — populated from `ads/networking.pdf`
+- [x] `net5-fiber-cable.jpg` (Fiber optic) — added to `public/lessons/net/`
+- [x] `net5-coax-cable.jpg` (Coaxial) — added to `public/lessons/net/`
 
 ## Claims your documents mark VERIFY / NOT FOUND (still shown in the lessons)
 

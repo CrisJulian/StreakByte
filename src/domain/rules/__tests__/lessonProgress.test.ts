@@ -92,6 +92,12 @@ describe('deriveTrackProgress', () => {
     expect(isLessonUnlocked('hw', HW, completions, 5)).toBe(true);
   });
 
+  it('leaves Final Lessons open when unlockFinal is enabled', () => {
+    const p = deriveTrackProgress('hw', HW, [], { unlockFinal: true });
+    expect(p.lessons.map((l) => l.status)).toEqual(['cur', 'open', 'open', 'open', 'open', 'open']);
+    expect(p.lessons[5].lockMessage).toBeUndefined();
+  });
+
   it('counts done lessons for any order of completion', () => {
     const p = deriveTrackProgress('net', NET, [done('net-2'), done('net-1')]);
     expect(p.doneCount).toBe(2);

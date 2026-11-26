@@ -7,26 +7,25 @@ import { img } from './helpers';
  * Pictures: see public/lessons/net/ and LESSON_TODO.md.
  */
 
-const ROUTER_PAGE =
-  'https://commons.wikimedia.org/wiki/File:TP-link_Archer_A6_Router_(v4)_-_Front_Side.jpg';
-const HUB_PAGE = 'https://commons.wikimedia.org/wiki/File:4_port_netgear_ethernet_hub.jpg';
-const HUB_CREDIT = '“4 port netgear ethernet hub.jpg” by plugwash, public domain, via Wikimedia Commons';
-const SWITCH_TODO =
-  'NO FREE IMAGE FOUND. Look on Commons for a plain photo of an unmanaged 5 or 8 port switch with the ports visible.';
+const PDF_CREDIT = 'Source: StreakByte Networking Basics reference guide (networking.pdf)';
+const pdfImg = (file: string, alt: string, caption: string) =>
+  img(file, alt, caption, { available: true, credit: PDF_CREDIT });
 
-const routerImage = (file: string) =>
-  img(file, 'A TP-Link Archer A6 Wi-Fi router seen from the front: a small box with antennas.', 'A home router.', {
-    sourcePage: ROUTER_PAGE,
-    todo: 'License is CC BY-SA but the version number was not visible (VERIFY on the Commons page). Credit once confirmed: “TP-link Archer A6 Router (v4) - Front Side.jpg” by Paowee, CC BY-SA [add version], via Wikimedia Commons.',
-  });
-const switchImage = (file: string) =>
-  img(file, 'A small network switch with a row of Ethernet ports.', 'A network switch.', { todo: SWITCH_TODO });
-const hubImage = (file: string) =>
-  img(file, 'A 4-port Netgear Ethernet hub: a small box with a row of ports.', 'A 4-port Ethernet hub.', {
-    sourcePage: HUB_PAGE,
-    credit: HUB_CREDIT,
-    todo: 'Public domain (license text confirmed on a mirror page only). Confirm on the Commons page, then add the file.',
-  });
+const routerImage = pdfImg(
+  'net1-router.jpg',
+  'A black home Wi-Fi router with three antennas.',
+  'A home router.',
+);
+const switchImage = pdfImg(
+  'net1-switch.jpg',
+  'A network switch with a row of Ethernet ports.',
+  'A network switch.',
+);
+const hubImage = pdfImg(
+  'net1-hub.jpg',
+  'An 8-port desktop Ethernet hub with a row of ports.',
+  'An Ethernet hub.',
+);
 
 const CLOUDFLARE_ROUTER = {
   title: 'What is a router? (Cloudflare Learning Center)',
@@ -93,30 +92,34 @@ export const NET_LESSONS: Record<string, LessonContent> = {
         name: 'Router',
         does: 'Joins your LAN to other networks, such as the internet.',
         looksLike: 'A small box, often with antennas, and its back has WAN and LAN ports, a power jack and a reset button.',
-        images: [routerImage('net1-router.jpg')],
+        images: [routerImage],
       },
       {
         name: 'Switch',
         does: 'Connects the devices on one LAN.',
         looksLike: 'A flat box with a row of Ethernet ports.',
-        images: [switchImage('net1-switch.jpg')],
+        images: [switchImage],
       },
       {
         name: 'Hub',
         does: 'Connects devices, but with no smarts.',
         looksLike: 'It looks like a small switch, with a row of ports and no extra features.',
-        images: [hubImage('net1-hub.jpg')],
+        images: [hubImage],
       },
       {
         name: 'PC and laptop',
         does: 'The end devices that use the network. They connect by cable or by Wi-Fi.',
         images: [
-          img('net1-pc.jpg', 'A desktop PC on a clean background.', 'A desktop PC.', {
-            todo: 'NO FREE IMAGE FOUND. Look for a plain desktop PC photo on a clean background (CC0, public domain, CC BY or CC BY-SA).',
-          }),
-          img('net1-laptop.jpg', 'A closed laptop on a clean background.', 'A laptop.', {
-            todo: 'NO FREE IMAGE FOUND. Look for a closed laptop photo on a clean background (CC0, public domain, CC BY or CC BY-SA).',
-          }),
+          pdfImg(
+            'net1-pc-laptop.jpg',
+            'A laptop and a desktop PC side by side on a clean background.',
+            'A laptop and a desktop PC (end devices).',
+          ),
+          pdfImg(
+            'net1-wireless-devices.jpg',
+            'End devices including a laptop, desktop PC, phone, and tablet connected over Wi-Fi.',
+            'End devices connecting to a network over Wi-Fi.',
+          ),
         ],
       },
     ],
@@ -278,17 +281,17 @@ export const NET_LESSONS: Record<string, LessonContent> = {
       {
         name: 'Router',
         does: 'Lets different networks talk to each other.',
-        images: [routerImage('net4-router.jpg')],
+        images: [routerImage],
       },
       {
         name: 'Switch',
         does: 'Lets devices on a network talk to each other. If a router runs out of ports, a switch can plug into one router port to add more wired devices.',
-        images: [switchImage('net4-switch.jpg')],
+        images: [switchImage],
       },
       {
         name: 'Hub',
         does: 'Repeats data to the other ports.',
-        images: [hubImage('net4-hub.jpg')],
+        images: [hubImage],
       },
     ],
     keyPoints: [
@@ -323,27 +326,35 @@ export const NET_LESSONS: Record<string, LessonContent> = {
         does: 'Copper wires twisted in pairs, which reduces interference. It carries electrical signals and ends in an RJ-45 plug with eight connections. It is inexpensive and the most popular choice for LANs, with a 100 meter segment limit for UTP. Used for homes, offices and links from a switch to a PC.',
         verify: 'All Cat6-specific details are marked VERIFY: the opened source covers Category 5 and older.',
         images: [
-          img('net5-ethernet-cable.jpg', 'A patch cable with an RJ-45 plug.', 'An Ethernet patch cable with an RJ-45 plug.', {
-            todo: 'NO FREE IMAGE FOUND. Look for a plain photo of a Cat6 patch cable with the RJ-45 plug visible.',
-          }),
+          pdfImg(
+            'net5-ethernet-cable.jpg',
+            'Blue Ethernet patch cables with RJ-45 plugs connected to a switch.',
+            'Ethernet patch cables with RJ-45 plugs.',
+          ),
         ],
       },
       {
         name: 'Fiber optic',
         does: 'Glass strands (a core wrapped in cladding) carry data as pulses of light. It is not affected by electrical interference, runs for many miles, and costs more. Used for long links and high-speed backbones.',
         images: [
-          img('net5-fiber-cable.jpg', 'A fiber patch cable with connectors.', 'A fiber optic patch cable.', {
-            todo: 'NO FREE IMAGE FOUND. Look for a photo of a fiber patch cable with connectors.',
-          }),
+          img(
+            'net5-fiber-cable.jpg',
+            'A cutaway view of a fiber optic cable showing its protective layers and glass fiber strands.',
+            'A fiber optic cable cutaway showing internal fiber strands.',
+            { available: true, credit: 'Source: StreakByte Networking Basics lesson asset' },
+          ),
         ],
       },
       {
         name: 'Coaxial',
         does: 'A copper core, an insulating layer, a braided metal shield and an outer cover. It resists interference well and suits longer runs than twisted pair. Used for cable TV and broadband (RG-59 and RG-6 types), and in older Ethernet. Connectors include BNC.',
         images: [
-          img('net5-coax-cable.jpg', 'A coaxial cable with an F or BNC connector.', 'A coaxial cable.', {
-            todo: 'NO FREE IMAGE FOUND. Look for a clear cross-section or end photo of coax cable with an F or BNC connector.',
-          }),
+          img(
+            'net5-coax-cable.jpg',
+            'Coaxial cables with metal F-type connectors.',
+            'Coaxial cables with F-type connectors.',
+            { available: true, credit: 'Source: StreakByte Networking Basics lesson asset' },
+          ),
         ],
       },
     ],

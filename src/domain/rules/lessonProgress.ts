@@ -56,6 +56,7 @@ export function deriveTrackProgress(
   trackId: string,
   kinds: readonly LessonKind[],
   completions: readonly LessonCompletion[],
+  opts?: { unlockFinal?: boolean },
 ): DerivedTrackProgress {
   let currentTaken = false;
   const lessons: DerivedLesson[] = kinds.map((kind, index) => {
@@ -66,7 +67,7 @@ export function deriveTrackProgress(
       .slice(0, index)
       .every((_, i) => isLessonComplete(completions, lessonKeyFor(trackId, i)));
 
-    if (kind === 'final' && !allBeforeDone) {
+    if (kind === 'final' && !allBeforeDone && !opts?.unlockFinal) {
       return { key, status: 'lock', lockMessage: lockMessageFor(index) };
     }
     if (!currentTaken) {

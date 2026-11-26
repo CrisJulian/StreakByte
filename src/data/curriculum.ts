@@ -123,6 +123,14 @@ export function finalLessonLab(trackId: TrackId): 'pc' | 'network' {
   return trackId === 'net' ? 'network' : 'pc';
 }
 
+/** Unlock Final Lessons only on local dev server (`localhost` / `127.0.0.1`), never on deployed hosts or in tests/prod. */
+function isLocalDevUnlock(): boolean {
+  if (!import.meta.env.DEV || import.meta.env.MODE === 'test') return false;
+  if (typeof window === 'undefined') return false;
+  const host = window.location.hostname;
+  return host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+}
+
 /** Status of every lesson in a track, worked out from the saved quiz results. */
 export function getTrackProgress(
   trackId: TrackId,
@@ -132,6 +140,7 @@ export function getTrackProgress(
     trackId,
     TRACKS[trackId].lessons.map((l) => l.kind),
     completions,
+    { unlockFinal: isLocalDevUnlock() },
   );
 }
 

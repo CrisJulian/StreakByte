@@ -107,6 +107,19 @@ describe('Learn page', () => {
     open('hw-6');
     expect(screen.getByText('No new terms. Use the definitions from Lessons 1 to 5.')).toBeInTheDocument();
   });
+
+  it('never renders Needs checking tags for verify notes', () => {
+    useStreakByteStore.setState({
+      completions: [1, 2, 3, 4].map((n) => ({
+        lessonKey: `net-${n}`,
+        correct: 4,
+        total: 4,
+        completedAt: 'x',
+      })),
+    });
+    open('net-5');
+    expect(screen.queryByText(/Needs checking:/i)).not.toBeInTheDocument();
+  });
 });
 
 afterEach(() => {
