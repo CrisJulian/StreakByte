@@ -5,7 +5,6 @@ import { QUIZ_BANK } from '../data/quizBank';
 import { ARENA_SCENARIOS } from '../data/arenaScenarios';
 import { getTrackProgress, isLessonKeyLocked, LESSON_XP_BY_KEY, lessonLabel, TRACKS } from '../data/curriculum';
 import { LESSON_CONTENT } from '../data/lessons';
-import { getArenaAntiCheatReply } from '../data/studyBuddy';
 import type { LessonCompletion } from '../domain/entities/progress';
 import type { QuizSession } from '../domain/entities/quiz';
 import {
@@ -99,6 +98,23 @@ import {
 const ACTIVE_DUEL_LOCK_MSG = 'Finish or forfeit your active 1v1 duel first.';
 const isLockedInActiveDuel = (state: { activeDuel: DuelRoom | null }) =>
   state.activeDuel?.status === 'active';
+
+/** Returns a user-facing lock reason when Study Buddy is disabled (quiz, lab exam, or active 1v1 fight). */
+export function getStudyBuddyLockReason(state: {
+  view: ViewId;
+  activeDuel: DuelRoom | null;
+}): string | null {
+  if (state.activeDuel?.status === 'active') {
+    return 'Study Buddy is disabled during a 1v1 Arena fight.';
+  }
+  if (state.view === 'quiz') {
+    return 'Study Buddy is disabled during quizzes.';
+  }
+  if (state.view === 'lesson') {
+    return 'Study Buddy is disabled during hands-on lab exams.';
+  }
+  return null;
+}
 
 function resolveLabNextMission(
   trackId: 'hw' | 'net',
@@ -984,7 +1000,10 @@ export const useStreakByteStore = create<StreakByteStore>()(
           return;
         }
         const prev = get().activeDuel;
-        set({ activeDuel: room });
+        set((state) => ({
+          activeDuel: room,
+          ...(room?.status === 'active' ? { chat: { ...state.chat, open: false } } : {}),
+        }));
         if (room && room.status === 'finished' && (!prev || prev.status !== 'finished')) {
           const authId = get().authUser?.id || 'local-guest';
           if (room.winnerId) {
@@ -1018,8 +1037,9 @@ export const useStreakByteStore = create<StreakByteStore>()(
           ARENA_SCENARIOS,
           DUEL_QUESTION_COUNT,
         );
-        set({
+        set((state) => ({
           opponentProgress: null,
+          chat: { ...state.chat, open: false },
           activeDuel: {
             id: LOCAL_TEST_DUEL_ID,
             code: 'TEST1V',
@@ -1047,7 +1067,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
             shieldAwarded: false,
             shieldConsumed: false,
           },
-        });
+        }));
       },
 
       refreshClassroomDuels: async () => {
@@ -1279,9 +1299,16 @@ export const useStreakByteStore = create<StreakByteStore>()(
           }
           // Hash sync can fire twice for one navigation; never restart a quiz in progress.
           if (get().quiz?.lessonKey !== key) {
-            set({ view: 'quiz', quiz: startQuiz(key, bank) });
+            set((state) => ({
+              view: 'quiz',
+              quiz: startQuiz(key, bank),
+              chat: { ...state.chat, open: false },
+            }));
           } else {
-            set({ view: 'quiz' });
+            set((state) => ({
+              view: 'quiz',
+              chat: { ...state.chat, open: false },
+            }));
           }
           return;
         }
@@ -1290,6 +1317,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
           view: parsed.view,
           activeLab: parsed.lab ?? state.activeLab,
           labTimedOut: parsed.view === 'lesson' ? state.labTimedOut : false,
+          ...(parsed.view === 'lesson' ? { chat: { ...state.chat, open: false } } : {}),
           arenaTab:
             parsed.view === 'practice'
               ? 'practice'
@@ -1363,19 +1391,21 @@ export const useStreakByteStore = create<StreakByteStore>()(
       startSessionFromModal: () => {
         const { target, mode, length } = get().setupModal;
         const durationSec = (length === '10' ? 10 : 5) * 60;
-        set(
+        set((state) =>
           target === 'network'
             ? {
                 net: createInitialNetState(),
                 labSessionMode: mode,
                 lessonSeconds: mode === 'timed' ? durationSec : 0,
                 labTimedOut: false,
+                chat: { ...state.chat, open: false },
               }
             : {
                 pc: createInitialPcState(),
                 labSessionMode: mode,
                 lessonSeconds: mode === 'timed' ? durationSec : 0,
                 labTimedOut: false,
+                chat: { ...state.chat, open: false },
               },
         );
         get().closeSetup();
@@ -1851,7 +1881,14 @@ export const useStreakByteStore = create<StreakByteStore>()(
           profileSettings: { ...state.profileSettings, ...patch },
         })),
 
-      setChatOpen: (open) =>
+      setChatOpen: (open) => {
+        if (open) {
+          const reason = getStudyBuddyLockReason(get());
+          if (reason) {
+            get().showToast(reason);
+            return;
+          }
+        }
         set((state) => {
           if (open && !state.chat.hasOpened) {
             return {
@@ -1864,28 +1901,16 @@ export const useStreakByteStore = create<StreakByteStore>()(
             };
           }
           return { chat: { ...state.chat, open } };
-        }),
+        });
+      },
 
       sendChatMessage: (raw) => {
         const text = raw.trim();
         if (!text) return;
 
-        if (isLockedInActiveDuel(get())) {
-          set((state) => {
-            const attempt = state.chat.messages.filter((m) => m.role === 'me').length;
-            return {
-              chat: {
-                ...state.chat,
-                showSuggestions: false,
-                isLoading: false,
-                messages: [
-                  ...state.chat.messages,
-                  { id: nextMsgId(), role: 'me', text },
-                  { id: nextMsgId(), role: 'bot', text: getArenaAntiCheatReply(attempt) },
-                ],
-              },
-            };
-          });
+        const reason = getStudyBuddyLockReason(get());
+        if (reason) {
+          get().showToast(reason);
           return;
         }
 

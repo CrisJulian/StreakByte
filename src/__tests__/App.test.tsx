@@ -77,14 +77,16 @@ describe('App integration', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Start lesson' }));
     expect(screen.getByRole('heading', { name: 'Build a PC' })).toBeInTheDocument();
 
-    // Open Study Buddy chat and tap a starter prompt
+    // Study Buddy AI is hidden during hands-on lab exams
+    expect(screen.queryByRole('button', { name: 'Open study buddy chat' })).not.toBeInTheDocument();
+
+    // Navigate back to Dashboard, open Study Buddy chat, tap a starter prompt, and claim Daily Quest
+    await user.click(within(nav).getByRole('link', { name: 'Dashboard' }));
     await user.click(screen.getByRole('button', { name: 'Open study buddy chat' }));
     const chatDialog = screen.getByRole('dialog', { name: 'Study buddy chat' });
     await user.click(within(chatDialog).getByRole('button', { name: 'Explain the RAM key notch' }));
     expect(within(chatDialog).getByText(/off-centre on the gold pins/i)).toBeInTheDocument();
 
-    // Navigate back to Dashboard and claim the Daily Quest reward earned from chatting with BYTE
-    await user.click(within(nav).getByRole('link', { name: 'Dashboard' }));
     const quests = screen.getByRole('region', { name: 'Daily quests' });
     await user.click(within(quests).getByRole('button', { name: 'Claim +25 XP' }));
     expect(within(quests).getByText('Claimed')).toBeInTheDocument();
