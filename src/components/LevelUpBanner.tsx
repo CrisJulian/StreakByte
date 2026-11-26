@@ -51,7 +51,7 @@ export function LevelUpBanner() {
           ref={btnRef}
           type="button"
           onClick={dismissLevelUp}
-          className="sb-cut mt-5 w-full min-h-11 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors hover:bg-[#e64b00]"
+          className="sb-cut mt-5 w-full min-h-11 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors hover:brightness-110"
         >
           Keep going
         </button>

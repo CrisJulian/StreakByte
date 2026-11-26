@@ -69,4 +69,33 @@ describe('Curriculum: Final Lesson lock', () => {
     expect(within(first).getByText('Completed')).toBeInTheDocument();
     expect(within(first).getByRole('button', { name: 'Quiz for Lesson 1: Inside the PC' })).toBeInTheDocument();
   });
+
+  it('disables the sidebar Boss Lab button while the Final Lesson is locked', async () => {
+    const user = userEvent.setup();
+    render(<CurriculumView />);
+    const lockedLabBtn = screen.getByRole('button', { name: /Locked · PC Lab/i });
+    expect(lockedLabBtn).toBeDisabled();
+    await user.click(lockedLabBtn);
+    expect(useStreakByteStore.getState().setupModal.open).toBe(false);
+  });
+
+  it('enables the sidebar Boss Lab button once earlier lessons are completed', async () => {
+    const user = userEvent.setup();
+    useStreakByteStore.setState({ completions: [1, 2, 3, 4, 5].map((n) => done(`hw-${n}`)) });
+    render(<CurriculumView />);
+    const openLabBtn = screen.getByRole('button', { name: /Open PC Lab/i });
+    expect(openLabBtn).toBeEnabled();
+    await user.click(openLabBtn);
+    expect(useStreakByteStore.getState().setupModal.open).toBe(true);
+    expect(useStreakByteStore.getState().setupModal.target).toBe('pc');
+  });
+
+  it('requires opening the lesson from Track Telemetry before taking the quiz', async () => {
+    const user = userEvent.setup();
+    render(<CurriculumView />);
+    expect(screen.queryByRole('button', { name: /Take the quiz/i })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Start lesson' }));
+    expect(useStreakByteStore.getState().view).toBe('learn');
+    expect(useStreakByteStore.getState().learnKey).toBe('hw-1');
+  });
 });

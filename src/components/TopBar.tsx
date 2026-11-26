@@ -277,7 +277,7 @@ export function TopBar() {
             e.preventDefault();
             navigate('profile');
           }}
-          className="sb-cut-sm inline-flex items-center justify-center min-w-[96px] h-9 px-4 bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] flex-none no-underline whitespace-nowrap transition-colors hover:bg-[#e64b00]"
+          className="sb-cut-sm inline-flex items-center justify-center min-w-[96px] h-9 px-4 bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] flex-none no-underline whitespace-nowrap transition-colors hover:brightness-110"
         >
           {shortName}
         </a>

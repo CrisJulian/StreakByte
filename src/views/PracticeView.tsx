@@ -60,7 +60,7 @@ export function PracticeView() {
               <button
                 type="button"
                 onClick={() => navigate('curriculum')}
-                className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00]"
+                className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110"
               >
                 Go to curriculum
               </button>
@@ -70,7 +70,7 @@ export function PracticeView() {
                   type="button"
                   disabled={needCount === 0}
                   onClick={() => needItems[0] && navigate(`quiz/${needItems[0].lessonKey}`)}
-                  className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00] disabled:opacity-45 disabled:cursor-not-allowed"
+                  className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 disabled:opacity-45 disabled:cursor-not-allowed"
                 >
                   Practice missed ({needCount})
                 </button>
@@ -181,7 +181,7 @@ export function PracticeView() {
                     type="button"
                     onClick={() => navigate(`quiz/${item.lessonKey}`)}
                     className={`sb-cut-sm inline-flex items-center justify-center min-h-9 px-3.5 border font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer transition-colors ${isNeed
-                        ? 'bg-cyan border-cyan text-cyan-ink hover:bg-[#e64b00]'
+                        ? 'bg-cyan border-cyan text-cyan-ink hover:brightness-110'
                         : 'bg-panel border-line text-ink hover:border-ink hover:bg-panel2'
                       }`}
                   >

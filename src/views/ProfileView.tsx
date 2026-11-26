@@ -27,6 +27,8 @@ export function ProfileView() {
   const streak = useStreakByteStore((s) => s.streak);
   const labBonusXp = useStreakByteStore((s) => s.labBonusXp);
   const xpSpent = useStreakByteStore((s) => s.xpSpent);
+  const arenaStats = useStreakByteStore((s) => s.arenaStats);
+  const classrooms = useStreakByteStore((s) => s.classrooms);
   const logout = useStreakByteStore((s) => s.logout);
   const authUser = useStreakByteStore((s) => s.authUser);
 
@@ -40,7 +42,10 @@ export function ProfileView() {
     streak,
     totalXp,
     hwTotal: TRACKS.hw.lessons.length,
+    netTotal: TRACKS.net.lessons.length,
     leaderboardRank: null,
+    arenaStats,
+    classroomCount: classrooms.length,
   });
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
   const trackChoice: 'hw' | 'net' | 'both' =
@@ -394,7 +399,7 @@ export function ProfileView() {
 
             <button
               type="submit"
-              className="sb-cut w-full mt-3.5 inline-flex items-center justify-center min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00] transition-colors"
+              className="sb-cut w-full mt-3.5 inline-flex items-center justify-center min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 transition-colors"
             >
               Save changes
             </button>

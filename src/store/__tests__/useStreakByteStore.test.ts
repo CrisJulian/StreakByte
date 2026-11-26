@@ -421,6 +421,8 @@ describe('quiz flow in the store', () => {
     const submitSpy = vi.spyOn(services.duel, 'submitResult').mockResolvedValue({
       ...fakeRoom,
       status: 'finished',
+      hostScore: 2,
+      hostTimeMs: 9000,
       winnerId: 'u-1',
       settled: true,
     });
@@ -434,6 +436,10 @@ describe('quiz flow in the store', () => {
 
       await useStreakByteStore.getState().submitDuelResult(2, 9000);
       expect(useStreakByteStore.getState().activeDuel?.winnerId).toBe('u-1');
+      expect(useStreakByteStore.getState().dailyActivity.arenaDuelsFinished).toBe(1);
+
+      useStreakByteStore.getState().claimDailyQuest('daily-arena');
+      expect(useStreakByteStore.getState().labBonusXp).toBe(50);
     } finally {
       createSpy.mockRestore();
       submitSpy.mockRestore();
@@ -453,6 +459,7 @@ describe('quiz flow in the store', () => {
       await useStreakByteStore.getState().submitDuelResult(7, 12000);
       expect(useStreakByteStore.getState().activeDuel?.status).toBe('finished');
       expect(submitSpy).not.toHaveBeenCalled();
+      expect(useStreakByteStore.getState().dailyActivity.arenaDuelsFinished).toBe(0);
 
       await useStreakByteStore.getState().cancelOrForfeitDuel();
       expect(useStreakByteStore.getState().activeDuel).toBeNull();

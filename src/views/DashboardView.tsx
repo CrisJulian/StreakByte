@@ -27,8 +27,8 @@ function MissionSchematic({ trackId }: { trackId: 'hw' | 'net' }) {
         aria-label="LAN topology schematic showing Router, Switch, Workstation, and Laptop"
       >
         <rect x="8" y="8" width="304" height="164" fill="var(--panel)" stroke="var(--text)" strokeWidth="2" />
-        <line x1="66" y1="90" x2="156" y2="90" stroke="#ff5500" strokeWidth="2.5" />
-        <line x1="156" y1="90" x2="250" y2="52" stroke="#ff5500" strokeWidth="2.5" />
+        <line x1="66" y1="90" x2="156" y2="90" stroke="var(--cyan)" strokeWidth="2.5" />
+        <line x1="156" y1="90" x2="250" y2="52" stroke="var(--cyan)" strokeWidth="2.5" />
         <line x1="156" y1="90" x2="250" y2="128" stroke="var(--text)" strokeWidth="2" strokeDasharray="5 3" />
         <rect x="20" y="64" width="66" height="52" fill="var(--panel)" stroke="var(--text)" strokeWidth="1.8" />
         <text x="53" y="87" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="8.5" fontWeight="700" fill="var(--text)">
@@ -37,11 +37,11 @@ function MissionSchematic({ trackId }: { trackId: 'hw' | 'net' }) {
         <text x="53" y="101" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="7" fill="var(--muted)">
           192.168.1.1
         </text>
-        <rect x="122" y="64" width="68" height="52" fill="#141414" />
+        <rect x="122" y="64" width="68" height="52" fill="var(--dark-card)" stroke="var(--line)" strokeWidth="1" />
         <text x="156" y="87" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="8.5" fontWeight="700" fill="#ffffff">
           SWITCH
         </text>
-        <text x="156" y="101" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="7" fill="#ff5500">
+        <text x="156" y="101" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="7" fill="var(--cyan)">
           8-PORT L2
         </text>
         <rect x="218" y="30" width="80" height="44" fill="var(--panel)" stroke="var(--text)" strokeWidth="1.6" />
@@ -74,29 +74,29 @@ function MissionSchematic({ trackId }: { trackId: 'hw' | 'net' }) {
       <text x="32" y="92" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="8" fontWeight="700" fill="var(--text)" transform="rotate(-90 32 92)">
         REAR I/O
       </text>
-      <rect x="68" y="24" width="76" height="68" fill="#141414" />
-      <rect x="80" y="36" width="52" height="44" fill="none" stroke="#ff5500" strokeWidth="1.8" />
+      <rect x="68" y="24" width="76" height="68" fill="var(--dark-card)" stroke="var(--line)" strokeWidth="1" />
+      <rect x="80" y="36" width="52" height="44" fill="none" stroke="var(--cyan)" strokeWidth="1.8" />
       <text x="106" y="61" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="8.5" fontWeight="700" fill="#ffffff">
         CPU
       </text>
       <g>
         <rect x="162" y="24" width="8" height="68" fill="var(--panel2)" stroke="var(--text)" strokeWidth="1" />
-        <rect x="175" y="24" width="8" height="68" fill="#ff5500" stroke="var(--text)" strokeWidth="1" />
+        <rect x="175" y="24" width="8" height="68" fill="var(--cyan)" stroke="var(--text)" strokeWidth="1" />
         <rect x="188" y="24" width="8" height="68" fill="var(--panel2)" stroke="var(--text)" strokeWidth="1" />
-        <rect x="201" y="24" width="8" height="68" fill="#ff5500" stroke="var(--text)" strokeWidth="1" />
+        <rect x="201" y="24" width="8" height="68" fill="var(--cyan)" stroke="var(--text)" strokeWidth="1" />
         <text x="185" y="105" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="7.5" fontWeight="700" fill="var(--text)">
           DIMM A2/B2
         </text>
       </g>
-      <rect x="230" y="24" width="70" height="22" fill="#141414" />
+      <rect x="230" y="24" width="70" height="22" fill="var(--dark-card)" stroke="var(--line)" strokeWidth="1" />
       <text x="265" y="38" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="7.5" fontWeight="700" fill="#ffffff">
         24-PIN ATX
       </text>
-      <rect x="228" y="64" width="72" height="22" fill="var(--you)" stroke="#ff5500" strokeWidth="1.4" strokeDasharray="4 2" />
-      <text x="264" y="78" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="7.5" fontWeight="700" fill="#ff5500">
+      <rect x="228" y="64" width="72" height="22" fill="var(--you)" stroke="var(--cyan)" strokeWidth="1.4" strokeDasharray="4 2" />
+      <text x="264" y="78" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="7.5" fontWeight="700" fill="var(--cyan)">
         M.2 NVMe
       </text>
-      <rect x="68" y="132" width="142" height="16" fill="#141414" />
+      <rect x="68" y="132" width="142" height="16" fill="var(--dark-card)" stroke="var(--line)" strokeWidth="1" />
       <text x="139" y="143" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="7.5" fontWeight="700" fill="#ffffff">
         PCIe x16 (GPU)
       </text>
@@ -113,6 +113,7 @@ export function DashboardView() {
   const setTrack = useStreakByteStore((s) => s.setTrack);
   const navigate = useStreakByteStore((s) => s.navigate);
   const setChatOpen = useStreakByteStore((s) => s.setChatOpen);
+  const setArenaTab = useStreakByteStore((s) => s.setArenaTab);
   const claimDailyQuest = useStreakByteStore((s) => s.claimDailyQuest);
   const track = useStreakByteStore((s) => s.track);
   const completions = useStreakByteStore((s) => s.completions);
@@ -121,6 +122,8 @@ export function DashboardView() {
   const xpSpent = useStreakByteStore((s) => s.xpSpent);
   const dailyActivity = useStreakByteStore((s) => s.dailyActivity);
   const leaderboard = useStreakByteStore((s) => s.leaderboard);
+  const arenaStats = useStreakByteStore((s) => s.arenaStats);
+  const classrooms = useStreakByteStore((s) => s.classrooms);
   const authUser = useStreakByteStore((s) => s.authUser);
   const isGuest = useStreakByteStore((s) => s.isGuest);
   const selectedTracks = useStreakByteStore((s) => s.profileSettings.selectedTracks);
@@ -169,10 +172,17 @@ export function DashboardView() {
     streak,
     totalXp,
     hwTotal: TRACKS.hw.lessons.length,
+    netTotal: TRACKS.net.lessons.length,
     leaderboardRank: me?.rank ?? null,
+    arenaStats,
+    classroomCount: classrooms.length,
     today,
   });
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
+  const previewAchievements = [
+    ...achievements.filter((a) => a.unlocked),
+    ...achievements.filter((a) => !a.unlocked),
+  ].slice(0, 8);
   const dailyQuests = deriveDailyQuests(ensureDailyActivity(dailyActivity, today));
   const completedQuestsCount = dailyQuests.filter((q) => q.completed).length;
 
@@ -181,6 +191,9 @@ export function DashboardView() {
       navigate('curriculum');
     } else if (id === 'daily-lab') {
       openSetup(activeTrack.defaultTarget, nextLessonTitle);
+    } else if (id === 'daily-arena') {
+      setArenaTab('duel');
+      navigate('arena');
     } else {
       setChatOpen(true);
     }
@@ -274,7 +287,7 @@ export function DashboardView() {
             <button
               type="button"
               onClick={() => navigate(`learn/${nextLessonKey}`)}
-              className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors hover:bg-[#e64b00]"
+              className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors hover:brightness-110"
             >
               <Icon name="play" className="w-4 h-4" />
               Start lesson
@@ -458,7 +471,7 @@ export function DashboardView() {
                     <button
                       type="button"
                       onClick={() => openSetup(activeTrack.defaultTarget, lesson.title)}
-                      className="sb-cut-sm inline-flex items-center px-3 py-1.5 border-0 bg-cyan text-cyan-ink text-[10px] font-bold uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00]"
+                      className="sb-cut-sm inline-flex items-center px-3 py-1.5 border-0 bg-cyan text-cyan-ink text-[10px] font-bold uppercase tracking-[0.06em] cursor-pointer hover:brightness-110"
                     >
                       Boss Lab
                     </button>
@@ -502,11 +515,13 @@ export function DashboardView() {
                 ? 'Go to lessons'
                 : q.id === 'daily-lab'
                   ? 'Open lab'
-                  : 'Ask BYTE';
+                  : q.id === 'daily-arena'
+                    ? 'Enter Arena'
+                    : 'Ask BYTE';
             return (
               <article
                 key={q.id}
-                className="p-4 border-r border-line max-[1024px]:border-b flex flex-col gap-2.5 bg-panel"
+                className="p-4 border-r border-line last:border-r-0 max-[1024px]:border-b max-[1024px]:[&:nth-child(even)]:border-r-0 max-[600px]:border-r-0 flex flex-col gap-2.5 bg-panel"
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
@@ -548,7 +563,7 @@ export function DashboardView() {
                   <button
                     type="button"
                     onClick={() => claimDailyQuest(q.id)}
-                    className="sb-cut mt-1 w-full inline-flex items-center justify-center gap-1.5 min-h-10 px-3 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00] transition-colors"
+                    className="sb-cut mt-1 w-full inline-flex items-center justify-center gap-1.5 min-h-10 px-3 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 transition-colors"
                   >
                     Claim +{q.xpReward} XP
                   </button>
@@ -564,34 +579,51 @@ export function DashboardView() {
               </article>
             );
           })}
+        </div>
 
-          <aside className="p-4 bg-[var(--dark-card)] text-white flex flex-col gap-2.5">
-            <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-white/60">
-              DAILY BONUS
+        <aside className="p-4 border-x border-b border-line bg-[var(--dark-card)] text-white flex items-center justify-between gap-4 flex-wrap">
+          <div className="min-w-0 flex-1 grid gap-1.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="text-[10px] font-bold uppercase tracking-[0.09em] text-white/60">
+                DAILY PROGRESS · {completedQuestsCount === dailyQuests.length ? 'ALL CLEAR' : 'IN PROGRESS'}
+              </span>
+              <span className="text-[11px] text-white/75">
+                Complete all {dailyQuests.length} daily goals ({completedQuestsCount} of {dailyQuests.length}).
+              </span>
             </div>
-            <div className="font-head text-[20px] font-bold">
-              {completedQuestsCount === dailyQuests.length ? 'All Clear' : 'In Progress'}
-            </div>
-            <div className="grid grid-cols-3 gap-1" aria-hidden="true">
+            <div
+              className="grid gap-1 max-w-[360px]"
+              style={{ gridTemplateColumns: `repeat(${dailyQuests.length}, minmax(0, 1fr))` }}
+              aria-hidden="true"
+            >
               {dailyQuests.map((q) => (
                 <i
                   key={q.id}
-                  className={`block h-2.5 ${q.completed ? 'bg-cyan' : 'bg-white/20'}`}
+                  className={`block h-2 ${q.completed ? 'bg-cyan' : 'bg-white/20'}`}
                 />
               ))}
             </div>
-            <p className="m-0 text-[11px] text-white/70">
-              Complete all {dailyQuests.length} daily goals ({completedQuestsCount} of {dailyQuests.length}).
-            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                setArenaTab('duel');
+                navigate('arena');
+              }}
+              className="sb-cut-sm inline-flex items-center justify-center min-h-9 px-3.5 border border-cyan bg-cyan text-cyan-ink font-bold text-[10px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 transition-colors"
+            >
+              Enter 1v1 Arena ▶
+            </button>
             <button
               type="button"
               onClick={() => setChatOpen(true)}
-              className="sb-cut-sm mt-auto inline-flex items-center justify-center min-h-9 px-3 border border-[var(--dark-line)] bg-transparent text-white font-bold text-[10px] uppercase tracking-[0.06em] cursor-pointer hover:border-white transition-colors"
+              className="sb-cut-sm inline-flex items-center justify-center min-h-9 px-3.5 border border-[var(--dark-line)] bg-transparent text-white font-bold text-[10px] uppercase tracking-[0.06em] cursor-pointer hover:border-white transition-colors"
             >
               Ask BYTE-01 ▶
             </button>
-          </aside>
-        </div>
+          </div>
+        </aside>
       </section>
 
       {/* Bottom 2-Column Split: Class League & Trophy Wall */}
@@ -677,7 +709,7 @@ export function DashboardView() {
           </div>
 
           <ul className="grid grid-cols-4 max-[600px]:grid-cols-2 border border-line">
-            {achievements.map((ach, idx) => (
+            {previewAchievements.map((ach, idx) => (
               <li
                 key={ach.id}
                 className={`p-3.5 text-center flex flex-col items-center gap-1.5 border-r border-b border-line ${idx % 4 === 3 ? 'min-[601px]:border-r-0' : ''

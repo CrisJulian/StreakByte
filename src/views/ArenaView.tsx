@@ -446,7 +446,7 @@ export function ArenaView() {
         <PracticeView />
       ) : (isGuest || !authUser) && !activeDuel ? (
         <div className="p-6 max-[760px]:p-4">
-          <section className="p-6 border border-line bg-panel2 grid gap-4 max-w-[640px]">
+          <section className="p-6 border border-line bg-panel2 grid gap-4 max-w-[640px] mx-auto">
             <h2 className="m-0 font-head text-lg font-bold">Sign in with Google for Live 1v1 Duels</h2>
             <p className="m-0 text-xs text-muted">
               Guest mode runs offline and cannot connect to live 1v1 rooms or wager XP. Sign in with
@@ -457,7 +457,7 @@ export function ArenaView() {
               <button
                 type="button"
                 onClick={() => startBotTestDuel('mixed')}
-                className="sb-cut min-h-10 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00]"
+                className="sb-cut min-h-10 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110"
               >
                 Test 1v1 vs BYTE Bot
               </button>
@@ -584,7 +584,7 @@ export function ArenaView() {
               <button
                 type="submit"
                 disabled={busy}
-                className="sb-cut flex-1 min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00] disabled:opacity-50"
+                className="sb-cut flex-1 min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 disabled:opacity-50"
               >
                 {busy ? 'Creating room…' : 'Create 1v1 Room'}
               </button>
@@ -697,7 +697,7 @@ export function ArenaView() {
         </div>
       ) : activeDuel.status === 'waiting' ? (
         <div className="p-6 max-[760px]:p-4">
-          <section className="bg-panel border border-line p-6 grid gap-5 max-w-[680px]">
+          <section className="bg-panel border border-line p-6 grid gap-5 max-w-[680px] mx-auto">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted">
@@ -756,7 +756,7 @@ export function ArenaView() {
                 onClick={() => void handleToggleReady()}
                 className={`sb-cut min-h-11 px-5 border font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors ${myRoomReady
                     ? 'border-line bg-panel2 text-ink'
-                    : 'border-cyan bg-cyan text-cyan-ink hover:bg-[#e64b00]'
+                    : 'border-cyan bg-cyan text-cyan-ink hover:brightness-110'
                   }`}
               >
                 {myRoomReady ? 'Cancel Ready' : 'Ready Up'}
@@ -774,7 +774,7 @@ export function ArenaView() {
         </div>
       ) : activeDuel.status === 'active' ? (
         <div className="p-6 max-[760px]:p-4">
-          <section className="bg-panel border border-line p-6 grid gap-5 max-w-[780px]">
+          <section className="bg-panel border border-line p-6 grid gap-5 max-w-[780px] mx-auto">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted">
@@ -909,7 +909,7 @@ export function ArenaView() {
         </div>
       ) : (
         <div className="p-6 max-[760px]:p-4">
-          <section className="bg-panel border border-line p-6 grid gap-5 max-w-[680px]">
+          <section className="bg-panel border border-line p-6 grid gap-5 max-w-[680px] mx-auto">
             {(() => {
               const won = activeDuel.winnerId === playerId;
               const draw = activeDuel.winnerId === null;

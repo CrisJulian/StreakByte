@@ -135,7 +135,7 @@ export function LessonPlayerView() {
           <button
             type="button"
             onClick={() => navigate(activeLab === 'pc' ? 'quiz/hw-6' : 'quiz/net-5')}
-            className="sb-cut inline-flex items-center justify-center min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00] transition-colors"
+            className="sb-cut inline-flex items-center justify-center min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 transition-colors"
           >
             Take the quiz
           </button>

@@ -207,7 +207,7 @@ export function LoginView() {
           <button
             type="submit"
             disabled={busy}
-            className="sb-cut w-full min-h-10 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00] disabled:opacity-60 transition-colors"
+            className="sb-cut w-full min-h-10 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 disabled:opacity-60 transition-colors"
           >
             {busy ? 'Please wait…' : mode === 'login' ? 'Log in' : 'Create account'}
           </button>

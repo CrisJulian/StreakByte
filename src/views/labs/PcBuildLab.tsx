@@ -34,7 +34,7 @@ const PART_META: { id: PcPartId; swatch: string; label: string }[] = [
   { id: 'ram', swatch: '#129954', label: 'RAM stick' },
   { id: 'm2', swatch: '#e5e5e5', label: 'M.2 SSD' },
   { id: 'gpu', swatch: '#9e9e9e', label: 'Graphics card' },
-  { id: 'psu', swatch: '#ff5500', label: 'Power supply' },
+  { id: 'psu', swatch: '#22d3ee', label: 'Power supply' },
 ];
 
 interface DraggablePartButtonProps {
@@ -273,14 +273,14 @@ export function PcBuildLab() {
               strokeWidth="1.5"
             />
             <g transform="translate(243 111)">
-              <circle r="48" fill="#ffffff" stroke="#141414" strokeWidth="1.5" />
-              <g fill="#ff5500" stroke="#141414" strokeWidth="1.2">
+              <circle r="48" fill="#ffffff" stroke="var(--dark-card)" strokeWidth="1.5" />
+              <g fill="var(--cyan)" stroke="var(--dark-card)" strokeWidth="1.2">
                 <path d="M0 0C-8-24 8-40 22-34 22-14 12-4 0 0z" />
                 <path d="M0 0C24-8 40 8 34 22 14 22 4 12 0 0z" />
                 <path d="M0 0C8 24-8 40-22 34-22 14-12 4 0 0z" />
                 <path d="M0 0C-24 8-40-8-34-22-14-22-4-12 0 0z" />
               </g>
-              <circle r="10" fill="#141414" />
+              <circle r="10" fill="var(--dark-card)" />
             </g>
             <StepBadge cx={188} cy={64} num={1} done />
             <text className="lab" x="243" y="198">
@@ -376,7 +376,7 @@ export function PcBuildLab() {
               onActivate={() => placePcPart('M2')}
             >
               <rect className="sh" x="130" y="254" width="210" height="24" />
-              <circle cx="142" cy="266" r="4" fill="#ff5500" />
+              <circle cx="142" cy="266" r="4" fill="var(--cyan)" />
             </DroppableSlot>
             <StepBadge cx={240} cy={266} num={4} done={pc.m2} />
             <text className="lab" x="185" y="298">
@@ -515,7 +515,7 @@ export function PcBuildLab() {
             />
             <DraggablePartButton
               partId="psu"
-              swatch="#ff5500"
+              swatch="#22d3ee"
               label="Power supply"
               selected={pc.selectedPart === 'psu'}
               disabled={pc.psu}
@@ -535,7 +535,7 @@ export function PcBuildLab() {
             <button
               type="button"
               onClick={completePcBuild}
-              className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors hover:bg-[#e64b00]"
+              className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors hover:brightness-110"
             >
               Check build
             </button>

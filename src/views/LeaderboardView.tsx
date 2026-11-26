@@ -349,7 +349,7 @@ export function LeaderboardView() {
             <button
               type="button"
               onClick={() => openSetup(defaultLab)}
-              className="sb-cut-sm w-full inline-flex items-center justify-center min-h-10 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00]"
+              className="sb-cut-sm w-full inline-flex items-center justify-center min-h-10 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110"
             >
               Earn XP: resume lesson
             </button>

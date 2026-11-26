@@ -15,11 +15,9 @@ test('guest entry, theme toggle, and curriculum navigation', async ({ page }) =>
   await page.goto('/');
   await enterAsGuest(page);
 
-  await page.getByRole('button', { name: 'Switch to dark theme' }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(page.getByRole('button', { name: 'Switch to light theme' })).toBeVisible();
   await page.getByRole('button', { name: 'Switch to light theme' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(page.getByRole('button', { name: 'Switch to dark theme' })).toBeVisible();
 
   const nav = page.getByRole('navigation', { name: 'Main' });
   await nav.getByRole('link', { name: 'Curriculum' }).click();

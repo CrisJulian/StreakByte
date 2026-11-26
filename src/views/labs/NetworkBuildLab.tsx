@@ -261,7 +261,7 @@ export function NetworkBuildLab() {
               <path d="M0 40H680M0 80H680M0 120H680M0 160H680M0 200H680M0 240H680M0 280H680M0 320H680M0 360H680M40 0V410M80 0V410M120 0V410M160 0V410M200 0V410M240 0V410M280 0V410M320 0V410M360 0V410M400 0V410M440 0V410M480 0V410M520 0V410M560 0V410M600 0V410M640 0V410" />
             </g>
 
-            <path d="M310 92V144" stroke="#ff5500" strokeWidth="4" fill="none" />
+            <path d="M310 92V144" stroke="var(--cyan)" strokeWidth="4" fill="none" />
             {pcSaved && laptopSaved && (
               <path
                 className="sb-packet-flow"
@@ -319,12 +319,12 @@ export function NetworkBuildLab() {
                 y="144"
                 width="108"
                 height="38"
-                fill="#141414"
+                fill="var(--dark-card)"
                 stroke="var(--text)"
                 strokeWidth="2"
               />
-              <circle cx="272" cy="163" r="4" fill="#129954" />
-              <circle cx="284" cy="163" r="4" fill="#ff5500" />
+              <circle cx="272" cy="163" r="4" fill="var(--green)" />
+              <circle cx="284" cy="163" r="4" fill="var(--cyan)" />
               <g fill="#666666">
                 <rect x="298" y="156" width="14" height="14" />
                 <rect x="318" y="156" width="14" height="14" />
@@ -346,7 +346,7 @@ export function NetworkBuildLab() {
               <path
                 className="sb-packet-flow"
                 d="M164 268V226H292V182"
-                stroke="#ff5500"
+                stroke="var(--cyan)"
                 strokeWidth="3"
                 strokeLinecap="round"
                 fill="none"
@@ -357,7 +357,7 @@ export function NetworkBuildLab() {
               <path
                 className="sb-packet-flow"
                 d="M310 268V182"
-                stroke="#ff5500"
+                stroke="var(--cyan)"
                 strokeWidth="3"
                 strokeLinecap="round"
                 fill="none"
@@ -450,7 +450,7 @@ export function NetworkBuildLab() {
                   y="272"
                   width="66"
                   height="46"
-                  fill="#ff5500"
+                  fill="var(--cyan)"
                   stroke="var(--text)"
                   strokeWidth="2.2"
                 />
@@ -490,7 +490,7 @@ export function NetworkBuildLab() {
                   y="274"
                   width="68"
                   height="44"
-                  fill="#ff5500"
+                  fill="var(--cyan)"
                   stroke="var(--text)"
                   strokeWidth="2.2"
                 />
@@ -624,7 +624,7 @@ export function NetworkBuildLab() {
 
               <button
                 type="submit"
-                className="sb-cut w-full mt-3 inline-flex items-center justify-center min-h-10 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00] transition-colors"
+                className="sb-cut w-full mt-3 inline-flex items-center justify-center min-h-10 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 transition-colors"
               >
                 Save
               </button>
@@ -642,7 +642,7 @@ export function NetworkBuildLab() {
           <button
             type="button"
             onClick={completeNetworkBuild}
-            className="sb-cut w-full inline-flex items-center justify-center min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00] transition-colors"
+            className="sb-cut w-full inline-flex items-center justify-center min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 transition-colors"
           >
             Test connection
           </button>

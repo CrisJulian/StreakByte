@@ -117,13 +117,6 @@ export function LearnView() {
             <Icon name="back" className="w-4 h-4" />
             Back to lessons
           </a>
-          <button
-            type="button"
-            onClick={() => navigate(`quiz/${learnKey}`)}
-            className="sb-cut-sm inline-flex items-center justify-center gap-2 min-h-10 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00] transition-colors"
-          >
-            Take quiz ▶
-          </button>
         </div>
       </header>
 
@@ -280,7 +273,7 @@ export function LearnView() {
           <button
             type="button"
             onClick={() => navigate(`quiz/${learnKey}`)}
-            className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00] transition-colors"
+            className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 transition-colors"
           >
             Take the quiz
           </button>

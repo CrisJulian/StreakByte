@@ -68,9 +68,10 @@ describe('Learn page', () => {
     }
   });
 
-  it('the Quiz button opens that lesson’s quiz', async () => {
+  it('puts the Quiz button after lesson content without a top-header shortcut', async () => {
     const user = userEvent.setup();
     open('hw-2');
+    expect(screen.queryByRole('button', { name: /Take quiz/i })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Take the quiz' }));
     expect(useStreakByteStore.getState().view).toBe('quiz');
     expect(useStreakByteStore.getState().quiz?.lessonKey).toBe('hw-2');

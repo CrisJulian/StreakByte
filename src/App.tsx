@@ -81,7 +81,7 @@ export function App() {
     document.documentElement.setAttribute('data-theme', theme);
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
-      metaTheme.setAttribute('content', theme === 'light' ? '#ffffff' : '#111111');
+      metaTheme.setAttribute('content', theme === 'light' ? '#f1f5f9' : '#0b1020');
     }
   }, [theme]);
 

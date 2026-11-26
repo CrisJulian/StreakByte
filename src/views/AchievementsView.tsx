@@ -19,6 +19,8 @@ export function AchievementsView() {
   const labBonusXp = useStreakByteStore((s) => s.labBonusXp);
   const xpSpent = useStreakByteStore((s) => s.xpSpent);
   const leaderboard = useStreakByteStore((s) => s.leaderboard);
+  const arenaStats = useStreakByteStore((s) => s.arenaStats);
+  const classrooms = useStreakByteStore((s) => s.classrooms);
   const authUser = useStreakByteStore((s) => s.authUser);
   const isGuest = useStreakByteStore((s) => s.isGuest);
   const displayName = useStreakByteStore(
@@ -49,7 +51,10 @@ export function AchievementsView() {
     streak,
     totalXp,
     hwTotal: TRACKS.hw.lessons.length,
+    netTotal: TRACKS.net.lessons.length,
     leaderboardRank: myRank,
+    arenaStats,
+    classroomCount: classrooms.length,
     today,
   });
 
@@ -153,7 +158,7 @@ export function AchievementsView() {
                   All achievements unlocked!
                 </h2>
                 <p className="m-0 text-muted text-xs">
-                  You earned every badge in Hardware and Networking.
+                  You earned every badge across lessons, classrooms, and the 1v1 Arena.
                 </p>
               </>
             )}

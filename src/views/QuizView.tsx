@@ -182,7 +182,7 @@ export function QuizView() {
                 type="button"
                 disabled={quiz.selected === null}
                 onClick={submitQuizAnswer}
-                className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors hover:bg-[#e64b00] disabled:opacity-45 disabled:cursor-not-allowed"
+                className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors hover:brightness-110 disabled:opacity-45 disabled:cursor-not-allowed"
               >
                 Check answer
               </button>

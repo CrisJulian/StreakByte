@@ -4,7 +4,7 @@ export function IsometricCubeSvg({ size = 56 }: { size?: number }) {
       <polygon points="32,6 56,20 56,44 32,58 8,44 8,20" stroke="#ffffff" strokeWidth="1.6" />
       <polyline points="8,20 32,34 56,20" stroke="#ffffff" strokeWidth="1.6" />
       <line x1="32" y1="34" x2="32" y2="58" stroke="#ffffff" strokeWidth="1.6" />
-      <circle cx="32" cy="34" r="4.5" fill="#FF5500" />
+      <circle cx="32" cy="34" r="4.5" fill="var(--cyan)" />
     </svg>
   );
 }

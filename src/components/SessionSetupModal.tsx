@@ -150,7 +150,7 @@ export function SessionSetupModal() {
           ref={startButtonRef}
           type="button"
           onClick={startSessionFromModal}
-          className="sb-cut w-full inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors hover:bg-[#e64b00]"
+          className="sb-cut w-full inline-flex items-center justify-center gap-2 min-h-11 px-[18px] border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors hover:brightness-110"
         >
           Start lesson
         </button>

@@ -14,7 +14,7 @@ describe('progressViews domain derivations', () => {
       today: '2026-11-25',
     });
 
-    expect(achievements).toHaveLength(8);
+    expect(achievements).toHaveLength(16);
     expect(achievements.filter((a) => a.unlocked)).toHaveLength(0);
 
     const practice = derivePracticeItems([], () => ({ title: 'Any', track: 'hw' }));
@@ -73,5 +73,46 @@ describe('progressViews domain derivations', () => {
     // Tuesday = row 1, current week = col 4 -> 1 completion ('l1')
     expect(heatmap[2][4]).toBe('l2');
     expect(heatmap[1][4]).toBe('l1');
+  });
+
+  it('unlocks Arena, classroom, Networking Finisher, and Full Byte Scholar badges and tracks progress', () => {
+    const completions: LessonCompletion[] = [1, 2, 3, 4, 5].map((n) => ({
+      lessonKey: `net-${n}`,
+      correct: 4,
+      total: 4,
+      completedAt: '2026-11-25T10:00:00',
+    }));
+
+    const achievements = deriveAchievements({
+      completions,
+      streak: createInitialStreak(),
+      totalXp: 700,
+      hwTotal: 6,
+      netTotal: 5,
+      leaderboardRank: 2,
+      arenaStats: {
+        wins: 4,
+        losses: 1,
+        winStreak: 2,
+        bestStreak: 3,
+        streakShields: 1,
+      },
+      classroomCount: 1,
+      today: '2026-11-25',
+    });
+
+    const unlocked = new Set(achievements.filter((a) => a.unlocked).map((a) => a.id));
+    expect(unlocked.has('arena-rookie')).toBe(true);
+    expect(unlocked.has('arena-first-win')).toBe(true);
+    expect(unlocked.has('arena-hot-streak')).toBe(true);
+    expect(unlocked.has('shield-bearer')).toBe(true);
+    expect(unlocked.has('classroom-squad')).toBe(true);
+    expect(unlocked.has('networking-grad')).toBe(true);
+    expect(unlocked.has('perfectionist')).toBe(true);
+    expect(unlocked.has('arena-veteran')).toBe(false);
+
+    const veteran = achievements.find((a) => a.id === 'arena-veteran');
+    expect(veteran?.progressText).toBe('4 / 10 wins');
+    expect(veteran?.progressPct).toBe(40);
   });
 });

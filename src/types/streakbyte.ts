@@ -52,6 +52,7 @@ export type IconName =
   | 'back'
   | 'warn'
   | 'search'
+  | 'shield'
   | 'sun'
   | 'moon';
 

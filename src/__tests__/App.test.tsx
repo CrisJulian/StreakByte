@@ -8,7 +8,7 @@ describe('App integration', () => {
   beforeEach(() => {
     localStorage.clear();
     window.location.hash = '';
-    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.setAttribute('data-theme', 'dark');
     useStreakByteStore.getState().resetAll();
   });
 
@@ -37,13 +37,10 @@ describe('App integration', () => {
     expect(streakBtn).toHaveFocus();
 
     // Theme toggle updates <html data-theme>
-    const themeBtn = screen.getByRole('button', { name: 'Switch to dark theme' });
+    const themeBtn = screen.getByRole('button', { name: 'Switch to light theme' });
     await user.click(themeBtn);
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-    const backToLightBtn = screen.getByRole('button', { name: 'Switch to light theme' });
-    expect(backToLightBtn).toBeInTheDocument();
-    await user.click(backToLightBtn);
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    expect(screen.getByRole('button', { name: 'Switch to dark theme' })).toBeInTheDocument();
 
     // Navigate to Curriculum and search
     const nav = screen.getByRole('navigation', { name: 'Main' });
@@ -164,7 +161,7 @@ describe('App integration', () => {
 
     const nav = screen.getByRole('navigation', { name: 'Main' });
     await user.click(within(nav).getByRole('link', { name: 'Achievements' }));
-    expect(screen.getByText('0 of 8 unlocked')).toBeInTheDocument();
+    expect(screen.getByText('0 of 16 unlocked')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Unlocked 0' })).toBeInTheDocument();
 
     await user.click(within(nav).getByRole('link', { name: 'Arena' }));

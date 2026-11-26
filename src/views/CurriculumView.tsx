@@ -19,6 +19,8 @@ export function CurriculumView() {
   // Done / current / locked are worked out from the saved quiz results, never stored.
   const progress = getTrackProgress(activeTrackId, completions);
   const currentIdx = progress.lessons.findIndex((l) => l.status === 'cur');
+  const finalIdx = activeTrack.lessons.findIndex((l) => l.kind === 'final');
+  const bossLabLocked = finalIdx >= 0 && progress.lessons[finalIdx]?.status === 'lock';
   const q = searchQuery.trim().toLowerCase();
   const filteredLessons = activeTrack.lessons
     .map((lesson, idx) => ({ lesson, idx }))
@@ -192,7 +194,7 @@ export function CurriculumView() {
                           aria-label={`${isDone ? 'Review' : 'Open'} ${label}`}
                           onClick={() => navigate(`learn/${key}`)}
                           className={`sb-cut-sm min-h-9 px-3 border font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer transition-colors ${isCur
-                              ? 'border-cyan bg-cyan text-cyan-ink hover:bg-[#e64b00]'
+                              ? 'border-cyan bg-cyan text-cyan-ink hover:brightness-110'
                               : 'border-line bg-panel text-ink hover:border-ink hover:bg-panel2'
                             }`}
                         >
@@ -258,16 +260,9 @@ export function CurriculumView() {
                 <button
                   type="button"
                   onClick={() => navigate(`learn/${lessonKeyFor(activeTrackId, currentIdx)}`)}
-                  className="sb-cut w-full inline-flex items-center justify-center gap-2 min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors hover:bg-[#e64b00]"
+                  className="sb-cut w-full inline-flex items-center justify-center gap-2 min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors hover:brightness-110"
                 >
                   Start lesson
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate(`quiz/${lessonKeyFor(activeTrackId, currentIdx)}`)}
-                  className="sb-cut w-full inline-flex items-center justify-center gap-2 min-h-11 px-4 border border-[var(--dark-card)] bg-[var(--dark-card)] text-white font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-opacity hover:opacity-90"
-                >
-                  Take the quiz
                 </button>
               </div>
             ) : (
@@ -280,20 +275,38 @@ export function CurriculumView() {
           <div className="relative border border-[var(--dark-card)] bg-[var(--dark-card)] text-white p-5">
             <CornerBrackets light />
             <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-white/60">
-              BOSS LAB SANDBOX
+              {bossLabLocked ? 'BOSS LAB · LOCKED' : 'BOSS LAB SANDBOX'}
             </div>
             <h3 className="m-0 mt-1.5 mb-1.5 font-head text-base font-bold">
               Hands-on Build Simulator
             </h3>
             <p className="m-0 mb-3.5 text-[11px] text-white/70">
-              Practice installing components or configuring IPv4 networks anytime.
+              {bossLabLocked
+                ? `Complete all earlier ${activeTrack.heading} lessons to unlock the hands-on build simulator.`
+                : 'Practice installing components or configuring IPv4 networks anytime.'}
             </p>
             <button
               type="button"
-              onClick={() => openSetup(finalLessonLab(activeTrackId), activeTrack.heading)}
-              className="sb-cut-sm w-full min-h-9 px-3 border border-cyan bg-cyan text-cyan-ink font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer hover:bg-[#e64b00]"
+              disabled={bossLabLocked}
+              onClick={() => {
+                if (!bossLabLocked) {
+                  openSetup(finalLessonLab(activeTrackId), activeTrack.heading);
+                }
+              }}
+              className={`sb-cut-sm w-full min-h-9 px-3 border font-bold text-[10.5px] uppercase tracking-[0.06em] inline-flex items-center justify-center gap-1.5 transition-colors ${
+                bossLabLocked
+                  ? 'border-white/20 bg-white/10 text-white/55 cursor-not-allowed'
+                  : 'border-cyan bg-cyan text-cyan-ink cursor-pointer hover:brightness-110'
+              }`}
             >
-              Open {activeTrackId === 'net' ? 'Network' : 'PC'} Lab ▶
+              {bossLabLocked ? (
+                <>
+                  <Icon name="lock" className="w-3.5 h-3.5" />
+                  <span>Locked · {activeTrackId === 'net' ? 'Network' : 'PC'} Lab</span>
+                </>
+              ) : (
+                `Open ${activeTrackId === 'net' ? 'Network' : 'PC'} Lab ▶`
+              )}
             </button>
           </div>
         </aside>

@@ -183,7 +183,7 @@ export function StudyBuddyChat() {
               type="submit"
               disabled={chat.isLoading || !draft.trim()}
               aria-label="Send"
-              className="sb-cut-sm inline-flex items-center justify-center w-11 min-h-10 p-0 border border-cyan bg-cyan text-cyan-ink cursor-pointer transition-colors hover:bg-[#e64b00] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="sb-cut-sm inline-flex items-center justify-center w-11 min-h-10 p-0 border border-cyan bg-cyan text-cyan-ink cursor-pointer transition-colors hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Icon name="send" className="w-4 h-4" />
             </button>

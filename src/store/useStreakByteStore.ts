@@ -414,7 +414,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
       pendingSyncCount: 0,
       isSyncing: false,
       activeLab: 'pc',
-      theme: 'light',
+      theme: 'dark',
       track: 'hw',
       searchQuery: '',
       practiceFilter: 'all',
@@ -873,6 +873,16 @@ export const useStreakByteStore = create<StreakByteStore>()(
             });
           }
           if (room.id !== LOCAL_TEST_DUEL_ID) {
+            const playerScore = room.hostId === authId ? room.hostScore : room.guestScore;
+            if (playerScore !== null || room.winnerId === authId) {
+              const prevDaily = ensureDailyActivity(get().dailyActivity, localDayString());
+              set({
+                dailyActivity: {
+                  ...prevDaily,
+                  arenaDuelsFinished: prevDaily.arenaDuelsFinished + 1,
+                },
+              });
+            }
             void get().loadUserData();
           }
         }
@@ -1604,7 +1614,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
           pendingSyncCount: 0,
           isSyncing: false,
           activeLab: 'pc',
-          theme: 'light',
+          theme: 'dark',
           track: 'hw',
           searchQuery: '',
           practiceFilter: 'all',

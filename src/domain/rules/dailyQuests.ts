@@ -4,10 +4,11 @@ export interface DailyActivityState {
   perfectQuizzes: number;
   labsCompleted: number;
   studyBuddyMessages: number;
+  arenaDuelsFinished: number;
   claimedIds: string[];
 }
 
-export type DailyQuestId = 'daily-quiz' | 'daily-lab' | 'daily-buddy';
+export type DailyQuestId = 'daily-quiz' | 'daily-lab' | 'daily-buddy' | 'daily-arena';
 
 export interface DailyQuest {
   id: DailyQuestId;
@@ -18,7 +19,7 @@ export interface DailyQuest {
   target: number;
   completed: boolean;
   claimed: boolean;
-  icon: 'book' | 'wrench' | 'term';
+  icon: 'book' | 'wrench' | 'term' | 'bolt';
 }
 
 export function createDailyActivity(day: string): DailyActivityState {
@@ -28,6 +29,7 @@ export function createDailyActivity(day: string): DailyActivityState {
     perfectQuizzes: 0,
     labsCompleted: 0,
     studyBuddyMessages: 0,
+    arenaDuelsFinished: 0,
     claimedIds: [],
   };
 }
@@ -46,6 +48,7 @@ export function ensureDailyActivity(
     perfectQuizzes: Math.max(0, Number(state.perfectQuizzes) || 0),
     labsCompleted: Math.max(0, Number(state.labsCompleted) || 0),
     studyBuddyMessages: Math.max(0, Number(state.studyBuddyMessages) || 0),
+    arenaDuelsFinished: Math.max(0, Number(state.arenaDuelsFinished) || 0),
     claimedIds: Array.isArray(state.claimedIds) ? state.claimedIds : [],
   };
 }
@@ -55,6 +58,7 @@ export function deriveDailyQuests(activity: DailyActivityState): DailyQuest[] {
   const quizProgress = Math.min(activity.quizzesPassed, 1);
   const labProgress = Math.min(activity.labsCompleted, 1);
   const buddyProgress = Math.min(activity.studyBuddyMessages, 1);
+  const arenaProgress = Math.min(activity.arenaDuelsFinished || 0, 1);
 
   return [
     {
@@ -78,6 +82,17 @@ export function deriveDailyQuests(activity: DailyActivityState): DailyQuest[] {
       completed: labProgress >= 1,
       claimed: claimed.has('daily-lab'),
       icon: 'wrench',
+    },
+    {
+      id: 'daily-arena',
+      title: 'Complete 1 Arena 1v1 duel',
+      description: 'Finish an 8-bit 1v1 match in the Arena.',
+      xpReward: 50,
+      progress: arenaProgress,
+      target: 1,
+      completed: arenaProgress >= 1,
+      claimed: claimed.has('daily-arena'),
+      icon: 'bolt',
     },
     {
       id: 'daily-buddy',

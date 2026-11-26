@@ -26,34 +26,33 @@
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
-:root,
-:root[data-theme="light"] {
-  color-scheme: light;
+:root {
+  color-scheme: dark;
   --hog: url('/mascot.png');
   --buddy: url('/buddy-logo.png');
-  --bg: #ffffff;
-  --canvas: #e8e8e8;
-  --panel: #ffffff;
-  --panel2: #f3f3f3;
-  --panel3: #dfdfdf;
-  --line: #cccccc;
-  --text: #141414;
-  --muted: #666666;
-  --cyan: #ff5500;
-  --cyan-ink: #ffffff;
-  --amber: #ff5500;
-  --amber-ink: #ffffff;
-  --green: #129954;
-  --green-ink: #ffffff;
-  --danger: #d92d20;
-  --red: #d92d20;
-  --you: #fde4d6;
-  --dark-card: #141414;
-  --dark-line: #2c2c2c;
-  --scrim: rgba(17, 17, 17, 0.68);
-  --dimm-bg: #f3f3f3;
-  --dimm-stroke: #141414;
-  --dimm-chip: #ffffff;
+  --bg: #0b1020;
+  --canvas: #070b17;
+  --panel: #121935;
+  --panel2: #18214a;
+  --panel3: #202b5c;
+  --line: #26305f;
+  --text: #eef2ff;
+  --muted: #a3add1;
+  --cyan: #22d3ee;
+  --cyan-ink: #04212a;
+  --amber: #38bdf8;
+  --amber-ink: #041e2e;
+  --green: #34d399;
+  --green-ink: #032218;
+  --danger: #f87171;
+  --red: #f87171;
+  --you: #143a4a;
+  --dark-card: #0b1020;
+  --dark-line: #26305f;
+  --scrim: rgba(6, 10, 22, 0.72);
+  --dimm-bg: #18214a;
+  --dimm-stroke: #3a4690;
+  --dimm-chip: #0b1020;
   --disp: "Archivo Black", Impact, "Arial Black", sans-serif;
   --head: "Space Grotesk", system-ui, sans-serif;
   --sans: "JetBrains Mono", ui-monospace, monospace;
@@ -63,31 +62,35 @@
   caret-color: var(--cyan);
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f1f5f9;
+  --canvas: #e2e8f0;
+  --panel: #ffffff;
+  --panel2: #e2e8f0;
+  --panel3: #cbd5e1;
+  --line: #cbd5e1;
+  --text: #0f172a;
+  --muted: #475569;
+  --cyan: #08708a;
+  --cyan-ink: #ffffff;
+  --amber: #0284c7;
+  --amber-ink: #ffffff;
+  --green: #047857;
+  --green-ink: #ffffff;
+  --danger: #b91c1c;
+  --red: #b91c1c;
+  --you: #e0f2fe;
+  --dark-card: #0f172a;
+  --dark-line: #334155;
+  --scrim: rgba(15, 23, 42, 0.45);
+  --dimm-bg: #e2e8f0;
+  --dimm-stroke: #94a3b8;
+  --dimm-chip: #ffffff;
+}
+
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #111111;
-  --canvas: #0b0b0b;
-  --panel: #161616;
-  --panel2: #1f1f1f;
-  --panel3: #2a2a2a;
-  --line: #2e2e2e;
-  --text: #f4f4f4;
-  --muted: #a0a0a0;
-  --cyan: #ff5500;
-  --cyan-ink: #ffffff;
-  --amber: #ff6a1a;
-  --amber-ink: #ffffff;
-  --green: #18b865;
-  --green-ink: #ffffff;
-  --danger: #f04438;
-  --red: #f04438;
-  --you: #3a1e10;
-  --dark-card: #0c0c0c;
-  --dark-line: #333333;
-  --scrim: rgba(0, 0, 0, 0.78);
-  --dimm-bg: #1f1f1f;
-  --dimm-stroke: #525252;
-  --dimm-chip: #111111;
 }
 
 @layer base {
@@ -350,28 +353,28 @@ svg.pcb {
 
 .pcb text {
   font: 700 12px var(--mono);
-  fill: #ffffff;
+  fill: #f4f7ef;
   paint-order: stroke;
-  stroke: #141414;
+  stroke: #0f3a33;
   stroke-width: 4px;
   stroke-linejoin: round;
 }
 
 .pcb .bd {
-  fill: #141414;
-  stroke: #333333;
+  fill: #1e7a56;
+  stroke: #2fa376;
   stroke-width: 2;
 }
 
 .pcb .hole {
   fill: none;
-  stroke: #ff5500;
+  stroke: #22d3ee;
   stroke-width: 3;
 }
 
 .pcb .part {
-  fill: #242424;
-  stroke: #0c0c0c;
+  fill: #151d36;
+  stroke: #0b1020;
   stroke-width: 1.5;
 }
 
@@ -381,8 +384,8 @@ svg.pcb {
 }
 
 .pcb .slot .sh {
-  fill: #1d1d1d;
-  stroke: #ff5500;
+  fill: #0b1020;
+  stroke: #22d3ee;
   stroke-width: 2;
   stroke-dasharray: 5 4;
   transition: fill 0.18s, stroke 0.18s;
@@ -392,28 +395,28 @@ svg.pcb {
 .pcb .slot:focus-visible .sh,
 .pcb .slot.over .sh {
   stroke: #ffffff;
-  fill: #2b2019;
+  fill: #16224a;
 }
 
 .pcb .slot.filled .sh {
   stroke-dasharray: none;
-  stroke: #ffffff;
+  stroke: #0b1020;
 }
 
 .pcb .slot[data-part="ram"].filled .sh {
-  fill: #129954;
+  fill: #34d399;
 }
 
 .pcb .slot[data-part="m2"].filled .sh {
-  fill: #e5e5e5;
+  fill: #cbd5e1;
 }
 
 .pcb .slot[data-part="gpu"].filled .sh {
-  fill: #9e9e9e;
+  fill: #94a3b8;
 }
 
 .pcb .slot[data-part="psu"].filled .sh {
-  fill: #ff5500;
+  fill: #22d3ee;
 }
 
 .pcb .slot.hint .sh {
@@ -421,20 +424,20 @@ svg.pcb {
 }
 
 .pcb .badge circle {
-  fill: #ff5500;
-  stroke: #141414;
+  fill: #22d3ee;
+  stroke: #0b1020;
   stroke-width: 1.5;
 }
 
 .pcb .badge text {
-  fill: #ffffff;
+  fill: #04212a;
   stroke: none;
   font: 700 12px var(--mono);
   text-anchor: middle;
 }
 
 .pcb .badge.done circle {
-  fill: #129954;
+  fill: #0f3a33;
   stroke: #ffffff;
 }
 

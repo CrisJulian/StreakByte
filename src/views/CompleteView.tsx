@@ -122,7 +122,7 @@ export function CompleteView() {
                 e.preventDefault();
                 navigate('practice');
               }}
-              className="sb-cut inline-flex items-center justify-center min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] no-underline hover:bg-[#e64b00] transition-colors"
+              className="sb-cut inline-flex items-center justify-center min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] no-underline hover:brightness-110 transition-colors"
             >
               Practice missed
             </a>
