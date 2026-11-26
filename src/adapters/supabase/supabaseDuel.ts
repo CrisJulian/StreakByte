@@ -195,7 +195,16 @@ export const supabaseDuel: DuelService = {
           }
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          void this.getDuel(duelId)
+            .then((room) => {
+              if (room) handlers.onRoomUpdate(room);
+            })
+            .catch(() => undefined);
+          void channel.send({ type: 'broadcast', event: 'sync', payload: { duelId } });
+        }
+      });
 
     return {
       sendProgress: (progress) => {

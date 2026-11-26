@@ -1,16 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockRpc, mockFrom } = vi.hoisted(() => ({
+const { mockRpc, mockFrom, mockChannel, mockRemoveChannel } = vi.hoisted(() => ({
   mockRpc: vi.fn(),
   mockFrom: vi.fn(),
+  mockChannel: vi.fn(),
+  mockRemoveChannel: vi.fn(),
 }));
 
 vi.mock('../supabaseClient', () => ({
   supabase: {
     rpc: mockRpc,
     from: mockFrom,
-    channel: vi.fn(),
-    removeChannel: vi.fn(),
+    channel: mockChannel,
+    removeChannel: mockRemoveChannel,
   },
 }));
 
@@ -116,5 +118,48 @@ describe('supabaseDuel adapter', () => {
     const open = await supabaseDuel.listOpenClassroomDuels(['c-1']);
     expect(open).toHaveLength(1);
     expect(open[0].code).toBe('AB12CD');
+  });
+
+  it('fetches initial duel state and broadcasts sync when realtime channel subscribes', async () => {
+    const mockSend = vi.fn();
+    const cbBox: { fn?: (status: string) => void } = {};
+    const channelObj = {
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn((cb?: (status: string) => void) => {
+        cbBox.fn = cb;
+        return channelObj;
+      }),
+      send: mockSend,
+    };
+    mockChannel.mockReturnValue(channelObj);
+
+    const activeRow = { ...SAMPLE_ROW, status: 'active', host_ready: true, guest_ready: true };
+    mockFrom.mockReturnValue({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: vi.fn().mockResolvedValue({ data: activeRow, error: null }),
+        }),
+      }),
+    });
+
+    const onRoomUpdate = vi.fn();
+    const sub = supabaseDuel.subscribeDuel('d-1', {
+      onRoomUpdate,
+      onOpponentProgress: vi.fn(),
+    });
+
+    cbBox.fn?.('SUBSCRIBED');
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(onRoomUpdate).toHaveBeenCalledWith(expect.objectContaining({ id: 'd-1', status: 'active' }));
+    expect(mockSend).toHaveBeenCalledWith({
+      type: 'broadcast',
+      event: 'sync',
+      payload: { duelId: 'd-1' },
+    });
+
+    sub.unsubscribe();
+    expect(mockRemoveChannel).toHaveBeenCalledWith(channelObj);
   });
 });

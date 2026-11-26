@@ -58,6 +58,10 @@ import {
   effectiveStreak,
   localDayString,
 } from '../domain/rules/xp';
+
+const ACTIVE_DUEL_LOCK_MSG = 'Finish or forfeit your active 1v1 duel first.';
+const isLockedInActiveDuel = (state: { activeDuel: DuelRoom | null }) =>
+  state.activeDuel?.status === 'active';
 import type {
   AchievementFilter,
   CableType,
@@ -853,7 +857,13 @@ export const useStreakByteStore = create<StreakByteStore>()(
         }
       },
 
-      setArenaTab: (arenaTab) => set({ arenaTab }),
+      setArenaTab: (arenaTab) => {
+        if (isLockedInActiveDuel(get()) && arenaTab !== 'duel') {
+          get().showToast(ACTIVE_DUEL_LOCK_MSG);
+          return;
+        }
+        set({ arenaTab });
+      },
 
       setOpponentProgress: (opponentProgress) => set({ opponentProgress }),
 
@@ -1120,6 +1130,15 @@ export const useStreakByteStore = create<StreakByteStore>()(
       syncFromHash: (hash) => {
         const parsed = parseHash(hash);
 
+        if (isLockedInActiveDuel(get()) && parsed.view !== 'arena') {
+          if (typeof window !== 'undefined' && window.location.hash !== '#arena') {
+            window.location.hash = '#arena';
+          }
+          set({ view: 'arena', arenaTab: 'duel' });
+          get().showToast(ACTIVE_DUEL_LOCK_MSG);
+          return;
+        }
+
         if (parsed.view === 'learn') {
           const key = parsed.learn ?? '';
           if (!LESSON_CONTENT[key]) {
@@ -1171,6 +1190,11 @@ export const useStreakByteStore = create<StreakByteStore>()(
 
       navigate: (route) => {
         const normalized = route.startsWith('#') ? route : `#${route}`;
+        const parsed = parseHash(normalized);
+        if (isLockedInActiveDuel(get()) && parsed.view !== 'arena') {
+          get().showToast(ACTIVE_DUEL_LOCK_MSG);
+          return;
+        }
         if (typeof window !== 'undefined') {
           if (window.location.hash !== normalized) {
             window.location.hash = normalized;

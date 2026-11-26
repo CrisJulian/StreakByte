@@ -467,4 +467,25 @@ describe('quiz flow in the store', () => {
       submitSpy.mockRestore();
     }
   });
+
+  it('blocks navigation and Solo Practice tab during an active duel until finished or forfeited', async () => {
+    useStreakByteStore.getState().navigate('arena');
+    useStreakByteStore.getState().startBotTestDuel('mixed');
+
+    expect(useStreakByteStore.getState().view).toBe('arena');
+    expect(useStreakByteStore.getState().arenaTab).toBe('duel');
+
+    useStreakByteStore.getState().navigate('dashboard');
+    expect(useStreakByteStore.getState().view).toBe('arena');
+
+    useStreakByteStore.getState().syncFromHash('#curriculum');
+    expect(useStreakByteStore.getState().view).toBe('arena');
+
+    useStreakByteStore.getState().setArenaTab('practice');
+    expect(useStreakByteStore.getState().arenaTab).toBe('duel');
+
+    await useStreakByteStore.getState().cancelOrForfeitDuel();
+    useStreakByteStore.getState().navigate('dashboard');
+    expect(useStreakByteStore.getState().view).toBe('dashboard');
+  });
 });

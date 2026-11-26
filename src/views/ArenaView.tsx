@@ -133,48 +133,51 @@ export function ArenaView() {
     }
   }, [arenaTab, isGuest, authUser, activeDuel, classrooms.length, refreshClassroomDuels]);
 
+  const playerId = authUser?.id || 'local-guest';
+  const isHost = Boolean(activeDuel && activeDuel.hostId === playerId);
+  const myServerScore = activeDuel ? (isHost ? activeDuel.hostScore : activeDuel.guestScore) : null;
+  const myServerTimeMs = activeDuel ? (isHost ? activeDuel.hostTimeMs : activeDuel.guestTimeMs) : null;
+  const effectivelyDone = localDone || myServerScore !== null;
+  const isMatchActive = activeDuel?.status === 'active';
+
   useEffect(() => {
-    if (!activeDuel) {
-      subRef.current = null;
+    if (!activeDuel || activeDuel.id !== LOCAL_TEST_DUEL_ID || activeDuel.status !== 'active') {
       return undefined;
     }
 
-    if (activeDuel.id === LOCAL_TEST_DUEL_ID) {
-      subRef.current = null;
-      if (activeDuel.status !== 'active') return undefined;
+    let step = 0;
+    const total = activeDuel.questionIds.length;
+    const botBits: Array<0 | 1> = [];
+    let botScore = 0;
+    let botStreak = 0;
 
-      let step = 0;
-      const total = activeDuel.questionIds.length;
-      const botBits: Array<0 | 1> = [];
-      let botScore = 0;
-      let botStreak = 0;
+    const timer = setInterval(() => {
+      if (step >= total) return;
+      step += 1;
+      const bit: 0 | 1 = step % 4 === 0 ? 0 : 1;
+      botBits.push(bit);
+      if (bit === 1) {
+        botScore += 1;
+        botStreak += 1;
+      } else {
+        botStreak = 0;
+      }
+      setOpponentProgress({
+        userId: 'byte-bot',
+        answered: step,
+        total,
+        score: botScore,
+        bits: [...botBits],
+        answerStreak: botStreak,
+        finished: step >= total,
+      });
+    }, 2400);
 
-      const timer = setInterval(() => {
-        if (step >= total) return;
-        step += 1;
-        const bit: 0 | 1 = step % 4 === 0 ? 0 : 1;
-        botBits.push(bit);
-        if (bit === 1) {
-          botScore += 1;
-          botStreak += 1;
-        } else {
-          botStreak = 0;
-        }
-        setOpponentProgress({
-          userId: 'byte-bot',
-          answered: step,
-          total,
-          score: botScore,
-          bits: [...botBits],
-          answerStreak: botStreak,
-          finished: step >= total,
-        });
-      }, 2400);
+    return () => clearInterval(timer);
+  }, [activeDuel?.id, activeDuel?.status, activeDuel?.questionIds.length, setOpponentProgress]);
 
-      return () => clearInterval(timer);
-    }
-
-    if (isGuest || !authUser) {
+  useEffect(() => {
+    if (!activeDuel || activeDuel.id === LOCAL_TEST_DUEL_ID || isGuest || !authUser) {
       subRef.current = null;
       return undefined;
     }
@@ -192,31 +195,49 @@ export function ArenaView() {
     });
     subRef.current = sub;
 
-    let timer: ReturnType<typeof setInterval> | null = null;
-    if (activeDuel.status === 'waiting' || activeDuel.status === 'active') {
-      timer = setInterval(() => {
-        void services.duel
-          .getDuel(duelId)
-          .then((room) => {
-            if (room) setActiveDuel(room);
-          })
-          .catch(() => undefined);
-      }, 3000);
-    }
-
     return () => {
       sub.unsubscribe();
       subRef.current = null;
-      if (timer) clearInterval(timer);
     };
-  }, [activeDuel?.id, activeDuel?.status, activeDuel?.startedAt, activeDuel?.questionIds.length, authUser, isGuest, setActiveDuel, setOpponentProgress]);
+  }, [activeDuel?.id, authUser?.id, isGuest, setActiveDuel, setOpponentProgress]);
 
   useEffect(() => {
-    if (activeDuel?.status !== 'active') return undefined;
+    if (!activeDuel || activeDuel.id === LOCAL_TEST_DUEL_ID || isGuest || !authUser) {
+      return undefined;
+    }
+    if (activeDuel.status !== 'waiting' && activeDuel.status !== 'active') {
+      return undefined;
+    }
+
+    const duelId = activeDuel.id;
+    const poll = () => {
+      void services.duel
+        .getDuel(duelId)
+        .then((room) => {
+          if (room) setActiveDuel(room);
+        })
+        .catch(() => undefined);
+    };
+    const timer = setInterval(poll, 1500);
+    return () => clearInterval(timer);
+  }, [activeDuel?.id, activeDuel?.status, authUser?.id, isGuest, setActiveDuel]);
+
+  useEffect(() => {
+    if (!isMatchActive || isTestDuel || typeof window === 'undefined') return undefined;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [isMatchActive, isTestDuel]);
+
+  useEffect(() => {
+    if (activeDuel?.status !== 'active' || effectivelyDone) return undefined;
     setNowMs(Date.now());
     const id = setInterval(() => setNowMs(Date.now()), 100);
     return () => clearInterval(id);
-  }, [activeDuel?.status, activeDuel?.startedAt]);
+  }, [activeDuel?.status, activeDuel?.startedAt, effectivelyDone]);
 
   const duelQuestions = useMemo(
     () =>
@@ -330,8 +351,6 @@ export function ArenaView() {
     [classrooms],
   );
 
-  const playerId = authUser?.id || 'local-guest';
-  const isHost = Boolean(activeDuel && activeDuel.hostId === playerId);
   const opponentName = activeDuel
     ? isHost
       ? activeDuel.guestName || 'Opponent'
@@ -342,6 +361,7 @@ export function ArenaView() {
   const startMs = activeDuel?.startedAt ? Date.parse(activeDuel.startedAt) : nowMs;
   const countdownSec = Math.max(0, Math.ceil((startMs - nowMs) / 1000));
   const sprintElapsedMs = Math.max(0, nowMs - startMs);
+  const frozenElapsedMs = localElapsedMs ?? myServerTimeMs;
   const liveBonusMs = calculateStreakSpeedBonusMs(maxAnswerStreak);
 
   return (
@@ -388,11 +408,12 @@ export function ArenaView() {
             </button>
             <button
               type="button"
+              disabled={isMatchActive}
               aria-pressed={arenaTab === 'practice'}
               onClick={() => setArenaTab('practice')}
-              className={`min-h-10 px-4 border-0 border-l border-ink font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer transition-colors ${arenaTab === 'practice'
+              className={`min-h-10 px-4 border-0 border-l border-ink font-bold text-[10.5px] uppercase tracking-[0.06em] transition-colors disabled:opacity-45 disabled:cursor-not-allowed ${arenaTab === 'practice'
                   ? 'bg-cyan text-cyan-ink'
-                  : 'bg-transparent text-ink hover:bg-panel2'
+                  : 'bg-transparent text-ink hover:bg-panel2 cursor-pointer'
                 }`}
             >
               Solo Practice
@@ -793,7 +814,11 @@ export function ArenaView() {
                 )}
               </div>
               <span className="num font-disp text-lg text-cyan">
-                {countdownSec > 0 ? `Starting in ${countdownSec}…` : formatDuelTime(sprintElapsedMs)}
+                {effectivelyDone
+                  ? formatDuelTime(frozenElapsedMs)
+                  : countdownSec > 0
+                    ? `Starting in ${countdownSec}…`
+                    : formatDuelTime(sprintElapsedMs)}
               </span>
             </div>
 
@@ -829,11 +854,12 @@ export function ArenaView() {
                   Fingers ready — build an 8-bit Byte as fast as you can!
                 </p>
               </div>
-            ) : localDone ? (
+            ) : effectivelyDone ? (
               <div className="py-8 text-center grid gap-2">
                 <h2 className="m-0 font-head text-xl font-bold">
-                  {score === duelQuestions.length ? 'Full Byte (8/8)! ' : ''}Score locked: {score} /{' '}
-                  {duelQuestions.length} in {formatDuelTime(localElapsedMs)}
+                  {(myServerScore ?? score) === duelQuestions.length ? 'Full Byte (8/8)! ' : ''}
+                  Score locked: {myServerScore ?? score} / {duelQuestions.length} in{' '}
+                  {formatDuelTime(frozenElapsedMs)}
                 </h2>
                 {localBonusMs > 0 && (
                   <p className="m-0 text-xs font-bold text-cyan">
@@ -894,17 +920,15 @@ export function ArenaView() {
               )
             )}
 
-            {!localDone && (
-              <div className="pt-2 border-t border-line flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => void cancelOrForfeitDuel()}
-                  className="min-h-9 px-3 border border-line bg-transparent text-[10.5px] font-bold uppercase tracking-[0.06em] text-muted hover:text-ink cursor-pointer"
-                >
-                  Forfeit Match
-                </button>
-              </div>
-            )}
+            <div className="pt-2 border-t border-line flex justify-end">
+              <button
+                type="button"
+                onClick={() => void cancelOrForfeitDuel()}
+                className="min-h-9 px-3 border border-line bg-transparent text-[10.5px] font-bold uppercase tracking-[0.06em] text-muted hover:text-ink cursor-pointer"
+              >
+                {isTestDuel ? 'Exit Test Duel' : 'Forfeit Match'}
+              </button>
+            </div>
           </section>
         </div>
       ) : (

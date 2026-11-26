@@ -40,6 +40,7 @@ export function TopBar() {
   const flushSyncQueue = useStreakByteStore((s) => s.flushSyncQueue);
   const restoreCurrentStreak = useStreakByteStore((s) => s.restoreCurrentStreak);
   const buyStreakRestore = useStreakByteStore((s) => s.buyStreakRestore);
+  const isInActiveDuel = useStreakByteStore((s) => s.activeDuel?.status === 'active');
   const canShowSyncCount = !isGuest && Boolean(authUser) && pendingSyncCount > 0;
   const displayName = useStreakByteStore(
     (s) => s.profileSettings.displayName || s.authUser?.displayName || 'Learner',
@@ -106,11 +107,14 @@ export function TopBar() {
     <header className="sticky top-0 z-20 grid grid-cols-[auto_1fr_auto] max-[760px]:grid-cols-[1fr_auto] items-stretch min-h-[56px] bg-panel border-b border-line">
       <a
         href="#dashboard"
+        aria-disabled={isInActiveDuel}
         onClick={(e) => {
           e.preventDefault();
           navigate('dashboard');
         }}
-        className="inline-flex items-center gap-2.5 px-5 max-[760px]:px-3.5 text-ink no-underline justify-self-start whitespace-nowrap"
+        className={`inline-flex items-center gap-2.5 px-5 max-[760px]:px-3.5 text-ink no-underline justify-self-start whitespace-nowrap ${
+          isInActiveDuel ? 'opacity-45 cursor-not-allowed' : ''
+        }`}
       >
         <i className="buddy-logo block w-9 h-9 flex-none" aria-hidden="true" />
         <span className="font-disp text-[14px] tracking-[0.02em] uppercase max-[760px]:hidden">
@@ -124,11 +128,13 @@ export function TopBar() {
       >
         {NAV_TABS.map((tab) => {
           const isCurrent = activeNav === tab.id;
+          const lockedOut = isInActiveDuel && tab.id !== 'arena';
           return (
             <a
               key={tab.id}
               href={`#${tab.id}`}
               aria-current={isCurrent ? 'page' : undefined}
+              aria-disabled={lockedOut}
               onClick={(e) => {
                 e.preventDefault();
                 navigate(tab.id);
@@ -136,7 +142,7 @@ export function TopBar() {
               className={`relative flex items-center gap-2 px-3.5 max-[1100px]:px-3 max-[760px]:flex-1 max-[760px]:flex-col max-[760px]:justify-center max-[760px]:gap-0.5 max-[760px]:px-1 max-[760px]:border-r max-[760px]:border-line max-[760px]:last:border-r-0 text-[11px] max-[760px]:text-[9.5px] uppercase tracking-[0.07em] no-underline whitespace-nowrap transition-colors ${isCurrent
                   ? 'bg-panel3 text-ink font-bold max-[760px]:shadow-[inset_0_3px_0_var(--cyan)]'
                   : 'text-muted font-semibold hover:text-ink hover:bg-panel2'
-                }`}
+                } ${lockedOut ? 'opacity-45 cursor-not-allowed' : ''}`}
             >
               <Icon
                 name={tab.icon}
@@ -273,11 +279,14 @@ export function TopBar() {
         <a
           href="#profile"
           aria-label={`Profile, ${displayName}`}
+          aria-disabled={isInActiveDuel}
           onClick={(e) => {
             e.preventDefault();
             navigate('profile');
           }}
-          className="sb-cut-sm inline-flex items-center justify-center min-w-[96px] h-9 px-4 bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] flex-none no-underline whitespace-nowrap transition-colors hover:brightness-110"
+          className={`sb-cut-sm inline-flex items-center justify-center min-w-[96px] h-9 px-4 bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] flex-none no-underline whitespace-nowrap transition-colors hover:brightness-110 ${
+            isInActiveDuel ? 'opacity-45 cursor-not-allowed' : ''
+          }`}
         >
           {shortName}
         </a>
