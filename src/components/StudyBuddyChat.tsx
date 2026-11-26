@@ -6,6 +6,10 @@ import { Icon } from './Icon';
 export function StudyBuddyChat() {
   const chat = useStreakByteStore((s) => s.chat);
   const lastMistake = useStreakByteStore((s) => s.lastMistake);
+  const inActiveDuel = useStreakByteStore((s) => s.activeDuel?.status === 'active');
+  const inActiveQuiz = useStreakByteStore(
+    (s) => s.view === 'quiz' && Boolean(s.quiz) && !s.quiz?.submitted,
+  );
   const setChatOpen = useStreakByteStore((s) => s.setChatOpen);
   const sendChatMessage = useStreakByteStore((s) => s.sendChatMessage);
   const [draft, setDraft] = useState('');
@@ -75,7 +79,13 @@ export function StudyBuddyChat() {
               <b className="block text-[11px] uppercase tracking-[0.08em] leading-tight">
                 Study buddy // BYTE-01
               </b>
-              <small className="text-white/65 text-[10.5px]">Ask about your lessons</small>
+              <small className="text-white/65 text-[10.5px]">
+                {inActiveDuel
+                  ? '1v1 Duel active · Anti-cheat on'
+                  : inActiveQuiz
+                    ? 'Quiz coaching · Hints only, no spoilers'
+                    : 'Ask about your lessons'}
+              </small>
             </div>
             <button
               type="button"
@@ -132,7 +142,7 @@ export function StudyBuddyChat() {
             )}
           </div>
 
-          {chat.showSuggestions && (
+          {chat.showSuggestions && !inActiveDuel && (
             <div className="flex gap-1.5 flex-wrap px-3.5 py-2.5 border-t border-line bg-panel">
               {STARTER_PROMPTS.map((prompt) => (
                 <button
@@ -148,7 +158,7 @@ export function StudyBuddyChat() {
             </div>
           )}
 
-          {lastMistake && (
+          {lastMistake && !inActiveDuel && (
             <div className="px-3.5 pt-2 pb-1 border-t border-line bg-panel">
               <button
                 type="button"

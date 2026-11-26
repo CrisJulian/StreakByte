@@ -5,6 +5,7 @@ import { QUIZ_BANK } from '../data/quizBank';
 import { ARENA_SCENARIOS } from '../data/arenaScenarios';
 import { getTrackProgress, isLessonKeyLocked, LESSON_XP_BY_KEY, lessonLabel, TRACKS } from '../data/curriculum';
 import { LESSON_CONTENT } from '../data/lessons';
+import { getArenaAntiCheatReply } from '../data/studyBuddy';
 import type { LessonCompletion } from '../domain/entities/progress';
 import type { QuizSession } from '../domain/entities/quiz';
 import {
@@ -1869,6 +1870,25 @@ export const useStreakByteStore = create<StreakByteStore>()(
         const text = raw.trim();
         if (!text) return;
 
+        if (isLockedInActiveDuel(get())) {
+          set((state) => {
+            const attempt = state.chat.messages.filter((m) => m.role === 'me').length;
+            return {
+              chat: {
+                ...state.chat,
+                showSuggestions: false,
+                isLoading: false,
+                messages: [
+                  ...state.chat.messages,
+                  { id: nextMsgId(), role: 'me', text },
+                  { id: nextMsgId(), role: 'bot', text: getArenaAntiCheatReply(attempt) },
+                ],
+              },
+            };
+          });
+          return;
+        }
+
         const today = localDayString();
         const prevDaily = ensureDailyActivity(get().dailyActivity, today);
         set({
@@ -1894,11 +1914,13 @@ export const useStreakByteStore = create<StreakByteStore>()(
           state.learnKey ??
           state.quiz?.lessonKey ??
           (state.view === 'lesson' ? (state.activeLab === 'net' ? 'net-lab' : 'hw-lab') : undefined);
+        const inActiveQuiz = state.view === 'quiz' && Boolean(state.quiz) && !state.quiz?.submitted;
 
         const reply = services.studyBuddy.reply(text, {
           history,
           currentLesson,
           recentMistake: state.lastMistake?.summary,
+          inActiveQuiz,
           apiKey: state.profileSettings.geminiApiKey || undefined,
         });
 

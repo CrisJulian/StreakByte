@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { buildLabMistake, buildQuizMistake, formatStudyBuddyPrompt } from '../studyContext';
+import {
+  buildLabMistake,
+  buildQuizMistake,
+  formatStudyBuddyPrompt,
+  looksLikeMultipleChoicePaste,
+} from '../studyContext';
 
 describe('studyContext domain helpers', () => {
   it('builds a concise quiz mistake summary and prompt', () => {
@@ -31,5 +36,26 @@ describe('studyContext domain helpers', () => {
     });
     expect(formatted).toContain('[Current student context: Lesson net-2 | Recent mistake: Network lab:');
     expect(formatted).toContain('Why did that fail?');
+  });
+
+  it('detects pasted multiple-choice questions and injects Quiz Coaching Mode', () => {
+    expect(looksLikeMultipleChoicePaste('What does RAM stand for?')).toBe(false);
+    expect(
+      looksLikeMultipleChoicePaste(
+        'Which RAM slots enable dual-channel first?\nA) A1 and A2\nB) A2 and B2\nC) B1 and B2\nD) Only A1',
+      ),
+    ).toBe(true);
+    expect(looksLikeMultipleChoicePaste('Which of the following is the subnet mask?')).toBe(true);
+
+    const pastedPrompt = formatStudyBuddyPrompt(
+      'Which RAM slots?\nA) A1 and A2\nB) A2 and B2',
+    );
+    expect(pastedPrompt).toContain('Quiz Coaching Mode: DO NOT reveal the answer');
+
+    const activeQuizPrompt = formatStudyBuddyPrompt('Explain dual-channel', {
+      currentLesson: 'hw-3',
+      inActiveQuiz: true,
+    });
+    expect(activeQuizPrompt).toContain('Quiz Coaching Mode: DO NOT reveal the answer');
   });
 });

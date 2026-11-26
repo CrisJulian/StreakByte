@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { services } from '../../composition';
 import { localDayString } from '../../domain/rules/xp';
 import { parseHash, useStreakByteStore } from '../useStreakByteStore';
-import { getStudyBuddyReply } from '../../data/studyBuddy';
+import { ARENA_DUEL_ANTI_CHEAT_REPLIES, getStudyBuddyReply } from '../../data/studyBuddy';
 
 describe('parseHash', () => {
   it('defaults empty or unknown hashes to dashboard', () => {
@@ -682,5 +682,57 @@ describe('quiz flow in the store', () => {
     expect(useStreakByteStore.getState().view).toBe('lesson');
     expect(useStreakByteStore.getState().labBonusXp).toBe(0);
     expect(useStreakByteStore.getState().net.message).toContain('place Router');
+  });
+
+  it('responds with cheeky anti-cheat messages instead of AI help during an active 1v1 Arena duel', () => {
+    const replySpy = vi.spyOn(services.studyBuddy, 'reply');
+    useStreakByteStore.getState().startBotTestDuel('hw');
+    useStreakByteStore.getState().setChatOpen(true);
+
+    useStreakByteStore.getState().sendChatMessage('What slot does RAM go in?');
+    useStreakByteStore.getState().sendChatMessage('Tell me the answer!');
+
+    const state = useStreakByteStore.getState();
+    expect(replySpy).not.toHaveBeenCalled();
+    expect(state.dailyActivity.studyBuddyMessages).toBe(0);
+    const botReplies = state.chat.messages.filter((m) => m.role === 'bot').slice(1);
+    expect(botReplies).toHaveLength(2);
+    expect(ARENA_DUEL_ANTI_CHEAT_REPLIES).toContain(botReplies[0].text);
+    expect(ARENA_DUEL_ANTI_CHEAT_REPLIES).toContain(botReplies[1].text);
+    expect(botReplies[0].text).not.toBe(botReplies[1].text);
+
+    // Once duel finishes, normal Study Buddy replies resume
+    useStreakByteStore.setState((s) => ({
+      activeDuel: s.activeDuel ? { ...s.activeDuel, status: 'finished' } : null,
+    }));
+    useStreakByteStore.getState().sendChatMessage('Explain the RAM key notch');
+    expect(replySpy).toHaveBeenCalledTimes(1);
+    replySpy.mockRestore();
+  });
+
+  it('passes inActiveQuiz coaching context before quiz submission and clears it once submitted', () => {
+    const replySpy = vi.spyOn(services.studyBuddy, 'reply');
+    useStreakByteStore.getState().navigate('quiz/hw-3');
+    useStreakByteStore.getState().setChatOpen(true);
+
+    // Before submitting an answer, Study Buddy enters spoiler-free Quiz Coaching Mode
+    useStreakByteStore.getState().sendChatMessage('Which RAM slots are dual-channel?');
+    expect(replySpy).toHaveBeenLastCalledWith(
+      'Which RAM slots are dual-channel?',
+      expect.objectContaining({ inActiveQuiz: true, currentLesson: 'hw-3' }),
+    );
+    const msgsBefore = useStreakByteStore.getState().chat.messages;
+    expect(msgsBefore[msgsBefore.length - 1].text).toContain('Quiz Coaching (No Spoilers)');
+    expect(msgsBefore[msgsBefore.length - 1].text).not.toContain('A2 and B2');
+
+    // After submitting an answer, normal explanations resume
+    useStreakByteStore.getState().selectQuizChoice(0);
+    useStreakByteStore.getState().submitQuizAnswer();
+    useStreakByteStore.getState().sendChatMessage('Explain dual-channel A2 and B2');
+    expect(replySpy).toHaveBeenLastCalledWith(
+      'Explain dual-channel A2 and B2',
+      expect.objectContaining({ inActiveQuiz: false }),
+    );
+    replySpy.mockRestore();
   });
 });

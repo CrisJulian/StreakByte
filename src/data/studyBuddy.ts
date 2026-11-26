@@ -1,4 +1,5 @@
 import type { StudyBuddyContext } from '../application/ports';
+import { looksLikeMultipleChoicePaste } from '../domain/rules/studyContext';
 
 export const STARTER_PROMPTS = [
   'Explain the RAM key notch',
@@ -9,12 +10,128 @@ export const STARTER_PROMPTS = [
 export const STUDY_BUDDY_GREETING =
   'Hi there! I’m your study buddy. Stuck on RAM or want a quick quiz? Ask away.';
 
+export const ARENA_DUEL_ANTI_CHEAT_REPLIES = [
+  'Nice try! 👀 No lifelines in a 1v1 Arena duel — win it with your own brainpower!',
+  'Caught in 4K! 📸 Trying to phone a bot mid-duel? Finish your 1v1 first, then we’ll study.',
+  'Whoa there, slick — BYTE-01 doesn’t help people cheat in 1v1s. Back to the Arena!',
+  'Error 403: Anti-Cheat Engaged. 🚫 Earn that W yourself — I’ll be right here after the match.',
+  'Bold move asking the study buddy during a live 1v1! Eyes on your own screen, champ. 😉',
+] as const;
+
+/** Rotating cheeky anti-cheat reply returned when a learner chats mid-1v1 duel. */
+export function getArenaAntiCheatReply(attemptIndex: number): string {
+  return ARENA_DUEL_ANTI_CHEAT_REPLIES[Math.abs(attemptIndex) % ARENA_DUEL_ANTI_CHEAT_REPLIES.length];
+}
+
+function getQuizCoachingReply(rawLower: string): string {
+  if (
+    rawLower.includes('ram') ||
+    rawLower.includes('memory') ||
+    rawLower.includes('dual') ||
+    rawLower.includes('dimm') ||
+    rawLower.includes('ddr') ||
+    rawLower.includes('notch') ||
+    rawLower.includes('a2') ||
+    rawLower.includes('b2')
+  ) {
+    return [
+      '**Quiz Coaching (No Spoilers):**',
+      '- **Concept clue:** RAM holds active short-term data while power is on, and motherboards pair matching channels across alternating slots (using an off-centre notch to block the wrong generation or backwards insertion).',
+      '- **How to spot it:** Rule out choices that describe permanent long-term storage or pairing adjacent slots side-by-side.',
+      '- **Your turn:** Which choice matches alternating dual-channel slots or volatile working memory?',
+    ].join('\n');
+  }
+
+  if (
+    rawLower.includes('cpu') ||
+    rawLower.includes('processor') ||
+    rawLower.includes('cooler') ||
+    rawLower.includes('thermal') ||
+    rawLower.includes('socket') ||
+    rawLower.includes('vrm') ||
+    rawLower.includes('cmos')
+  ) {
+    return [
+      '**Quiz Coaching (No Spoilers):**',
+      '- **Concept clue:** The CPU aligns gently with the socket triangle before mounting the cooler + a pea-sized drop of thermal paste, while VRMs regulate power and the CMOS battery keeps BIOS settings.',
+      '- **How to spot it:** Eliminate any choice that suggests forcing pins, installing a cooler before the CPU, or mixing cooling with permanent storage.',
+      '- **Your turn:** Based on what sits directly under the cooler, which option fits best?',
+    ].join('\n');
+  }
+
+  if (
+    rawLower.includes('m.2') ||
+    rawLower.includes('nvme') ||
+    rawLower.includes('ssd') ||
+    rawLower.includes('hdd') ||
+    rawLower.includes('storage') ||
+    rawLower.includes('drive')
+  ) {
+    return [
+      '**Quiz Coaching (No Spoilers):**',
+      '- **Concept clue:** Non-volatile drives keep files after shutdown: spinning HDDs are slowest, SATA SSDs top out around SATA bus speeds, and M.2 NVMe drives plug directly into PCIe lanes on the board.',
+      '- **How to spot it:** Cross out volatile memory (RAM) or options requiring extra SATA cables when thinking about M.2 speed.',
+      '- **Your turn:** Which option connects directly over PCIe lanes without extra cables?',
+    ].join('\n');
+  }
+
+  if (
+    rawLower.includes('gpu') ||
+    rawLower.includes('graphics') ||
+    rawLower.includes('pcie') ||
+    rawLower.includes('psu') ||
+    rawLower.includes('power') ||
+    rawLower.includes('24-pin') ||
+    rawLower.includes('esd') ||
+    rawLower.includes('static')
+  ) {
+    return [
+      '**Quiz Coaching (No Spoilers):**',
+      '- **Concept clue:** Expansion graphics cards use the top full-length PCIe slot with a retention latch, the PSU delivers DC power via the wide 24-pin main latch, and grounding on bare metal prevents ESD.',
+      '- **How to spot it:** Rule out low-bandwidth slots for GPUs, or options that skip static discharge before touching parts.',
+      '- **Your turn:** Which choice matches the main power latch, fastest PCIe lane, or safe ESD step?',
+    ].join('\n');
+  }
+
+  if (
+    rawLower.includes('ip') ||
+    rawLower.includes('subnet') ||
+    rawLower.includes('mask') ||
+    rawLower.includes('gateway') ||
+    rawLower.includes('router') ||
+    rawLower.includes('switch') ||
+    rawLower.includes('hub') ||
+    rawLower.includes('cable') ||
+    rawLower.includes('fiber') ||
+    rawLower.includes('ethernet') ||
+    rawLower.includes('lan') ||
+    rawLower.includes('wan')
+  ) {
+    return [
+      '**Quiz Coaching (No Spoilers):**',
+      '- **Concept clue:** Hubs broadcast to all ports, switches learn MAC addresses per LAN port, routers forward across networks (default gateway), `/24` masks lock the first three octets (`255.255.255.0`), and WAN uses ISP fiber/coax while LAN uses Cat6.',
+      '- **How to spot it:** Rule out reserved addresses (`.0` network, `.255` broadcast, `.1` router) for client hosts, or fiber/coax for a short switch-to-PC patch.',
+      '- **Your turn:** Check which option avoids conflicts and matches the exact device layer or port role!',
+    ].join('\n');
+  }
+
+  return [
+    '**Quiz Coaching (No Spoilers):**',
+    '- **Concept clue:** I’ll help you reason through it, but I won’t give away the final quiz answer outright!',
+    '- **How to spot it:** Break the question down by what each hardware part or network device actually does, and eliminate options that belong to a different layer or component.',
+    '- **Your turn:** Ask me to explain one specific term from the choices, and I’ll walk you through how it works.',
+  ].join('\n');
+}
+
 /**
  * Offline-first Study Buddy responder for StreakByte's Hardware & Networking curriculum.
  * Kept in its own module so a real LLM endpoint can be swapped in later without touching UI code.
  */
 export function getStudyBuddyReply(rawInput: string, context?: StudyBuddyContext): string {
   const rawLower = rawInput.trim().toLowerCase();
+  if (context?.inActiveQuiz || looksLikeMultipleChoicePaste(rawInput)) {
+    return getQuizCoachingReply(rawLower);
+  }
   const isMistakeFollowUp =
     Boolean(context?.recentMistake) &&
     (rawLower.includes('mistake') ||
