@@ -124,6 +124,18 @@ export const supabaseProgress: ProgressRepository = {
     return spent;
   },
 
+  async saveXpSpent(xpSpent) {
+    const safeSpent = Math.max(0, Math.floor(xpSpent));
+    saveLocalXpSpent(safeSpent);
+    const userId = await getSignedInUserId();
+    if (!userId || !supabase) return;
+
+    const { error } = await supabase
+      .from('user_profiles')
+      .upsert({ user_id: userId, xp_spent: safeSpent }, { onConflict: 'user_id' });
+    if (error) throw new Error(error.message);
+  },
+
   async loadArenaStats(): Promise<ArenaStats> {
     const userId = await getSignedInUserId();
     if (!userId || !supabase) return createInitialArenaStats();

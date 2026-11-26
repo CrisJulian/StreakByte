@@ -72,7 +72,7 @@ test('real pointer drag-and-drop in PcBuildLab', async ({ page }) => {
   await expect(setupDialog).toBeVisible();
   await setupDialog.getByRole('button', { name: 'Start lesson' }).click();
 
-  await expect(page.getByText('Partly built PC')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Build a PC' })).toBeVisible();
 
   const tray = page.getByRole('group', { name: 'Parts tray' });
   const ramButton = tray.getByRole('button', { name: /RAM stick 2x/i });

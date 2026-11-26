@@ -344,11 +344,21 @@
 
 /* Interactive SVG: PC Build motherboard */
 svg.pcb {
-  width: 100%;
+  width: auto;
+  max-width: 100%;
+  max-height: calc(100dvh - 210px);
   height: auto;
   stroke: none;
   stroke-width: 0;
   display: block;
+  margin-inline: auto;
+}
+
+@media (max-width: 1100px) {
+  svg.pcb {
+    width: 100%;
+    max-height: none;
+  }
 }
 
 .pcb text {
@@ -405,6 +415,14 @@ svg.pcb {
 
 .pcb .slot[data-part="ram"].filled .sh {
   fill: #34d399;
+}
+
+.pcb .slot[data-part="cpu"].filled .sh {
+  fill: #38bdf8;
+}
+
+.pcb .slot[data-part="cooler"].filled .sh {
+  fill: #cbd5e1;
 }
 
 .pcb .slot[data-part="m2"].filled .sh {

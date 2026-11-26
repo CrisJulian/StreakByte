@@ -50,12 +50,15 @@ describe('useStreakByteStore', () => {
   it('tracks RAM slots, rejects duplicate filled slot, and calculates dual-channel accuracy on completion', () => {
     const store = useStreakByteStore.getState();
 
+    store.placePcPart('CPU', 'cpu');
+    store.placePcPart('COOLER', 'cooler');
+
     // Install non-dual-channel RAM in A1 and B1
     store.placePcPart('A1', 'ram');
     // Try placing again into A1 (already filled)
     store.placePcPart('A1', 'ram');
     expect(useStreakByteStore.getState().pc.message).toBe('That slot already has a part installed.');
-    expect(useStreakByteStore.getState().pc.ok).toBe(1);
+    expect(useStreakByteStore.getState().pc.ok).toBe(3);
 
     store.placePcPart('B1', 'ram');
     store.placePcPart('M2', 'm2');
@@ -67,12 +70,14 @@ describe('useStreakByteStore', () => {
     const state = useStreakByteStore.getState();
     expect(state.view).toBe('complete');
     expect(state.completion?.title).toBe('Nice build, Learner!');
-    expect(state.completion?.accuracy).toBe('83%'); // 5 / (5 + 0 + 1 dual penalty)
+    expect(state.completion?.accuracy).toBe('88%'); // 7 / (7 + 0 + 1 dual penalty)
     expect(state.completion?.review[0]).toEqual(['Dual-channel RAM', 'You used slots A1 and B1']);
   });
 
   it('awards 100% accuracy when dual-channel A2 and B2 are used with zero errors', () => {
     const store = useStreakByteStore.getState();
+    store.placePcPart('CPU', 'cpu');
+    store.placePcPart('COOLER', 'cooler');
     store.placePcPart('A2', 'ram');
     store.placePcPart('B2', 'ram');
     store.placePcPart('M2', 'm2');
@@ -487,5 +492,173 @@ describe('quiz flow in the store', () => {
     await useStreakByteStore.getState().cancelOrForfeitDuel();
     useStreakByteStore.getState().navigate('dashboard');
     expect(useStreakByteStore.getState().view).toBe('dashboard');
+  });
+
+  it('sets completion.nextRoute to the actual next unlocked lesson after finishing a quiz', () => {
+    const finishQuiz = (key: string) => {
+      useStreakByteStore.getState().syncFromHash(`#quiz/${key}`);
+      for (let i = 0; i < 4; i += 1) {
+        const q = useStreakByteStore.getState().quiz;
+        if (!q) break;
+        const currentQ = q.questions[q.index];
+        useStreakByteStore.getState().selectQuizChoice(currentQ.correctIndex);
+        useStreakByteStore.getState().submitQuizAnswer();
+        useStreakByteStore.getState().nextQuizQuestion();
+      }
+    };
+
+    finishQuiz('hw-1');
+    expect(useStreakByteStore.getState().view).toBe('complete');
+    expect(useStreakByteStore.getState().completion?.nextRoute).toBe('learn/hw-2');
+
+    // Finish hw-5 while hw-2..4 remain incomplete -> hw-6 stays locked -> falls back to curriculum
+    finishQuiz('hw-5');
+    expect(useStreakByteStore.getState().completion?.nextRoute).toBe('curriculum');
+
+    // Complete remaining lessons so hw-6 unlocks, then finish hw-6 -> no following lesson -> curriculum
+    for (const key of ['hw-2', 'hw-3', 'hw-4']) {
+      useStreakByteStore.getState().recordLessonResult(key, 4, 4);
+    }
+    finishQuiz('hw-6');
+    expect(useStreakByteStore.getState().completion?.nextRoute).toBe('curriculum');
+  });
+
+  it('completes hw-6 in completions when finishing PC Build Lab after lessons 1-5 are done', () => {
+    for (const key of ['hw-1', 'hw-2', 'hw-3', 'hw-4', 'hw-5']) {
+      useStreakByteStore.getState().recordLessonResult(key, 4, 4);
+    }
+    const store = useStreakByteStore.getState();
+    store.placePcPart('CPU', 'cpu');
+    store.placePcPart('COOLER', 'cooler');
+    store.placePcPart('A2', 'ram');
+    store.placePcPart('B2', 'ram');
+    store.placePcPart('M2', 'm2');
+    store.placePcPart('PCIE', 'gpu');
+    store.placePcPart('PWR', 'psu');
+    useStreakByteStore.getState().completePcBuild();
+
+    const state = useStreakByteStore.getState();
+    expect(state.completions.some((c) => c.lessonKey === 'hw-6')).toBe(true);
+    expect(state.completion?.nextRoute).toBe('curriculum');
+  });
+
+  it('counts down from chosen timed session length and blocks actions on time out', () => {
+    const store = useStreakByteStore.getState();
+    store.setSetupMode('timed');
+    store.setSetupLength('10');
+    store.openSetup('pc');
+    store.startSessionFromModal();
+
+    expect(useStreakByteStore.getState().labSessionMode).toBe('timed');
+    expect(useStreakByteStore.getState().lessonSeconds).toBe(600);
+    expect(useStreakByteStore.getState().labTimedOut).toBe(false);
+
+    useStreakByteStore.getState().tickLessonTimer();
+    expect(useStreakByteStore.getState().lessonSeconds).toBe(599);
+
+    useStreakByteStore.setState({ lessonSeconds: 1 });
+    useStreakByteStore.getState().tickLessonTimer();
+    expect(useStreakByteStore.getState().lessonSeconds).toBe(0);
+    expect(useStreakByteStore.getState().labTimedOut).toBe(true);
+    expect(useStreakByteStore.getState().placePcPart('CPU', 'cpu')).toBe(false);
+
+    useStreakByteStore.getState().retryTimedLab();
+    expect(useStreakByteStore.getState().labTimedOut).toBe(false);
+    expect(useStreakByteStore.getState().lessonSeconds).toBe(600);
+    expect(useStreakByteStore.getState().placePcPart('CPU', 'cpu')).toBe(true);
+  });
+
+  it('charges 25 XP for PcBuildLab and NetworkBuildLab hints and enforces XP/mode/completion guards', () => {
+    // 0 XP blocks paid hint without charging
+    useStreakByteStore.getState().triggerPcHint();
+    expect(useStreakByteStore.getState().xpSpent).toBe(0);
+    expect(useStreakByteStore.getState().toastMessage).toContain('25 XP');
+
+    useStreakByteStore.getState().triggerNetworkHint();
+    expect(useStreakByteStore.getState().xpSpent).toBe(0);
+
+    // Grant 100 XP -> first PC hint deducts 25 XP, second click on same step costs 0 XP
+    useStreakByteStore.setState({ labBonusXp: 100 });
+    useStreakByteStore.getState().triggerPcHint();
+    expect(useStreakByteStore.getState().xpSpent).toBe(25);
+    expect(useStreakByteStore.getState().pc.message).toContain('Install the CPU');
+
+    useStreakByteStore.getState().triggerPcHint();
+    expect(useStreakByteStore.getState().xpSpent).toBe(25);
+
+    // Advancing to CPU cooler step unlocks next hint for 25 XP
+    useStreakByteStore.getState().placePcPart('CPU', 'cpu');
+    useStreakByteStore.getState().triggerPcHint();
+    expect(useStreakByteStore.getState().xpSpent).toBe(50);
+    expect(useStreakByteStore.getState().pc.message).toContain('Mount the CPU cooler');
+
+    // Network hint deducts 25 XP once per step, and stays locked until Laptop is saved
+    useStreakByteStore.getState().triggerNetworkHint();
+    expect(useStreakByteStore.getState().xpSpent).toBe(75);
+    expect(useStreakByteStore.getState().net.message).toContain('192.168.1.20');
+
+    useStreakByteStore.getState().triggerNetworkHint();
+    expect(useStreakByteStore.getState().xpSpent).toBe(75);
+
+    useStreakByteStore.getState().saveNetworkConfig({
+      ip: '192.168.1.20',
+      mask: '255.255.255.0',
+      gw: '192.168.1.1',
+      cab: 'eth',
+    });
+    useStreakByteStore.getState().triggerNetworkHint();
+    expect(useStreakByteStore.getState().xpSpent).toBe(100);
+    expect(useStreakByteStore.getState().net.message).toContain('PC');
+
+    // All steps complete -> no XP charged
+    useStreakByteStore.setState((s) => ({
+      pc: {
+        ...s.pc,
+        cpu: true,
+        cooler: true,
+        ram: { A2: true, B2: true },
+        m2: true,
+        gpu: true,
+        psu: true,
+      },
+      net: { ...s.net, savedDevices: { pc: true, laptop: true }, openDevice: null },
+    }));
+    useStreakByteStore.getState().triggerPcHint();
+    useStreakByteStore.getState().triggerNetworkHint();
+    expect(useStreakByteStore.getState().xpSpent).toBe(100);
+
+    // Timed mode and timed-out states ignore hint purchases
+    useStreakByteStore.getState().resetAll();
+    useStreakByteStore.setState({ labBonusXp: 100, labSessionMode: 'timed' });
+    useStreakByteStore.getState().triggerPcHint();
+    useStreakByteStore.getState().triggerNetworkHint();
+    expect(useStreakByteStore.getState().xpSpent).toBe(0);
+
+    useStreakByteStore.setState({ labSessionMode: 'guided', labTimedOut: true });
+    useStreakByteStore.getState().triggerPcHint();
+    useStreakByteStore.getState().triggerNetworkHint();
+    expect(useStreakByteStore.getState().xpSpent).toBe(0);
+  });
+
+  it('refuses to complete PC Build Lab or Network Build Lab when required steps are unfinished', () => {
+    useStreakByteStore.getState().navigate('lesson/pc');
+    useStreakByteStore.getState().completePcBuild();
+    expect(useStreakByteStore.getState().view).toBe('lesson');
+    expect(useStreakByteStore.getState().labBonusXp).toBe(0);
+    expect(useStreakByteStore.getState().pc.bad).toBe(1);
+    expect(useStreakByteStore.getState().pc.message).toContain('0/7 parts installed');
+
+    // Partial build also fails
+    useStreakByteStore.getState().placePcPart('CPU', 'cpu');
+    useStreakByteStore.getState().completePcBuild();
+    expect(useStreakByteStore.getState().view).toBe('lesson');
+    expect(useStreakByteStore.getState().pc.message).toContain('1/7 parts installed');
+
+    // Network lab fails if Laptop isn't configured yet
+    useStreakByteStore.getState().navigate('lesson/network');
+    useStreakByteStore.getState().completeNetworkBuild();
+    expect(useStreakByteStore.getState().view).toBe('lesson');
+    expect(useStreakByteStore.getState().labBonusXp).toBe(0);
+    expect(useStreakByteStore.getState().net.message).toContain('configure Laptop');
   });
 });

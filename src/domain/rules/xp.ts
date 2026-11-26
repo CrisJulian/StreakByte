@@ -2,6 +2,7 @@ import type { LessonCompletion } from '../entities/progress';
 import { isBroken, type StreakState } from './streak';
 
 export const XP_PER_LEVEL = 300;
+export const LAB_HINT_COST_XP = 25;
 
 /** Local calendar day formatted as YYYY-MM-DD. */
 export function localDayString(date: Date = new Date()): string {

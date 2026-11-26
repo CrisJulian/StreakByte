@@ -201,7 +201,7 @@ export function CurriculumView() {
                           {isDone ? 'Review' : 'Open'}
                         </button>
                       )}
-                      {isDone && (
+                      {isDone && lesson.kind !== 'final' && (
                         <button
                           type="button"
                           aria-label={`Quiz for ${label}`}

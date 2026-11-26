@@ -78,6 +78,9 @@ export const localProgress: ProgressRepository = {
     const parsed = raw ? Number(raw) : 0;
     return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 0;
   },
+  async saveXpSpent(xpSpent) {
+    saveLocalXpSpent(xpSpent);
+  },
   async loadArenaStats() {
     return createInitialArenaStats();
   },

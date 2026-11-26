@@ -284,4 +284,29 @@ describe('supabaseProgress adapter', () => {
       },
     ]);
   });
+
+  it('saves xp_spent locally and upserts to user_profiles when authenticated', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u-1' } } } });
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'user_profiles') {
+        return {
+          upsert,
+          select: () => ({
+            eq: () => ({
+              maybeSingle: vi.fn().mockResolvedValue({ data: { xp_spent: 75 }, error: null }),
+            }),
+          }),
+        };
+      }
+      return {};
+    });
+
+    await supabaseProgress.saveXpSpent(75);
+    expect(upsert).toHaveBeenCalledWith(
+      { user_id: 'u-1', xp_spent: 75 },
+      { onConflict: 'user_id' },
+    );
+    await expect(supabaseProgress.loadXpSpent()).resolves.toBe(75);
+  });
 });

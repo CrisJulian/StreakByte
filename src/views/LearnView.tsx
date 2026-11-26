@@ -1,6 +1,6 @@
 import { CornerBrackets } from '../components/ByteMascotSvg';
 import { Icon } from '../components/Icon';
-import { finalLessonLab, lessonLabel, TRACKS } from '../data/curriculum';
+import { lessonLabel, TRACKS } from '../data/curriculum';
 import { LESSON_CONTENT } from '../data/lessons';
 import type { LessonImage } from '../data/lessons/types';
 import { DEFAULT_PASS_MARK } from '../domain/rules/lessonProgress';
@@ -73,7 +73,6 @@ function LessonFigure({ image, trackId }: { image: LessonImage; trackId: TrackId
 export function LearnView() {
   const learnKey = useStreakByteStore((s) => s.learnKey);
   const navigate = useStreakByteStore((s) => s.navigate);
-  const openSetup = useStreakByteStore((s) => s.openSetup);
 
   const parsed = learnKey ? parseLessonKey(learnKey) : null;
   const track = parsed ? TRACKS[parsed.trackId as TrackId] : undefined;
@@ -236,49 +235,55 @@ export function LearnView() {
         </div>
       </div>
 
-      {isFinal && (
+      {isFinal ? (
         <section aria-labelledby="learn-lab" className={`${sectionClass} max-w-[1060px] mx-auto px-6 max-[760px]:px-4`}>
-          <div className="p-5 border border-line bg-panel2">
-            <h2 id="learn-lab" className={h2Class}>
-              Hands-on lab
-            </h2>
-            <p className="mt-0 mb-3 text-muted text-[12px]">
-              Put what you learned to work in the interactive lab.
-            </p>
+          <div className="p-6 border border-[var(--dark-card)] bg-[var(--dark-card)] text-white flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-white/60">
+                BOSS LAB SANDBOX
+              </div>
+              <h2 id="learn-lab" className="m-0 mt-1 font-head text-[20px] font-bold text-white">
+                Hands-on Final Boss Lab
+              </h2>
+              <p className="m-0 mt-1 text-white/70 text-[12px]">
+                Review these steps first. When you are ready, launch the interactive hands-on
+                simulator from the Boss Lab Sandbox panel on the Curriculum page.
+              </p>
+            </div>
             <button
               type="button"
-              onClick={() => openSetup(finalLessonLab(trackId), lesson.title)}
-              className="sb-cut-sm inline-flex items-center justify-center gap-2 min-h-10 px-4 border border-ink bg-panel text-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:bg-panel3 transition-colors"
+              onClick={() => navigate('curriculum')}
+              className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 transition-colors"
             >
               <Icon name="play" className="w-4 h-4" />
-              Start the lab
+              Go to Boss Lab Sandbox ▶
+            </button>
+          </div>
+        </section>
+      ) : (
+        <section
+          aria-labelledby="learn-quiz"
+          className="mt-8 max-w-[1060px] mx-auto px-6 max-[760px]:px-4"
+        >
+          <div className="p-6 border border-[var(--dark-card)] bg-[var(--dark-card)] text-white flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <h2 id="learn-quiz" className="m-0 font-head text-[20px] font-bold text-white">
+                Quiz
+              </h2>
+              <p className="m-0 mt-1 text-white/70 text-[12px]">
+                4 questions, 4 choices each. Get {DEFAULT_PASS_MARK} of 4 right to complete this lesson.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate(`quiz/${learnKey}`)}
+              className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 transition-colors"
+            >
+              Take the quiz
             </button>
           </div>
         </section>
       )}
-
-      <section
-        aria-labelledby="learn-quiz"
-        className="mt-8 max-w-[1060px] mx-auto px-6 max-[760px]:px-4"
-      >
-        <div className="p-6 border border-[var(--dark-card)] bg-[var(--dark-card)] text-white flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <h2 id="learn-quiz" className="m-0 font-head text-[20px] font-bold text-white">
-              Quiz
-            </h2>
-            <p className="m-0 mt-1 text-white/70 text-[12px]">
-              4 questions, 4 choices each. Get {DEFAULT_PASS_MARK} of 4 right to complete this lesson.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate(`quiz/${learnKey}`)}
-            className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 transition-colors"
-          >
-            Take the quiz
-          </button>
-        </div>
-      </section>
 
       <section aria-labelledby="learn-references" className="mt-8 max-w-[1060px] mx-auto px-6 pb-8 max-[760px]:px-4">
         <div className="pt-5 border-t border-line">

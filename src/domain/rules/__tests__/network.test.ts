@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   createInitialNetState,
+  hasNextNetworkHint,
+  isNetworkBuildComplete,
+  isNetworkHintUsedForCurrentStep,
   isValidIpv4,
+  missingNetworkSteps,
+  nextNetworkHint,
   placeDevice,
   saveDeviceConfig,
   scoreNetworkBuild,
@@ -42,5 +47,77 @@ describe('network rules', () => {
 
   it('floors accuracy at 60', () => {
     expect(scoreNetworkBuild({ ...createInitialNetState(), bad: 9 }).accuracyPct).toBe(60);
+  });
+
+  it('derives next-step network hints without duplicate IPs', () => {
+    const missingPc = {
+      ...createInitialNetState(),
+      placed: { pc: false, laptop: false, hub: false },
+    };
+    expect(hasNextNetworkHint(missingPc)).toBe(true);
+    expect(nextNetworkHint(missingPc).message).toContain('PC spot');
+
+    const missingLaptop = {
+      ...createInitialNetState(),
+      placed: { pc: true, laptop: false, hub: false },
+    };
+    expect(hasNextNetworkHint(missingLaptop)).toBe(true);
+    expect(nextNetworkHint(missingLaptop).message).toContain('Laptop spot');
+
+    // Initial state has PC pre-configured with 192.168.1.10 and laptop unsaved
+    const initial = createInitialNetState();
+    expect(hasNextNetworkHint(initial)).toBe(true);
+    const laptopHint = nextNetworkHint({ ...initial, openDevice: null });
+    expect(laptopHint.openDevice).toBe('laptop');
+    expect(laptopHint.message).toContain('192.168.1.20');
+
+    // Avoids PC IP if PC already uses 192.168.1.20
+    const clashCheck = {
+      ...initial,
+      openDevice: 'laptop' as const,
+      cfg: { ...initial.cfg, pc: { ...good, ip: '192.168.1.20' } },
+    };
+    expect(nextNetworkHint(clashCheck).message).toContain('192.168.1.21');
+
+    // Once both devices are placed and saved, no paid hint remains
+    const allDone = {
+      ...initial,
+      savedDevices: { pc: true, laptop: true },
+      openDevice: null,
+    };
+    expect(hasNextNetworkHint(allDone)).toBe(false);
+    expect(nextNetworkHint(allDone).message).toContain('Test connection');
+  });
+
+  it('reports completeness and missing steps before all hosts are configured', () => {
+    const initial = createInitialNetState();
+    expect(isNetworkBuildComplete(initial)).toBe(false);
+    expect(missingNetworkSteps(initial)).toEqual(['configure Laptop']);
+
+    const { state: configured } = saveDeviceConfig(initial, good);
+    expect(isNetworkBuildComplete(configured)).toBe(true);
+    expect(missingNetworkSteps(configured)).toEqual([]);
+  });
+
+  it('locks the network hint for the current step until the step is saved', () => {
+    const initial = createInitialNetState();
+    expect(hasNextNetworkHint(initial)).toBe(true);
+    expect(isNetworkHintUsedForCurrentStep(initial)).toBe(false);
+
+    const hinted = nextNetworkHint(initial);
+    expect(hinted.hintedStep).toBe('config-laptop');
+    expect(isNetworkHintUsedForCurrentStep(hinted)).toBe(true);
+    expect(hasNextNetworkHint(hinted)).toBe(false);
+
+    // Closing the form without saving keeps the hint locked for Laptop
+    const closed = { ...hinted, openDevice: null };
+    expect(isNetworkHintUsedForCurrentStep(closed)).toBe(true);
+    expect(hasNextNetworkHint(closed)).toBe(false);
+
+    // Saving Laptop clears hintedStep and unlocks the hint for PC
+    const { state: afterLaptop } = saveDeviceConfig(hinted, good);
+    expect(afterLaptop.hintedStep).toBeNull();
+    expect(isNetworkHintUsedForCurrentStep(afterLaptop)).toBe(false);
+    expect(hasNextNetworkHint(afterLaptop)).toBe(true);
   });
 });

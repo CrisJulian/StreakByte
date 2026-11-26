@@ -75,7 +75,7 @@ describe('App integration', () => {
     expect(within(dialog).getByText('+ 160 XP')).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole('button', { name: 'Start lesson' }));
-    expect(screen.getByText('Partly built PC')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Build a PC' })).toBeInTheDocument();
 
     // Open Study Buddy chat and tap a starter prompt
     await user.click(screen.getByRole('button', { name: 'Open study buddy chat' }));

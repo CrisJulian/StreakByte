@@ -77,7 +77,8 @@ describe('Learn page', () => {
     expect(useStreakByteStore.getState().quiz?.lessonKey).toBe('hw-2');
   });
 
-  it('a Final Lesson (once unlocked) offers the lab and shows its build steps', () => {
+  it('a Final Lesson (once unlocked) shows info and Build steps without a quiz, pointing to the Boss Lab Sandbox', async () => {
+    const user = userEvent.setup();
     useStreakByteStore.setState({
       completions: [1, 2, 3, 4].map((n) => ({
         lessonKey: `net-${n}`,
@@ -89,7 +90,9 @@ describe('Learn page', () => {
     open('net-5');
     expect(screen.getByRole('heading', { level: 1, name: 'Final Lesson: Build a Network' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Build steps' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Start the lab' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Take the quiz/i })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Go to Boss Lab Sandbox/i }));
+    expect(useStreakByteStore.getState().view).toBe('curriculum');
   });
 
   it('a lesson that adds no new terms says so instead of an empty list', () => {

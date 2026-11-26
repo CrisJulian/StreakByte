@@ -48,6 +48,7 @@ export interface ProgressRepository {
   restoreStreakServer(today: string): Promise<StreakState>;
   buyStreakRestore(availableXp: number): Promise<{ streak: StreakState; xpSpent: number }>;
   loadXpSpent(): Promise<number>;
+  saveXpSpent(xpSpent: number): Promise<void>;
   loadArenaStats(): Promise<ArenaStats>;
   loadLabBonusXp(): Promise<number>;
   saveLabBonusXp(xp: number): Promise<void>;
@@ -96,7 +97,7 @@ export interface ReminderScheduler {
 
 export interface SyncOperation {
   id: string;
-  type: 'save-streak' | 'save-settings' | 'complete-lesson' | 'save-lab-bonus-xp';
+  type: 'save-streak' | 'save-settings' | 'complete-lesson' | 'save-lab-bonus-xp' | 'save-xp-spent';
   payload: unknown;
   createdAt: number;
 }

@@ -11,20 +11,24 @@ export function LessonPlayerView() {
   const pc = useStreakByteStore((s) => s.pc);
   const streak = useStreakByteStore((s) => s.streak);
   const lessonSeconds = useStreakByteStore((s) => s.lessonSeconds);
+  const labSessionMode = useStreakByteStore((s) => s.labSessionMode);
+  const labTimedOut = useStreakByteStore((s) => s.labTimedOut);
   const tickLessonTimer = useStreakByteStore((s) => s.tickLessonTimer);
+  const retryTimedLab = useStreakByteStore((s) => s.retryTimedLab);
   const navigate = useStreakByteStore((s) => s.navigate);
   const streakDays = effectiveStreak(streak, localDayString());
 
   useEffect(() => {
+    if (labTimedOut) return undefined;
     const id = window.setInterval(() => {
       tickLessonTimer();
     }, 1000);
     return () => window.clearInterval(id);
-  }, [tickLessonTimer]);
+  }, [labTimedOut, tickLessonTimer]);
 
   const stepDoneFlags = [
-    true,
-    true,
+    pc.cpu,
+    pc.cooler,
     Object.keys(pc.ram).length >= 2,
     pc.m2,
     pc.gpu,
@@ -32,6 +36,7 @@ export function LessonPlayerView() {
   ];
   const curIdx = stepDoneFlags.findIndex((done) => !done);
   const stepLabel = curIdx < 0 ? 'All steps done' : `Step ${curIdx + 1} of 6`;
+  const timerUrgent = labSessionMode === 'timed' && lessonSeconds <= 30;
 
   const formattedTime = `${Math.floor(lessonSeconds / 60)}:${String(lessonSeconds % 60).padStart(
     2,
@@ -40,7 +45,7 @@ export function LessonPlayerView() {
 
   return (
     <div className="w-full bg-panel">
-      <div className="px-6 py-3.5 max-[760px]:px-4 border-b border-line bg-panel2 flex justify-between items-center gap-3 flex-wrap">
+      <div className="px-4 py-2 max-[760px]:px-3 border-b border-line bg-panel2 flex justify-between items-center gap-3 flex-wrap">
         <div className="flex gap-2.5 items-center flex-wrap">
           <a
             href="#curriculum"
@@ -109,15 +114,57 @@ export function LessonPlayerView() {
             <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
             {streakDays}-day streak
           </span>
-          <span className="inline-flex items-center gap-1.5 min-h-9 px-3 py-1 border border-line bg-panel font-bold text-[10.5px] uppercase tracking-[0.05em]">
-            <Icon name="clock" className="w-3.5 h-3.5 text-cyan" />
+          <span
+            className={`inline-flex items-center gap-1.5 min-h-9 px-3 py-1 border bg-panel font-bold text-[10.5px] uppercase tracking-[0.05em] ${
+              timerUrgent ? 'border-red text-red' : 'border-line text-ink'
+            }`}
+          >
+            <Icon name="clock" className={`w-3.5 h-3.5 ${timerUrgent ? 'text-red' : 'text-cyan'}`} />
+            {labSessionMode === 'timed' && <span>TIMED ·</span>}
             <span className="num">{formattedTime}</span>
           </span>
         </div>
       </div>
 
-      <div className="p-6 max-[760px]:p-4">
+      <div className="p-3.5 max-[760px]:p-3">
         {activeLab === 'pc' ? <PcBuildLab /> : <NetworkBuildLab />}
+
+        {labTimedOut && (
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-label="Time's up"
+            className="fixed inset-0 z-50 grid place-items-center p-4"
+            style={{ background: 'var(--scrim)' }}
+          >
+            <section className="sb-pop w-full max-w-[400px] bg-panel border border-red p-6 text-center grid gap-3">
+              <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-red">
+                TIMED RUN FAILED
+              </div>
+              <h2 className="m-0 font-disp text-2xl uppercase">Time&apos;s Up!</h2>
+              <p className="m-0 text-xs text-muted">
+                The clock reached 0:00 before you completed and verified your build. Try again to
+                earn full XP.
+              </p>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <button
+                  type="button"
+                  onClick={retryTimedLab}
+                  className="sb-cut-sm min-h-10 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110"
+                >
+                  Try Again
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('curriculum')}
+                  className="min-h-10 px-4 border border-line bg-panel2 text-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:border-ink"
+                >
+                  Exit Lab
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
 
         <section
           aria-labelledby="lesson-quiz"
@@ -128,8 +175,8 @@ export function LessonPlayerView() {
               Knowledge check
             </h2>
             <p className="m-0 mt-1 text-white/70 text-[12px]">
-              4 questions, 4 choices each. Get 3 of 4 right to complete this lesson. Mistakes are
-              saved for review, never a game over.
+              Optional 4-question knowledge check to review your build. Mistakes are saved for
+              review, never a game over.
             </p>
           </div>
           <button

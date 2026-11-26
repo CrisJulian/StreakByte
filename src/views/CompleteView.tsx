@@ -17,6 +17,7 @@ const DEFAULT_COMPLETION: CompletionSummary = {
     ['RAM notch', 'Check the orientation'],
   ],
   next: ['Lesson 4: Storage', 'HDD, SSD and M.2', '6 min · +120 XP'],
+  nextRoute: 'learn/hw-4',
 };
 
 export function CompleteView() {
@@ -27,6 +28,12 @@ export function CompleteView() {
   const today = localDayString();
   const streakDays = effectiveStreak(streak, today);
   const weekStrip = deriveWeekStrip(streak);
+  const nextRoute = completion.nextRoute ?? 'curriculum';
+  const nextButtonLabel = nextRoute.startsWith('learn/')
+    ? 'Next lesson ▶'
+    : nextRoute.startsWith('quiz/')
+      ? 'Take final quiz ▶'
+      : 'Back to curriculum ▶';
 
   return (
     <div className="w-full bg-panel">
@@ -149,14 +156,14 @@ export function CompleteView() {
           <b className="text-sm">{completion.next[1]}</b>
           <p className="m-0 text-muted text-xs num">{completion.next[2]}</p>
           <a
-            href="#curriculum"
+            href={`#${nextRoute}`}
             onClick={(e) => {
               e.preventDefault();
-              navigate('curriculum');
+              navigate(nextRoute);
             }}
             className="sb-cut mt-auto inline-flex items-center justify-center min-h-11 px-5 border border-[var(--dark-card)] bg-[var(--dark-card)] text-white font-bold text-[11px] uppercase tracking-[0.06em] no-underline hover:opacity-90 transition-opacity"
           >
-            Next lesson ▶
+            {nextButtonLabel}
           </a>
         </section>
       </div>

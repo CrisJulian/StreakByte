@@ -17,6 +17,13 @@ import {
 } from '@dnd-kit/core';
 import { CornerBrackets } from '../../components/ByteMascotSvg';
 import { Icon } from '../../components/Icon';
+import { LESSON_XP_BY_KEY } from '../../data/curriculum';
+import {
+  currentNetworkHintStep,
+  hasNextNetworkHint,
+  isNetworkHintUsedForCurrentStep,
+} from '../../domain/rules/network';
+import { calculateTotalXp, LAB_HINT_COST_XP } from '../../domain/rules/xp';
 import {
   CABLE_COLORS,
   NET_DEVICE_NAMES,
@@ -131,12 +138,37 @@ function DroppableSpot({
 
 export function NetworkBuildLab() {
   const net = useStreakByteStore((s) => s.net);
+  const completions = useStreakByteStore((s) => s.completions);
+  const labBonusXp = useStreakByteStore((s) => s.labBonusXp);
+  const xpSpent = useStreakByteStore((s) => s.xpSpent);
+  const labSessionMode = useStreakByteStore((s) => s.labSessionMode);
+  const labTimedOut = useStreakByteStore((s) => s.labTimedOut);
   const selectNetworkDevice = useStreakByteStore((s) => s.selectNetworkDevice);
   const placeNetworkDevice = useStreakByteStore((s) => s.placeNetworkDevice);
   const openNetworkConfig = useStreakByteStore((s) => s.openNetworkConfig);
   const closeNetworkConfig = useStreakByteStore((s) => s.closeNetworkConfig);
   const saveNetworkConfig = useStreakByteStore((s) => s.saveNetworkConfig);
+  const triggerNetworkHint = useStreakByteStore((s) => s.triggerNetworkHint);
   const completeNetworkBuild = useStreakByteStore((s) => s.completeNetworkBuild);
+
+  const availableXp = calculateTotalXp(completions, LESSON_XP_BY_KEY, labBonusXp, xpSpent);
+  const hintUsedForStep = isNetworkHintUsedForCurrentStep(net);
+  const hasRemainingStep = currentNetworkHintStep(net) !== null;
+  const hasHint = hasNextNetworkHint(net);
+  const notEnoughXp = availableXp < LAB_HINT_COST_XP;
+  const hintDisabled =
+    labTimedOut || labSessionMode === 'timed' || !hasRemainingStep || hintUsedForStep || notEnoughXp;
+  const hintTitle = labTimedOut
+    ? 'Time is up'
+    : labSessionMode === 'timed'
+      ? 'Hints are disabled in Timed mode'
+      : !hasRemainingStep
+        ? 'All devices are already configured'
+        : hintUsedForStep
+          ? 'Hint already unlocked for this step — complete this step to unlock the next hint'
+          : !hasHint || notEnoughXp
+            ? `Need ${LAB_HINT_COST_XP} XP to buy a hint (you have ${availableXp} XP)`
+            : `Buy next-step hint for ${LAB_HINT_COST_XP} XP`;
 
   const [draggingDev, setDraggingDev] = useState<NetDeviceId | null>(null);
   const [ip, setIp] = useState('192.168.1.20');
@@ -618,13 +650,10 @@ export function NetworkBuildLab() {
                 </span>
               )}
 
-              <p className="mt-2 mb-0 text-muted text-[11px]">
-                Hint: use a free number from 2 to 254.
-              </p>
-
               <button
                 type="submit"
-                className="sb-cut w-full mt-3 inline-flex items-center justify-center min-h-10 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 transition-colors"
+                disabled={labTimedOut}
+                className="sb-cut w-full mt-3 inline-flex items-center justify-center min-h-10 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
               >
                 Save
               </button>
@@ -639,13 +668,26 @@ export function NetworkBuildLab() {
           >
             {net.message}
           </p>
-          <button
-            type="button"
-            onClick={completeNetworkBuild}
-            className="sb-cut w-full inline-flex items-center justify-center min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 transition-colors"
-          >
-            Test connection
-          </button>
+          <div className="grid grid-cols-[auto_1fr] gap-2">
+            <button
+              type="button"
+              disabled={hintDisabled}
+              onClick={triggerNetworkHint}
+              title={hintTitle}
+              className="inline-flex items-center justify-center gap-1.5 min-h-11 px-3.5 border border-line bg-panel text-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors hover:border-ink hover:bg-panel2 disabled:opacity-45 disabled:cursor-not-allowed"
+            >
+              <Icon name="bulb" className="w-4 h-4" />
+              {hintUsedForStep ? 'Hint used' : `Hint · ${LAB_HINT_COST_XP} XP`}
+            </button>
+            <button
+              type="button"
+              disabled={labTimedOut}
+              onClick={completeNetworkBuild}
+              className="sb-cut inline-flex items-center justify-center min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
+            >
+              Test connection
+            </button>
+          </div>
         </div>
       </section>
 

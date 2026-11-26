@@ -7,7 +7,12 @@ import { getTrackProgress, isLessonKeyLocked, LESSON_XP_BY_KEY, lessonLabel, TRA
 import { LESSON_CONTENT } from '../data/lessons';
 import type { LessonCompletion } from '../domain/entities/progress';
 import type { QuizSession } from '../domain/entities/quiz';
-import { DEFAULT_PASS_MARK, isQuizPassed, recordCompletion } from '../domain/rules/lessonProgress';
+import {
+  DEFAULT_PASS_MARK,
+  isQuizPassed,
+  lessonKeyFor,
+  recordCompletion,
+} from '../domain/rules/lessonProgress';
 import {
   currentCombo,
   isFinished,
@@ -31,8 +36,30 @@ import {
   type DuelTrack,
   type DuelWagerMode,
 } from '../domain/rules/duel';
-import { createInitialNetState, placeDevice, saveDeviceConfig, selectDevice } from '../domain/rules/network';
-import { createInitialPcState, nextHint, placePart, selectPart } from '../domain/rules/pcBuild';
+import {
+  createInitialNetState,
+  currentNetworkHintStep,
+  hasNextNetworkHint,
+  isNetworkBuildComplete,
+  isNetworkHintUsedForCurrentStep,
+  missingNetworkSteps,
+  nextNetworkHint,
+  placeDevice,
+  saveDeviceConfig,
+  selectDevice,
+} from '../domain/rules/network';
+import {
+  createInitialPcState,
+  hasNextPcHint,
+  installedPcPartsCount,
+  isPcBuildComplete,
+  isPcHintUsedForCurrentStep,
+  missingPcParts,
+  nextHint,
+  placePart,
+  selectPart,
+  TOTAL_PC_PARTS,
+} from '../domain/rules/pcBuild';
 import {
   claimDailyQuest as claimDailyQuestRule,
   createDailyActivity,
@@ -50,18 +77,51 @@ import {
   type StreakState,
 } from '../domain/rules/streak';
 import { buildLabMistake, buildQuizMistake, type StudyMistake } from '../domain/rules/studyContext';
-import { summarizeNetworkBuild, summarizePcBuild, summarizeQuiz } from '../domain/rules/summaries';
+import {
+  summarizeNetworkBuild,
+  summarizePcBuild,
+  summarizeQuiz,
+  type LabNextMission,
+} from '../domain/rules/summaries';
 import {
   calculateTotalXp,
   calculateWeeklyXp,
   deriveLevel,
   effectiveStreak,
+  LAB_HINT_COST_XP,
   localDayString,
 } from '../domain/rules/xp';
 
 const ACTIVE_DUEL_LOCK_MSG = 'Finish or forfeit your active 1v1 duel first.';
 const isLockedInActiveDuel = (state: { activeDuel: DuelRoom | null }) =>
   state.activeDuel?.status === 'active';
+
+function resolveLabNextMission(
+  trackId: 'hw' | 'net',
+  completions: readonly LessonCompletion[],
+): LabNextMission {
+  const track = TRACKS[trackId];
+  const progress = getTrackProgress(trackId, completions);
+  const curIdx = progress.lessons.findIndex((l) => l.status === 'cur');
+  if (curIdx < 0) {
+    return {
+      next: ['Back to the curriculum', 'All lessons in this track complete!', 'Keep your streak going'],
+      nextRoute: 'curriculum',
+    };
+  }
+  const lesson = track.lessons[curIdx];
+  const curKey = lessonKeyFor(trackId, curIdx);
+  const meta = `${lesson.minutes} min · +${lesson.xp} XP`;
+  return lesson.kind === 'final'
+    ? {
+        next: [lessonLabel(lesson, curIdx), 'Take the final quiz to complete this track', meta],
+        nextRoute: `quiz/${curKey}`,
+      }
+    : {
+        next: [lessonLabel(lesson, curIdx), lesson.subtitle, meta],
+        nextRoute: `learn/${curKey}`,
+      };
+}
 import type {
   AchievementFilter,
   CableType,
@@ -231,6 +291,40 @@ async function persistOrQueue(
   set({ pendingSyncCount: pending.length });
 }
 
+function buyLabHint(
+  current: StreakByteStore,
+  get: () => StreakByteStore,
+  set: (partial: Partial<StreakByteStore>) => void,
+  hasHint: boolean,
+): boolean {
+  if (current.labTimedOut || current.labSessionMode === 'timed' || !hasHint) return false;
+  const availableXp = calculateTotalXp(
+    current.completions,
+    LESSON_XP_BY_KEY,
+    current.labBonusXp,
+    current.xpSpent,
+  );
+  if (availableXp < LAB_HINT_COST_XP) {
+    get().showToast(`Need ${LAB_HINT_COST_XP} XP to buy a hint.`);
+    return false;
+  }
+  const nextSpent = current.xpSpent + LAB_HINT_COST_XP;
+  set({ xpSpent: nextSpent });
+  get().showToast(`Hint unlocked (-${LAB_HINT_COST_XP} XP)`);
+  void persistOrQueue(
+    get,
+    set,
+    { type: 'save-xp-spent', payload: nextSpent },
+    () => services.progress.saveXpSpent(nextSpent),
+  );
+  if (!current.isGuest && current.authUser) {
+    void syncCurrentUserLeaderboard(get)
+      .then(() => get().refreshLeaderboard())
+      .catch(() => undefined);
+  }
+  return true;
+}
+
 export interface StreakByteStore {
   view: ViewId;
   authUser: AuthUser | null;
@@ -246,6 +340,8 @@ export interface StreakByteStore {
   achievementFilter: AchievementFilter;
   leaderboardPeriod: LeaderboardPeriod;
   lessonSeconds: number;
+  labSessionMode: SessionMode;
+  labTimedOut: boolean;
   setupModal: SetupModalState;
   pc: PcBuildState;
   net: NetworkLabState;
@@ -343,6 +439,7 @@ export interface StreakByteStore {
 
   // Lesson player timer
   tickLessonTimer: () => void;
+  retryTimedLab: () => void;
 
   // PC Build lab
   selectPcPart: (part: PcPartId | null) => void;
@@ -356,6 +453,7 @@ export interface StreakByteStore {
   openNetworkConfig: (device: NetDeviceId) => void;
   closeNetworkConfig: () => void;
   saveNetworkConfig: (config: NetDeviceConfig) => boolean;
+  triggerNetworkHint: () => void;
   completeNetworkBuild: () => void;
 
   // Quiz
@@ -424,7 +522,9 @@ export const useStreakByteStore = create<StreakByteStore>()(
       practiceFilter: 'all',
       achievementFilter: 'all',
       leaderboardPeriod: 'w',
-      lessonSeconds: 42,
+      lessonSeconds: 0,
+      labSessionMode: 'guided',
+      labTimedOut: false,
       setupModal: createInitialSetupModal(),
       pc: createInitialPcState(),
       net: createInitialNetState(),
@@ -489,6 +589,8 @@ export const useStreakByteStore = create<StreakByteStore>()(
               await services.progress.saveLessonCompletion(op.payload as LessonCompletion);
             } else if (op.type === 'save-lab-bonus-xp') {
               await services.progress.saveLabBonusXp(Number(op.payload) || 0);
+            } else if (op.type === 'save-xp-spent') {
+              await services.progress.saveXpSpent(Number(op.payload) || 0);
             }
           });
           const after = await services.syncQueue.pending().catch(() => []);
@@ -1179,6 +1281,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
         set((state) => ({
           view: parsed.view,
           activeLab: parsed.lab ?? state.activeLab,
+          labTimedOut: parsed.view === 'lesson' ? state.labTimedOut : false,
           arenaTab:
             parsed.view === 'practice'
               ? 'practice'
@@ -1250,17 +1353,64 @@ export const useStreakByteStore = create<StreakByteStore>()(
         })),
 
       startSessionFromModal: () => {
-        const target = get().setupModal.target;
+        const { target, mode, length } = get().setupModal;
+        const durationSec = (length === '10' ? 10 : 5) * 60;
+        set(
+          target === 'network'
+            ? {
+                net: createInitialNetState(),
+                labSessionMode: mode,
+                lessonSeconds: mode === 'timed' ? durationSec : 0,
+                labTimedOut: false,
+              }
+            : {
+                pc: createInitialPcState(),
+                labSessionMode: mode,
+                lessonSeconds: mode === 'timed' ? durationSec : 0,
+                labTimedOut: false,
+              },
+        );
         get().closeSetup();
         get().navigate(`lesson/${target}`);
       },
 
-      tickLessonTimer: () =>
-        set((state) => ({ lessonSeconds: state.lessonSeconds + 1 })),
+      retryTimedLab: () => {
+        const current = get();
+        const durationSec = (current.setupModal.length === '10' ? 10 : 5) * 60;
+        set(
+          current.activeLab === 'net'
+            ? {
+                net: createInitialNetState(),
+                labTimedOut: false,
+                lessonSeconds: current.labSessionMode === 'timed' ? durationSec : 0,
+              }
+            : {
+                pc: createInitialPcState(),
+                labTimedOut: false,
+                lessonSeconds: current.labSessionMode === 'timed' ? durationSec : 0,
+              },
+        );
+      },
+
+      tickLessonTimer: () => {
+        const current = get();
+        if (current.labTimedOut) return;
+        if (current.labSessionMode === 'timed') {
+          if (current.lessonSeconds <= 1) {
+            set({ lessonSeconds: 0, labTimedOut: true });
+            playSfx('error', { enabled: current.profileSettings.soundEffects });
+            return;
+          }
+          set({ lessonSeconds: current.lessonSeconds - 1 });
+          return;
+        }
+        set({ lessonSeconds: current.lessonSeconds + 1 });
+      },
 
       selectPcPart: (part) => set((state) => ({ pc: selectPart(state.pc, part) })),
 
       placePcPart: (slotId, draggedPart) => {
+        if (get().labTimedOut) return false;
         const { state, placed } = placePart(get().pc, slotId, draggedPart);
         set({
           pc: state,
@@ -1270,15 +1420,51 @@ export const useStreakByteStore = create<StreakByteStore>()(
         return placed;
       },
 
-      triggerPcHint: () => set((state) => ({ pc: nextHint(state.pc) })),
+      triggerPcHint: () => {
+        const current = get();
+        if (
+          current.labTimedOut ||
+          current.labSessionMode === 'timed' ||
+          isPcHintUsedForCurrentStep(current.pc)
+        ) {
+          return;
+        }
+        if (isPcBuildComplete(current.pc)) {
+          set({ pc: nextHint(current.pc) });
+          return;
+        }
+        if (buyLabHint(current, get, set, hasNextPcHint(current.pc))) {
+          set({ pc: nextHint(current.pc) });
+        }
+      },
 
       completePcBuild: () => {
         const current = get();
+        if (current.labTimedOut) return;
+        if (!isPcBuildComplete(current.pc)) {
+          const installed = installedPcPartsCount(current.pc);
+          const missing = missingPcParts(current.pc);
+          const message = `Build incomplete (${installed}/${TOTAL_PC_PARTS} parts installed). Still missing: ${missing.join(', ')}.`;
+          set({
+            pc: { ...current.pc, bad: current.pc.bad + 1, message },
+            lastMistake: buildLabMistake('pc', message),
+          });
+          playSfx('error', { enabled: current.profileSettings.soundEffects });
+          get().showToast(`Install all ${TOTAL_PC_PARTS} parts first (${installed}/${TOTAL_PC_PARTS}).`);
+          return;
+        }
         const today = localDayString();
         const name = learnerFirstName(current.profileSettings, current.authUser);
         const prevXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, current.labBonusXp, current.xpSpent);
+        const finalUnlocked = !isLessonKeyLocked('hw-6', current.completions);
+        const finalCompletion: LessonCompletion | null = finalUnlocked
+          ? { lessonKey: 'hw-6', correct: 4, total: 4, completedAt: new Date().toISOString() }
+          : null;
+        const nextCompletions = finalCompletion
+          ? recordCompletion(current.completions, finalCompletion)
+          : current.completions;
         const nextBonus = current.labBonusXp + 120;
-        const nextXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, nextBonus, current.xpSpent);
+        const nextXp = calculateTotalXp(nextCompletions, LESSON_XP_BY_KEY, nextBonus, current.xpSpent);
         const nextStreak = recordActivity(current.streak, today);
         const prevDaily = ensureDailyActivity(current.dailyActivity, today);
         const nextDaily = { ...prevDaily, labsCompleted: prevDaily.labsCompleted + 1 };
@@ -1287,13 +1473,26 @@ export const useStreakByteStore = create<StreakByteStore>()(
           playSfx('postBeep', { enabled: current.profileSettings.soundEffects });
         }
         set({
-          completion: summarizePcBuild(current.pc, name),
+          completion: summarizePcBuild(
+            current.pc,
+            name,
+            resolveLabNextMission('hw', nextCompletions),
+          ),
+          completions: nextCompletions,
           labBonusXp: nextBonus,
           streak: nextStreak,
           dailyActivity: nextDaily,
           lastMistake: null,
           ...(levelUp ? { levelUpEvent: levelUp } : {}),
         });
+        if (finalCompletion) {
+          void persistOrQueue(
+            get,
+            set,
+            { type: 'complete-lesson', payload: finalCompletion },
+            () => services.progress.saveLessonCompletion(finalCompletion),
+          );
+        }
         void persistOrQueue(
           get,
           set,
@@ -1318,6 +1517,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
         set((state) => ({ net: selectDevice(state.net, device) })),
 
       placeNetworkDevice: (spot, draggedDevice) => {
+        if (get().labTimedOut) return false;
         const { state, placed } = placeDevice(get().net, spot, draggedDevice);
         set({
           net: state,
@@ -1357,6 +1557,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
         })),
 
       saveNetworkConfig: (config) => {
+        if (get().labTimedOut) return false;
         const { state, saved } = saveDeviceConfig(get().net, config);
         const errText = Object.values(state.errors).filter(Boolean).join(' ') || state.message;
         set({
@@ -1367,13 +1568,50 @@ export const useStreakByteStore = create<StreakByteStore>()(
         return saved;
       },
 
+      triggerNetworkHint: () => {
+        const current = get();
+        if (
+          current.labTimedOut ||
+          current.labSessionMode === 'timed' ||
+          isNetworkHintUsedForCurrentStep(current.net)
+        ) {
+          return;
+        }
+        if (currentNetworkHintStep(current.net) === null) {
+          set({ net: nextNetworkHint(current.net) });
+          return;
+        }
+        if (buyLabHint(current, get, set, hasNextNetworkHint(current.net))) {
+          set({ net: nextNetworkHint(current.net) });
+        }
+      },
+
       completeNetworkBuild: () => {
         const current = get();
+        if (current.labTimedOut) return;
+        if (!isNetworkBuildComplete(current.net)) {
+          const missing = missingNetworkSteps(current.net);
+          const message = `Connection test failed. Still needed: ${missing.join(', ')}.`;
+          set({
+            net: { ...current.net, bad: current.net.bad + 1, message },
+            lastMistake: buildLabMistake('net', message),
+          });
+          playSfx('error', { enabled: current.profileSettings.soundEffects });
+          get().showToast('Configure both PC and Laptop before testing.');
+          return;
+        }
         const today = localDayString();
         const name = learnerFirstName(current.profileSettings, current.authUser);
         const prevXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, current.labBonusXp, current.xpSpent);
+        const finalUnlocked = !isLessonKeyLocked('net-5', current.completions);
+        const finalCompletion: LessonCompletion | null = finalUnlocked
+          ? { lessonKey: 'net-5', correct: 4, total: 4, completedAt: new Date().toISOString() }
+          : null;
+        const nextCompletions = finalCompletion
+          ? recordCompletion(current.completions, finalCompletion)
+          : current.completions;
         const nextBonus = current.labBonusXp + 150;
-        const nextXp = calculateTotalXp(current.completions, LESSON_XP_BY_KEY, nextBonus, current.xpSpent);
+        const nextXp = calculateTotalXp(nextCompletions, LESSON_XP_BY_KEY, nextBonus, current.xpSpent);
         const nextStreak = recordActivity(current.streak, today);
         const prevDaily = ensureDailyActivity(current.dailyActivity, today);
         const nextDaily = { ...prevDaily, labsCompleted: prevDaily.labsCompleted + 1 };
@@ -1382,13 +1620,26 @@ export const useStreakByteStore = create<StreakByteStore>()(
           playSfx('ping', { enabled: current.profileSettings.soundEffects });
         }
         set({
-          completion: summarizeNetworkBuild(current.net, name),
+          completion: summarizeNetworkBuild(
+            current.net,
+            name,
+            resolveLabNextMission('net', nextCompletions),
+          ),
+          completions: nextCompletions,
           labBonusXp: nextBonus,
           streak: nextStreak,
           dailyActivity: nextDaily,
           lastMistake: null,
           ...(levelUp ? { levelUpEvent: levelUp } : {}),
         });
+        if (finalCompletion) {
+          void persistOrQueue(
+            get,
+            set,
+            { type: 'complete-lesson', payload: finalCompletion },
+            () => services.progress.saveLessonCompletion(finalCompletion),
+          );
+        }
         void persistOrQueue(
           get,
           set,
@@ -1456,6 +1707,8 @@ export const useStreakByteStore = create<StreakByteStore>()(
           ? getTrackProgress(track.id, get().completions)
           : null;
         const followingLock = progress?.lessons[lessonIdx + 1]?.lockMessage;
+        const followingKey = following && track ? lessonKeyFor(track.id, lessonIdx + 1) : null;
+        const nextRoute = followingKey && !followingLock ? `learn/${followingKey}` : 'curriculum';
         const followingMeta = following
           ? `${following.minutes} min · +${following.xp} XP`
           : '';
@@ -1478,6 +1731,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
                   followingMeta,
                 ]
                 : ['Back to the curriculum', 'Pick your next lesson', 'Keep your streak going'],
+              nextRoute,
             },
             name,
           ),
@@ -1644,7 +1898,9 @@ export const useStreakByteStore = create<StreakByteStore>()(
           practiceFilter: 'all',
           achievementFilter: 'all',
           leaderboardPeriod: 'w',
-          lessonSeconds: 42,
+          lessonSeconds: 0,
+          labSessionMode: 'guided',
+          labTimedOut: false,
           setupModal: createInitialSetupModal(),
           pc: createInitialPcState(),
           net: createInitialNetState(),
