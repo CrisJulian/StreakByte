@@ -1,17 +1,27 @@
 import type { CompletionSummary, NetworkLabState, PcBuildState } from '../../types/streakbyte';
 import { scoreNetworkBuild } from './network';
-import { scorePcBuild } from './pcBuild';
+import { installedPcPartsCount, scorePcBuild, TOTAL_PC_PARTS } from './pcBuild';
 
-/** Builds the Lesson Complete payload for the PC lab. Copy is unchanged from the original store. */
-export function summarizePcBuild(pc: PcBuildState, learnerName = 'Mika'): CompletionSummary {
+export interface LabNextMission {
+  next: [string, string, string];
+  nextRoute: string;
+}
+
+/** Builds the Lesson Complete payload for the PC lab. */
+export function summarizePcBuild(
+  pc: PcBuildState,
+  learnerName = 'Learner',
+  nextOverride?: LabNextMission,
+): CompletionSummary {
   const { accuracyPct, missedDualChannel, usedRamSlots } = scorePcBuild(pc);
+  const installed = installedPcPartsCount(pc);
   return {
     title: `Nice build, ${learnerName}!`,
-    subtitle: 'You installed 5 of 5 parts and kept your streak alive.',
+    subtitle: `You installed ${installed} of ${TOTAL_PC_PARTS} parts and kept your streak alive.`,
     xp: '+120',
     accuracy: `${accuracyPct}%`,
     partsLabel: 'Parts',
-    partsValue: '5 / 5',
+    partsValue: `${installed} / ${TOTAL_PC_PARTS}`,
     review: [
       [
         'Dual-channel RAM',
@@ -20,11 +30,16 @@ export function summarizePcBuild(pc: PcBuildState, learnerName = 'Mika'): Comple
       ['DDR4 vs DDR5', 'Not compatible'],
       ['RAM notch', 'Check the orientation'],
     ],
-    next: ['Lesson 4: Storage', 'HDD, SSD and M.2', '6 min · +120 XP'],
+    next: nextOverride?.next ?? ['Lesson 4: Storage', 'HDD, SSD and M.2', '6 min · +120 XP'],
+    nextRoute: nextOverride?.nextRoute ?? 'learn/hw-4',
   };
 }
 
-export function summarizeNetworkBuild(net: NetworkLabState, learnerName = 'Mika'): CompletionSummary {
+export function summarizeNetworkBuild(
+  net: NetworkLabState,
+  learnerName = 'Learner',
+  nextOverride?: LabNextMission,
+): CompletionSummary {
   const { accuracyPct } = scoreNetworkBuild(net);
   return {
     title: `Nice build, ${learnerName}!`,
@@ -37,7 +52,8 @@ export function summarizeNetworkBuild(net: NetworkLabState, learnerName = 'Mika'
       ['IP address basics', 'Each host needs a unique address on 192.168.1.0/24'],
       ['Subnet masks', '255.255.255.0 keeps both devices on the same LAN'],
     ],
-    next: ['Subnet masks', 'Split one network into parts', '6 min · +120 XP'],
+    next: nextOverride?.next ?? ['Subnet masks', 'Split one network into parts', '6 min · +120 XP'],
+    nextRoute: nextOverride?.nextRoute ?? 'learn/net-3',
   };
 }
 
@@ -46,6 +62,7 @@ export interface QuizSummaryInput {
   lessonXp: number;
   score: { correct: number; total: number; accuracyPct: number; missed: { topic: string; choices: string[]; correctIndex: number }[] };
   next: [string, string, string];
+  nextRoute?: string;
   /** When given, the subtitle says whether the lesson is now complete. */
   passed?: boolean;
   passMark?: number;
@@ -60,7 +77,7 @@ function passNote(input: QuizSummaryInput): string {
 }
 
 /** Lesson Complete payload for a finished quiz, built from the real answers. */
-export function summarizeQuiz(input: QuizSummaryInput, learnerName = 'Mika'): CompletionSummary {
+export function summarizeQuiz(input: QuizSummaryInput, learnerName = 'Learner'): CompletionSummary {
   const { score } = input;
   const xp = score.total === 0 ? 0 : Math.round((input.lessonXp * score.correct) / score.total);
   return {
@@ -75,5 +92,6 @@ export function summarizeQuiz(input: QuizSummaryInput, learnerName = 'Mika'): Co
         ? [['All answers correct', 'Nothing to review']]
         : score.missed.map((q) => [q.topic, `Answer: ${q.choices[q.correctIndex]}`] as [string, string]),
     next: input.next,
+    nextRoute: input.nextRoute,
   };
 }

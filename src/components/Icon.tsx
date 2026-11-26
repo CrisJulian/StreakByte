@@ -104,6 +104,7 @@ export function Icon({ name, className = 'w-5 h-5', ...props }: IconProps) {
         </>
       )}
       {name === 'moon' && <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />}
+      {name === 'shield' && <path d="M12 3 5 6v6c0 5 3.5 8 7 9 3.5-1 7-4 7-9V6z" />}
     </svg>
   );
 }

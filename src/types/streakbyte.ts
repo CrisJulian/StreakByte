@@ -2,6 +2,7 @@ export type ViewId =
   | 'dashboard'
   | 'curriculum'
   | 'lesson'
+  | 'arena'
   | 'practice'
   | 'achievements'
   | 'leaderboard'
@@ -17,8 +18,8 @@ export type ThemeMode = 'dark' | 'light';
 export type SessionMode = 'guided' | 'timed';
 export type SessionLength = '5' | '10';
 
-export type PcPartId = 'ram' | 'm2' | 'gpu' | 'psu';
-export type PcSlotId = 'A1' | 'A2' | 'B1' | 'B2' | 'M2' | 'PCIE' | 'PWR';
+export type PcPartId = 'cpu' | 'cooler' | 'ram' | 'm2' | 'gpu' | 'psu';
+export type PcSlotId = 'CPU' | 'COOLER' | 'A1' | 'A2' | 'B1' | 'B2' | 'M2' | 'PCIE' | 'PWR';
 
 export type NetDeviceId = 'pc' | 'laptop' | 'hub';
 export type NetConfigurableDeviceId = 'pc' | 'laptop';
@@ -51,6 +52,7 @@ export type IconName =
   | 'back'
   | 'warn'
   | 'search'
+  | 'shield'
   | 'sun'
   | 'moon';
 
@@ -78,6 +80,7 @@ export interface CurriculumTrack {
 }
 
 export interface PracticeItem {
+  lessonKey: string;
   title: string;
   meta: string;
   best: number;
@@ -98,8 +101,10 @@ export interface AchievementItem {
 }
 
 export interface LeaderboardStudent {
+  userId: string;
   name: string;
   initial: string;
+  avatarUrl?: string;
   weeklyXp: number;
   allTimeXp: number;
   streakDays: number;
@@ -108,6 +113,8 @@ export interface LeaderboardStudent {
 
 export interface PcBuildState {
   selectedPart: PcPartId | null;
+  cpu: boolean;
+  cooler: boolean;
   ram: Partial<Record<'A1' | 'A2' | 'B1' | 'B2', boolean>>;
   m2: boolean;
   gpu: boolean;
@@ -117,7 +124,10 @@ export interface PcBuildState {
   message: string;
   hintSlots: PcSlotId[];
   hintTick: number;
+  hintedStep: PcPartId | null;
 }
+
+export type NetworkHintStep = 'place-pc' | 'place-laptop' | 'config-laptop' | 'config-pc';
 
 export interface NetDeviceConfig {
   ip: string;
@@ -143,6 +153,7 @@ export interface NetworkLabState {
   issues: string[];
   message: string;
   errors: NetFormErrors;
+  hintedStep: NetworkHintStep | null;
 }
 
 export interface CompletionSummary {
@@ -154,6 +165,7 @@ export interface CompletionSummary {
   partsValue: string;
   review: [string, string][];
   next: [string, string, string];
+  nextRoute?: string;
 }
 
 export interface SetupModalState {
@@ -167,6 +179,8 @@ export interface SetupModalState {
 export interface ProfileSettings {
   displayName: string;
   email: string;
+  selectedTracks: TrackId[];
+  onboardingCompleted: boolean;
   dailyGoal: '5' | '10';
   dailyReminder: boolean;
   soundEffects: boolean;

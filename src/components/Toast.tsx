@@ -29,9 +29,8 @@ export function Toast() {
     <div
       role="status"
       aria-live="polite"
-      className={`fixed left-1/2 z-[60] -translate-x-1/2 px-[18px] py-3 rounded-xl bg-ink text-bg font-semibold text-sm pointer-events-none transition-all duration-200 max-[760px]:bottom-[calc(84px+env(safe-area-inset-bottom,0px))] bottom-[calc(28px+env(safe-area-inset-bottom,0px))] ${
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'
-      }`}
+      className={`fixed left-1/2 z-[60] -translate-x-1/2 px-4 py-2.5 border border-cyan bg-[var(--dark-card)] text-white font-mono font-bold text-[11px] uppercase tracking-[0.06em] pointer-events-none transition-all duration-200 max-[760px]:bottom-[calc(76px+env(safe-area-inset-bottom,0px))] bottom-[calc(24px+env(safe-area-inset-bottom,0px))] ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+        }`}
     >
       {toastMessage ?? ''}
     </div>

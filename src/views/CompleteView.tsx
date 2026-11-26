@@ -1,10 +1,11 @@
-import { Icon } from '../components/Icon';
+import { CornerBrackets } from '../components/ByteMascotSvg';
 import { WeekStrip } from '../components/WeekStrip';
+import { deriveWeekStrip, effectiveStreak, localDayString } from '../domain/rules/xp';
 import { useStreakByteStore } from '../store/useStreakByteStore';
 import type { CompletionSummary } from '../types/streakbyte';
 
 const DEFAULT_COMPLETION: CompletionSummary = {
-  title: 'Nice build, Mika!',
+  title: 'Nice build!',
   subtitle: 'You installed 5 of 5 parts and kept your streak alive.',
   xp: '+120',
   accuracy: '80%',
@@ -16,78 +17,104 @@ const DEFAULT_COMPLETION: CompletionSummary = {
     ['RAM notch', 'Check the orientation'],
   ],
   next: ['Lesson 4: Storage', 'HDD, SSD and M.2', '6 min · +120 XP'],
+  nextRoute: 'learn/hw-4',
 };
 
 export function CompleteView() {
   const completion = useStreakByteStore((s) => s.completion) ?? DEFAULT_COMPLETION;
+  const streak = useStreakByteStore((s) => s.streak);
   const navigate = useStreakByteStore((s) => s.navigate);
 
+  const today = localDayString();
+  const streakDays = effectiveStreak(streak, today);
+  const weekStrip = deriveWeekStrip(streak);
+  const nextRoute = completion.nextRoute ?? 'curriculum';
+  const nextButtonLabel = nextRoute.startsWith('learn/')
+    ? 'Next lesson ▶'
+    : nextRoute.startsWith('quiz/')
+      ? 'Take final quiz ▶'
+      : 'Back to curriculum ▶';
+
   return (
-    <div>
-      <section
-        className="grid grid-cols-[minmax(0,1fr)_auto] max-[1100px]:grid-cols-1 gap-7 items-center mb-5 p-7 rounded-2xl border"
-        style={{
-          background: 'color-mix(in srgb, var(--green) 14%, var(--panel))',
-          borderColor: 'color-mix(in srgb, var(--green) 38%, var(--line))',
-        }}
-      >
+    <div className="w-full bg-panel">
+      <section className="relative grid grid-cols-[minmax(0,1fr)_auto] max-[960px]:grid-cols-1 gap-7 items-center p-7 max-[760px]:p-5 bg-[var(--dark-card)] text-white border-b border-line">
+        <CornerBrackets light />
         <div>
-          <h1 className="m-0 mb-1.5 text-[2.125rem] font-bold leading-[1.15] tracking-[-0.025em]">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-cyan">
+            <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
+            Systems online
+          </span>
+          <h1 className="m-0 mt-2 mb-1.5 font-disp text-[36px] leading-none uppercase tracking-[-0.02em]">
             {completion.title}
           </h1>
-          <p className="m-0 text-muted text-[1.0625rem]">{completion.subtitle}</p>
+          <p className="m-0 text-white/75 text-[12.5px]">{completion.subtitle}</p>
 
-          <div className="flex gap-7 max-[760px]:gap-4 max-[760px]:flex-wrap mt-[22px]">
-            <div>
-              <small className="block text-muted text-[0.8125rem] font-semibold">XP earned</small>
-              <b className="num text-[1.75rem] leading-tight">{completion.xp}</b>
+          <div className="flex gap-7 max-[760px]:gap-4 max-[760px]:flex-wrap mt-6">
+            <div className="sb-pop">
+              <small className="block text-white/60 text-[10px] font-bold uppercase tracking-[0.07em]">
+                XP earned
+              </small>
+              <b className="num font-disp text-[28px] leading-tight text-cyan">{completion.xp}</b>
             </div>
-            <div className="pl-7 max-[760px]:pl-4 border-l border-line">
-              <small className="block text-muted text-[0.8125rem] font-semibold">Accuracy</small>
-              <b className="num text-[1.75rem] leading-tight">{completion.accuracy}</b>
+            <div className="pl-7 max-[760px]:pl-4 border-l border-[var(--dark-line)]">
+              <small className="block text-white/60 text-[10px] font-bold uppercase tracking-[0.07em]">
+                Accuracy
+              </small>
+              <b className="num font-disp text-[28px] leading-tight">{completion.accuracy}</b>
             </div>
-            <div className="pl-7 max-[760px]:pl-4 border-l border-line">
-              <small className="block text-muted text-[0.8125rem] font-semibold">
+            <div className="pl-7 max-[760px]:pl-4 border-l border-[var(--dark-line)]">
+              <small className="block text-white/60 text-[10px] font-bold uppercase tracking-[0.07em]">
                 {completion.partsLabel}
               </small>
-              <b className="num text-[1.75rem] leading-tight">{completion.partsValue}</b>
+              <b className="num font-disp text-[28px] leading-tight">{completion.partsValue}</b>
             </div>
           </div>
         </div>
 
-        <div className="min-w-[290px] max-[1100px]:min-w-0 p-4 rounded-[14px] bg-bg border border-line">
-          <div className="flex items-center gap-2 font-bold">
-            <Icon name="flame" className="w-5 h-5 text-amber" />
-            6 day streak
+        <div className="min-w-[270px] max-[960px]:min-w-0 p-4 border border-[var(--dark-line)] bg-[#1b1b1b] text-white">
+          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.07em]">
+            <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
+            {streakDays} day streak
           </div>
-          <WeekStrip filledCount={6} todayIndex={5} ariaLabel="Monday to Saturday done" />
-          <p className="m-0 text-muted text-sm">Streak extended. Come back tomorrow.</p>
+          <WeekStrip
+            filledCount={weekStrip.filledCount}
+            todayIndex={weekStrip.todayIndex}
+            ariaLabel={weekStrip.ariaLabel}
+          />
+          <p className="m-0 text-white/65 text-[11px]">
+            {streakDays > 0
+              ? 'Streak active. Keep it going tomorrow.'
+              : 'Complete a lesson to start your streak.'}
+          </p>
         </div>
       </section>
 
-      <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] max-[1100px]:grid-cols-1 gap-5 items-stretch">
-        <section className="bg-panel border border-line rounded-2xl p-[22px]">
-          <h2 className="m-0 mb-1 text-[1.125rem] font-bold">Review these</h2>
-          <p className="m-0 text-muted text-sm">
+      <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] max-[960px]:grid-cols-1 items-stretch">
+        <section className="p-6 max-[760px]:p-4 border-r border-line max-[960px]:border-r-0 max-[960px]:border-b">
+          <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
+            CONCEPT LOG
+          </div>
+          <h2 className="m-0 mt-1 mb-1 font-head text-[20px] font-bold">Review these</h2>
+          <p className="m-0 text-muted text-[12px]">
             Mistakes are saved here, never a game over. Practice these to lock them in.
           </p>
 
-          <ul className="grid mt-3 mb-[18px]">
+          <ul className="border border-line mt-4 mb-5">
             {completion.review.map(([topic, detail]) => (
               <li
                 key={topic}
-                className="grid grid-cols-[14px_minmax(0,1fr)_auto_auto] gap-3.5 items-center py-3 border-t border-line"
+                className="grid grid-cols-[12px_minmax(0,1fr)_auto_auto] gap-3 items-center px-3.5 py-3 border-b border-line last:border-b-0"
               >
-                <i className="w-3 h-3 rounded-[3px] bg-amber block" />
-                <b>{topic}</b>
-                <span className="text-muted text-sm text-right">{detail}</span>
+                <i className="w-2 h-2 bg-cyan block" />
+                <b className="font-head text-[13.5px]">{topic}</b>
+                <span className="text-muted text-[11px] text-right">{detail}</span>
                 <a
                   href="#practice"
                   onClick={(e) => {
                     e.preventDefault();
                     navigate('practice');
                   }}
-                  className="inline-flex items-center justify-center min-h-11 px-[18px] border border-line rounded-[10px] bg-transparent text-ink font-semibold text-[0.9375rem] no-underline transition-colors hover:bg-panel2 hover:border-muted"
+                  className="inline-flex items-center justify-center min-h-8 px-3 border border-line bg-panel text-ink font-bold text-[10px] uppercase tracking-[0.06em] no-underline hover:border-ink hover:bg-panel2 transition-colors"
                 >
                   Review
                 </a>
@@ -95,14 +122,14 @@ export function CompleteView() {
             ))}
           </ul>
 
-          <div className="grid grid-cols-2 max-[760px]:grid-cols-1 gap-2.5">
+          <div className="grid grid-cols-2 max-[600px]:grid-cols-1 gap-2.5">
             <a
               href="#practice"
               onClick={(e) => {
                 e.preventDefault();
                 navigate('practice');
               }}
-              className="inline-flex items-center justify-center min-h-11 px-[18px] border border-cyan rounded-[10px] bg-cyan text-cyan-ink font-semibold text-[0.9375rem] no-underline transition-all hover:brightness-110"
+              className="sb-cut inline-flex items-center justify-center min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] no-underline hover:brightness-110 transition-colors"
             >
               Practice missed
             </a>
@@ -112,26 +139,31 @@ export function CompleteView() {
                 e.preventDefault();
                 navigate('curriculum');
               }}
-              className="inline-flex items-center justify-center min-h-11 px-[18px] border border-line rounded-[10px] bg-transparent text-ink font-semibold text-[0.9375rem] no-underline transition-colors hover:bg-panel2 hover:border-muted"
+              className="inline-flex items-center justify-center min-h-11 px-4 border border-line bg-panel text-ink font-bold text-[11px] uppercase tracking-[0.06em] no-underline hover:border-ink hover:bg-panel2 transition-colors"
             >
               Back to Learn
             </a>
           </div>
         </section>
 
-        <section className="bg-panel border border-line rounded-2xl p-[22px] flex flex-col gap-2">
-          <h2 className="m-0 text-2xl font-bold leading-tight">Up next: {completion.next[0]}</h2>
-          <b>{completion.next[1]}</b>
-          <p className="m-0 text-muted text-sm num">{completion.next[2]}</p>
+        <section className="p-6 max-[760px]:p-4 flex flex-col gap-2 bg-panel2">
+          <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
+            NEXT MISSION
+          </div>
+          <h2 className="m-0 font-head text-[24px] font-bold leading-tight">
+            Up next: {completion.next[0]}
+          </h2>
+          <b className="text-sm">{completion.next[1]}</b>
+          <p className="m-0 text-muted text-xs num">{completion.next[2]}</p>
           <a
-            href="#curriculum"
+            href={`#${nextRoute}`}
             onClick={(e) => {
               e.preventDefault();
-              navigate('curriculum');
+              navigate(nextRoute);
             }}
-            className="mt-auto inline-flex items-center justify-center min-h-11 px-[18px] border border-cyan rounded-[10px] bg-cyan text-cyan-ink font-semibold text-[0.9375rem] no-underline transition-all hover:brightness-110"
+            className="sb-cut mt-auto inline-flex items-center justify-center min-h-11 px-5 border border-[var(--dark-card)] bg-[var(--dark-card)] text-white font-bold text-[11px] uppercase tracking-[0.06em] no-underline hover:opacity-90 transition-opacity"
           >
-            Next lesson
+            {nextButtonLabel}
           </a>
         </section>
       </div>

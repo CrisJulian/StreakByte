@@ -8,16 +8,17 @@ const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 export function WeekStrip({ filledCount, todayIndex, ariaLabel }: WeekStripProps) {
   return (
-    <div className="grid grid-cols-7 gap-1.5 my-3.5 mb-3" role="img" aria-label={ariaLabel}>
+    <div className="grid grid-cols-7 gap-1 my-3" role="img" aria-label={ariaLabel}>
       {DAYS.map((day, idx) => {
         const isOn = idx < filledCount;
         const isToday = idx === todayIndex;
         return (
           <i
             key={`${day}-${idx}`}
-            className={`grid place-items-center h-[38px] rounded-lg not-italic font-bold text-[0.8125rem] font-mono ${
-              isOn ? 'bg-amber text-amber-ink' : 'bg-panel2 text-muted'
-            } ${isToday ? 'outline-2 outline-amber outline-offset-2' : ''}`}
+            className={`grid place-items-center h-8 border not-italic font-bold text-[10px] font-mono ${isOn
+                ? 'bg-cyan border-cyan text-cyan-ink'
+                : 'bg-panel2 border-line text-muted'
+              } ${isToday ? 'border-ink shadow-[inset_0_-2px_0_var(--text)]' : ''}`}
           >
             {day}
           </i>

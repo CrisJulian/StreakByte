@@ -1,0 +1,3368 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StreakByte — Swiss-Industrial UI Draft (All Views)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --canvas: #e8e8e8;
+      --surface: #ffffff;
+      --surface-2: #f3f3f3;
+      --surface-3: #dfdfdf;
+      --line: #cccccc;
+      --line-dark: #2c2c2c;
+      --ink: #141414;
+      --void: #111111;
+      --muted: #666666;
+      --subtle: #858585;
+      --orange: #ff5500;
+      --orange-hover: #e64b00;
+      --orange-tint: #fde4d6;
+      --orange-pill: #fff0e8;
+      --green: #129954;
+      --green-tint: #e3f7ec;
+      --red: #d92d20;
+      --red-tint: #fde8e7;
+
+      --f-disp: "Archivo Black", "Impact", "Arial Black", sans-serif;
+      --f-head: "Space Grotesk", system-ui, sans-serif;
+      --f-mono: "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: var(--f-mono);
+      font-size: 13px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible {
+      outline: 2px solid var(--orange);
+      outline-offset: 2px;
+    }
+
+    /* ---------- Draft Review Toolbar ---------- */
+    .draft-bar {
+      position: sticky;
+      top: 0;
+      z-index: 90;
+      background: var(--void);
+      color: #ffffff;
+      border-bottom: 1px solid #2b2b2b;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 10.5px;
+    }
+    .draft-bar-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #ffffff;
+      margin-right: 4px;
+      white-space: nowrap;
+    }
+    .draft-bar-title i {
+      width: 7px;
+      height: 7px;
+      background: var(--orange);
+      display: inline-block;
+    }
+    .draft-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .draft-sep {
+      width: 1px;
+      height: 18px;
+      background: #333333;
+      margin: 0 4px;
+    }
+    .draft-btn {
+      background: #1d1d1d;
+      color: #cccccc;
+      border: 1px solid #353535;
+      padding: 4px 8px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+    .draft-btn:hover {
+      background: #2b2b2b;
+      color: #ffffff;
+    }
+    .draft-btn.active {
+      background: var(--orange);
+      color: #ffffff;
+      border-color: var(--orange);
+    }
+    .draft-btn.overlay-trigger {
+      border-color: #523324;
+      color: #ffb28a;
+    }
+    .draft-btn.overlay-trigger:hover {
+      background: var(--orange);
+      color: #ffffff;
+      border-color: var(--orange);
+    }
+    .draft-viewport-toggle {
+      margin-left: auto;
+      display: inline-flex;
+      border: 1px solid #353535;
+    }
+    .draft-viewport-toggle button {
+      background: #1a1a1a;
+      color: #aaaaaa;
+      border: 0;
+      padding: 4px 9px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .draft-viewport-toggle button.active {
+      background: #ffffff;
+      color: var(--ink);
+    }
+
+    /* ---------- Sheet Wrapper ---------- */
+    .stage {
+      padding: 0 0 48px;
+      display: flex;
+      justify-content: center;
+    }
+    .sheet {
+      width: 100%;
+      max-width: none;
+      background: var(--surface);
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      position: relative;
+      transition: max-width 0.2s ease;
+    }
+    body.mobile-preview .stage {
+      padding: 20px 16px 64px;
+    }
+    body.mobile-preview .sheet {
+      max-width: 390px;
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16);
+    }
+
+    /* ---------- Common Swiss-Industrial Primitives ---------- */
+    .cut {
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+    }
+    .cut-sm {
+      clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid transparent;
+      padding: 10px 16px;
+      font-family: var(--f-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.14s, color 0.14s, border-color 0.14s;
+    }
+    .btn-sm {
+      padding: 7px 12px;
+      font-size: 10px;
+    }
+    .btn-orange {
+      background: var(--orange);
+      color: #ffffff;
+      border-color: var(--orange);
+    }
+    .btn-orange:hover:not(:disabled) {
+      background: var(--orange-hover);
+      border-color: var(--orange-hover);
+    }
+    .btn-black {
+      background: var(--ink);
+      color: #ffffff;
+      border-color: var(--ink);
+    }
+    .btn-black:hover:not(:disabled) {
+      background: #2b2b2b;
+    }
+    .btn-outline {
+      background: var(--surface);
+      color: var(--ink);
+      border-color: var(--line);
+    }
+    .btn-outline:hover:not(:disabled) {
+      border-color: var(--ink);
+      background: var(--surface-2);
+    }
+    .btn-ghost-dark {
+      background: transparent;
+      color: #ffffff;
+      border-color: #444444;
+    }
+    .btn-ghost-dark:hover:not(:disabled) {
+      border-color: #ffffff;
+      background: #222222;
+    }
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .sq {
+      width: 6px;
+      height: 6px;
+      background: var(--orange);
+      display: inline-block;
+      flex: none;
+    }
+    .sq-dark {
+      background: var(--ink);
+    }
+
+    .h-title {
+      font-family: var(--f-head);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.08;
+      margin: 0;
+    }
+    .disp-num {
+      font-family: var(--f-disp);
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border: 1px solid var(--line);
+      background: var(--surface);
+    }
+    .pill-black {
+      background: var(--ink);
+      color: #ffffff;
+      border-color: var(--ink);
+    }
+    .pill-orange {
+      background: var(--orange-pill);
+      color: var(--orange);
+      border-color: transparent;
+    }
+    .pill-orange-solid {
+      background: var(--orange);
+      color: #ffffff;
+      border-color: var(--orange);
+    }
+    .pill-muted {
+      background: #c8c8c8;
+      color: #666666;
+      border-color: transparent;
+    }
+    .pill-green {
+      background: var(--green-tint);
+      color: var(--green);
+      border-color: var(--green);
+    }
+
+    /* Corner Viewfinder Brackets */
+    .brackets {
+      position: relative;
+    }
+    .brackets .b-tl,
+    .brackets .b-tr,
+    .brackets .b-bl,
+    .brackets .b-br {
+      position: absolute;
+      width: 11px;
+      height: 11px;
+      pointer-events: none;
+    }
+    .brackets .b-tl {
+      top: 10px;
+      left: 10px;
+      border-top: 1.5px solid var(--ink);
+      border-left: 1.5px solid var(--ink);
+    }
+    .brackets .b-tr {
+      top: 10px;
+      right: 10px;
+      border-top: 1.5px solid var(--ink);
+      border-right: 1.5px solid var(--ink);
+    }
+    .brackets .b-bl {
+      bottom: 10px;
+      left: 10px;
+      border-bottom: 1.5px solid var(--ink);
+      border-left: 1.5px solid var(--ink);
+    }
+    .brackets .b-br {
+      bottom: 10px;
+      right: 10px;
+      border-bottom: 1.5px solid var(--ink);
+      border-right: 1.5px solid var(--ink);
+    }
+    .brackets-light .b-tl,
+    .brackets-light .b-tr,
+    .brackets-light .b-bl,
+    .brackets-light .b-br {
+      border-color: rgba(255, 255, 255, 0.72);
+    }
+
+    /* Segmented Progress Bars */
+    .seg-bar {
+      display: grid;
+      gap: 3px;
+      width: 100%;
+    }
+    .seg-bar i {
+      display: block;
+      height: 10px;
+      background: #e2e2e2;
+    }
+    .seg-bar i.fill-orange {
+      background: var(--orange);
+    }
+    .seg-bar i.fill-green {
+      background: var(--green);
+    }
+    .seg-bar i.fill-black {
+      background: var(--ink);
+    }
+    .seg-bar.dark-track i {
+      background: #2f2f2f;
+    }
+
+    /* Segmented Toggle */
+    .seg-toggle {
+      display: inline-flex;
+      border: 1px solid var(--ink);
+      background: var(--surface);
+    }
+    .seg-toggle button {
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      padding: 8px 14px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .seg-toggle button + button {
+      border-left: 1px solid var(--ink);
+    }
+    .seg-toggle button.active {
+      background: var(--orange);
+      color: #ffffff;
+    }
+
+    /* ---------- TopBar ---------- */
+    .topbar {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: stretch;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+      min-height: 56px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 20px;
+      text-decoration: none;
+      color: var(--ink);
+      border-right: 1px solid transparent;
+    }
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--orange);
+      display: grid;
+      place-items: center;
+      background: #fff;
+    }
+    .brand-mark span {
+      width: 12px;
+      height: 12px;
+      border: 1.5px solid var(--ink);
+      display: grid;
+      place-items: center;
+    }
+    .brand-mark span::after {
+      content: "";
+      width: 4px;
+      height: 4px;
+      background: var(--orange);
+      display: block;
+    }
+    .brand-word {
+      font-family: var(--f-disp);
+      font-size: 14px;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .brand-word b {
+      color: var(--orange);
+      font-weight: 400;
+    }
+
+    .nav-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 0 8px;
+    }
+    .nav-tab {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--muted);
+      background: transparent;
+      border: 0;
+    }
+    .nav-tab:hover {
+      color: var(--ink);
+      background: var(--surface-2);
+    }
+    .nav-tab.active {
+      background: var(--surface-3);
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .top-hud {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 18px;
+      position: relative;
+    }
+    .hud-stat {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: transparent;
+      border: 1px solid transparent;
+      padding: 6px 8px;
+    }
+    .hud-stat.clickable:hover {
+      border-color: var(--line);
+      background: var(--surface-2);
+    }
+    .hud-profile-btn {
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      padding: 6px 10px;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .hud-profile-btn:hover {
+      border-color: var(--ink);
+    }
+
+    /* Mobile Bottom Nav inside Sheet */
+    .mobile-nav {
+      display: none;
+      border-top: 1px solid var(--line);
+      background: var(--surface);
+      position: sticky;
+      bottom: 0;
+      z-index: 40;
+      grid-template-columns: repeat(5, 1fr);
+    }
+    .mobile-nav button {
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: var(--surface);
+      padding: 10px 4px;
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .mobile-nav button:last-child {
+      border-right: 0;
+    }
+    .mobile-nav button.active {
+      background: var(--surface-3);
+      color: var(--ink);
+      box-shadow: inset 0 3px 0 var(--orange);
+    }
+
+    /* ---------- Hero Poster Banner ---------- */
+    .hero-poster {
+      position: relative;
+      border-bottom: 1px solid var(--line);
+      overflow: hidden;
+      padding: 20px 0 0;
+      background: var(--surface);
+    }
+    .hero-poster-squares {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 22px 6px;
+    }
+    .hero-mega {
+      font-family: var(--f-disp);
+      font-size: clamp(2.1rem, 7.2vw, 7.8rem);
+      line-height: 0.9;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      color: var(--ink);
+      margin: 0;
+      padding: 0 22px 12px;
+      user-select: none;
+    }
+    .hero-substrip {
+      border-top: 1px solid var(--line);
+      padding: 10px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* ---------- Dashboard Grid ---------- */
+    .dash-hero-matrix {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr 0.95fr;
+      border-bottom: 1px solid var(--line);
+    }
+    .dash-mission-cell {
+      padding: 24px 22px;
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .dash-mission-title {
+      font-family: var(--f-head);
+      font-size: 30px;
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -0.025em;
+      margin: 6px 0 10px;
+    }
+    .dash-mission-copy {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0 0 14px;
+      max-width: 38ch;
+    }
+    .dash-spec-cell {
+      border-right: 1px solid var(--line);
+      background-color: var(--surface-2);
+      background-image: radial-gradient(#c6c6c6 1px, transparent 1px);
+      background-size: 16px 16px;
+      min-height: 276px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+    .dash-spec-cell:hover {
+      background-color: #ececec;
+    }
+    .dash-spec-cell:hover .spec-link {
+      color: var(--orange);
+    }
+    .dash-spec-stage {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      padding: 12px 6px;
+    }
+    .dash-reward-col {
+      display: grid;
+      grid-template-rows: 1fr auto;
+    }
+    .dash-reward-dark {
+      background: var(--ink);
+      color: #ffffff;
+      padding: 22px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 10px;
+    }
+    .dash-xp-footer {
+      border-top: 1px solid var(--line);
+      padding: 14px 18px;
+      background: var(--surface);
+      display: grid;
+      gap: 8px;
+    }
+
+    .section-band {
+      padding: 24px 22px;
+      border-bottom: 1px solid var(--line);
+    }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .section-h2 {
+      font-family: var(--f-head);
+      font-size: 23px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 4px 0 0;
+    }
+
+    /* Mission Map Chain */
+    .chain-grid {
+      display: grid;
+      border: 1px solid var(--line);
+    }
+    .chain-grid.cols-6 {
+      grid-template-columns: repeat(6, 1fr);
+    }
+    .chain-grid.cols-5 {
+      grid-template-columns: repeat(5, 1fr);
+    }
+    .chain-card {
+      padding: 16px 14px;
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      min-height: 186px;
+      background: var(--surface);
+      transition: background 0.15s;
+    }
+    .chain-card:last-child {
+      border-right: 0;
+    }
+    .chain-card.state-active {
+      background: var(--orange);
+      color: #ffffff;
+    }
+    .chain-card.state-locked {
+      background: var(--surface-3);
+      color: var(--muted);
+    }
+    .chain-card.state-boss {
+      background: var(--ink);
+      color: #ffffff;
+    }
+    .chain-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .chain-num {
+      font-family: var(--f-disp);
+      font-size: 26px;
+      line-height: 1;
+    }
+    .chain-card.state-done .chain-num {
+      color: #b5b5b5;
+    }
+    .chain-card.state-locked .chain-num {
+      color: #9e9e9e;
+    }
+    .chain-card.state-boss .chain-num {
+      color: var(--orange);
+    }
+    .chain-title {
+      font-family: var(--f-head);
+      font-size: 14.5px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin: 0 0 6px;
+    }
+    .chain-meta {
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      opacity: 0.78;
+      margin-bottom: 18px;
+    }
+    .chain-foot {
+      margin-top: auto;
+    }
+
+    /* Daily Quests */
+    .quest-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--line);
+    }
+    .quest-card {
+      padding: 16px;
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: var(--surface);
+    }
+    .quest-card:last-child {
+      border-right: 0;
+    }
+    .quest-card.crate {
+      background: var(--ink);
+      color: #ffffff;
+    }
+    .quest-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .quest-title {
+      font-family: var(--f-head);
+      font-size: 15px;
+      font-weight: 700;
+      margin: 0;
+    }
+    .quest-desc {
+      font-size: 11px;
+      color: var(--muted);
+      margin: 0;
+      flex: 1;
+    }
+
+    /* Bottom 2-col Dashboard Split */
+    .split-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .split-pane {
+      padding: 24px 22px;
+      border-right: 1px solid var(--line);
+    }
+    .split-pane:last-child {
+      border-right: 0;
+    }
+
+    /* League Table */
+    .league-table {
+      border: 1px solid var(--line);
+    }
+    .league-row {
+      display: grid;
+      grid-template-columns: 28px 1fr auto auto;
+      gap: 12px;
+      align-items: center;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+    .league-row:last-child {
+      border-bottom: 0;
+    }
+    .league-row.is-you {
+      background: var(--orange-tint);
+    }
+    .league-rank {
+      font-weight: 700;
+      text-align: center;
+    }
+    .league-name {
+      font-family: var(--f-head);
+      font-weight: 700;
+      font-size: 13.5px;
+    }
+    .league-streak {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .league-xp {
+      font-family: var(--f-disp);
+      font-size: 15px;
+    }
+
+    /* Trophy Grid 4x2 */
+    .trophy-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--line);
+    }
+    .trophy-tile {
+      padding: 16px 10px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      background: var(--surface);
+    }
+    .trophy-tile:nth-child(4n) {
+      border-right: 0;
+    }
+    .trophy-tile:nth-child(n + 5) {
+      border-bottom: 0;
+    }
+    .trophy-tile.locked {
+      background: #ececec;
+      color: var(--muted);
+    }
+    .trophy-icon {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      background: var(--orange);
+      color: #ffffff;
+    }
+    .trophy-tile.locked .trophy-icon {
+      background: transparent;
+      border: 1px solid #b5b5b5;
+      color: var(--muted);
+    }
+    .trophy-name {
+      font-family: var(--f-head);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.15;
+    }
+    .trophy-state {
+      font-size: 9px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ---------- Secondary Views Shared Layout ---------- */
+    .view-pane {
+      display: none;
+    }
+    .view-pane.active {
+      display: block;
+    }
+    .view-header {
+      padding: 22px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .view-h1 {
+      font-family: var(--f-head);
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin: 6px 0 4px;
+      line-height: 1.05;
+    }
+    .view-sub {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+      max-width: 62ch;
+    }
+
+    .grid-2col-main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+    }
+    .col-main {
+      border-right: 1px solid var(--line);
+      padding: 22px;
+    }
+    .col-side {
+      padding: 22px;
+      background: var(--surface-2);
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+    .panel-box {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      padding: 18px;
+    }
+    .panel-box-dark {
+      border: 1px solid var(--ink);
+      background: var(--ink);
+      color: #ffffff;
+      padding: 18px;
+    }
+
+    /* Inputs */
+    .field-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .input {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      font-family: var(--f-mono);
+      font-size: 12px;
+    }
+    .input:focus {
+      border-color: var(--ink);
+      outline: none;
+    }
+
+    /* Curriculum Rows */
+    .curr-list {
+      border: 1px solid var(--line);
+    }
+    .curr-row {
+      display: grid;
+      grid-template-columns: 46px minmax(0, 1fr) auto auto;
+      gap: 14px;
+      align-items: center;
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+    .curr-row:last-child {
+      border-bottom: 0;
+    }
+    .curr-row.is-current {
+      background: var(--orange-pill);
+      box-shadow: inset 4px 0 0 var(--orange);
+    }
+    .curr-row.is-locked {
+      background: var(--surface-2);
+      color: var(--muted);
+    }
+    .curr-idx {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      font-family: var(--f-disp);
+      font-size: 14px;
+      background: var(--surface);
+    }
+    .curr-row.is-done .curr-idx {
+      background: var(--ink);
+      color: #ffffff;
+      border-color: var(--ink);
+    }
+    .curr-row.is-current .curr-idx {
+      background: var(--orange);
+      color: #ffffff;
+      border-color: var(--orange);
+    }
+
+    /* Lesson Reader */
+    .lesson-body {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 24px 22px 36px;
+    }
+    .lesson-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: 1px solid var(--line);
+    }
+    .lesson-grid-cell {
+      padding: 16px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .lesson-grid-cell:nth-child(2n) {
+      border-right: 0;
+    }
+
+    /* Quiz */
+    .quiz-shell {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 24px 22px 36px;
+    }
+    .quiz-choice {
+      display: grid;
+      grid-template-columns: 38px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      text-align: left;
+      width: 100%;
+    }
+    .quiz-choice:hover:not(:disabled) {
+      border-color: var(--ink);
+      background: var(--surface-2);
+    }
+    .quiz-choice.selected {
+      border-color: var(--orange);
+      background: var(--orange-pill);
+    }
+    .quiz-choice.correct {
+      border-color: var(--green);
+      background: var(--green-tint);
+    }
+    .quiz-choice.wrong {
+      border-color: var(--red);
+      background: var(--red-tint);
+    }
+    .quiz-letter {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      font-weight: 700;
+      background: var(--surface-2);
+    }
+    .quiz-choice.selected .quiz-letter {
+      background: var(--orange);
+      color: #ffffff;
+      border-color: var(--orange);
+    }
+    .quiz-choice.correct .quiz-letter {
+      background: var(--green);
+      color: #ffffff;
+      border-color: var(--green);
+    }
+    .quiz-choice.wrong .quiz-letter {
+      background: var(--red);
+      color: #ffffff;
+      border-color: var(--red);
+    }
+
+    /* Labs */
+    .lab-hud {
+      padding: 14px 22px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .lab-svg-slot {
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .lab-svg-slot:hover rect.slot-box {
+      stroke: var(--orange);
+      stroke-width: 2.5;
+    }
+    .part-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      text-align: left;
+      font-size: 11.5px;
+      font-weight: 700;
+    }
+    .part-btn.selected {
+      border-color: var(--orange);
+      background: var(--orange-pill);
+    }
+    .part-btn.installed {
+      background: var(--green-tint);
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    /* Podium */
+    .podium {
+      display: grid;
+      grid-template-columns: 1fr 1.12fr 1fr;
+      align-items: end;
+      border: 1px solid var(--line);
+      margin-bottom: 18px;
+    }
+    .podium-slot {
+      padding: 20px 14px;
+      text-align: center;
+      border-right: 1px solid var(--line);
+      display: grid;
+      gap: 6px;
+      justify-items: center;
+    }
+    .podium-slot:last-child {
+      border-right: 0;
+    }
+    .podium-slot.p1 {
+      background: var(--orange);
+      color: #ffffff;
+      padding-top: 34px;
+      padding-bottom: 26px;
+    }
+    .podium-slot.p3 {
+      background: var(--ink);
+      color: #ffffff;
+    }
+
+    /* Heatmap & Switches */
+    .heat-grid {
+      display: grid;
+      grid-template-columns: 20px repeat(5, 1fr);
+      gap: 4px;
+      align-items: center;
+    }
+    .heat-cell {
+      height: 22px;
+      background: var(--surface-3);
+      border: 1px solid var(--line);
+    }
+    .heat-1 {
+      background: #ffd3bd;
+      border-color: #f3b290;
+    }
+    .heat-2 {
+      background: #ff8c52;
+      border-color: #e66a2c;
+    }
+    .heat-3 {
+      background: var(--orange);
+      border-color: var(--orange-hover);
+    }
+    .mech-switch {
+      width: 48px;
+      height: 26px;
+      border: 1px solid var(--ink);
+      background: var(--surface-3);
+      position: relative;
+      padding: 0;
+    }
+    .mech-switch::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: var(--ink);
+      transition: transform 0.15s, background 0.15s;
+    }
+    .mech-switch[aria-checked="true"] {
+      background: var(--orange);
+      border-color: var(--orange);
+    }
+    .mech-switch[aria-checked="true"]::after {
+      transform: translateX(22px);
+      background: #ffffff;
+    }
+
+    /* Login & Onboarding */
+    .auth-split {
+      display: grid;
+      grid-template-columns: 1fr 1.05fr;
+      min-height: 540px;
+    }
+    .auth-left {
+      background: var(--ink);
+      color: #ffffff;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-right: 1px solid var(--line);
+    }
+    .auth-right {
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 16px;
+    }
+    .onboard-card {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      padding: 18px;
+      text-align: left;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .onboard-card.selected {
+      border-color: var(--orange);
+      background: var(--orange-pill);
+    }
+
+    /* ---------- Overlays & Popovers ---------- */
+    .streak-popover {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 18px;
+      width: 310px;
+      background: var(--surface);
+      border: 1px solid var(--ink);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
+      padding: 16px;
+      z-index: 60;
+      display: none;
+    }
+    .streak-popover.open {
+      display: block;
+    }
+    .week-strip {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin: 12px 0;
+    }
+    .week-day {
+      border: 1px solid var(--line);
+      padding: 7px 2px;
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      background: var(--surface-2);
+    }
+    .week-day.on {
+      background: var(--orange);
+      border-color: var(--orange);
+      color: #ffffff;
+    }
+    .week-day.today {
+      border-color: var(--ink);
+      box-shadow: inset 0 -2px 0 var(--ink);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 17, 17, 0.68);
+      z-index: 100;
+      display: none;
+      place-items: center;
+      padding: 16px;
+    }
+    .modal-backdrop.open {
+      display: grid;
+    }
+    .modal-box {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border: 1px solid var(--ink);
+      padding: 22px;
+    }
+    .modal-box.dark {
+      background: var(--ink);
+      color: #ffffff;
+      border-color: #3a3a3a;
+    }
+
+    /* Floating BYTE-01 Chat FAB + Drawer */
+    .chat-fab {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 70;
+      width: 58px;
+      height: 58px;
+      border: 2px solid var(--ink);
+      background: var(--surface);
+      box-shadow: 4px 4px 0 var(--orange);
+      display: grid;
+      place-items: center;
+      padding: 0;
+    }
+    .chat-fab:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 5px 5px 0 var(--orange);
+    }
+    .chat-drawer {
+      position: fixed;
+      right: 22px;
+      bottom: 92px;
+      width: 370px;
+      max-width: calc(100vw - 24px);
+      height: 490px;
+      max-height: calc(100vh - 120px);
+      background: var(--surface);
+      border: 1px solid var(--ink);
+      box-shadow: 6px 6px 0 rgba(17, 17, 17, 0.25);
+      z-index: 75;
+      display: none;
+      flex-direction: column;
+    }
+    .chat-drawer.open {
+      display: flex;
+    }
+    .chat-log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: var(--surface-2);
+    }
+    .chat-msg {
+      max-width: 88%;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      font-size: 12px;
+    }
+    .chat-msg.me {
+      align-self: flex-end;
+      background: var(--ink);
+      color: #ffffff;
+      border-color: var(--ink);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      background: var(--ink);
+      color: #ffffff;
+      border: 1px solid var(--orange);
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      z-index: 120;
+      display: none;
+    }
+    .toast.show {
+      display: block;
+    }
+
+    /* ---------- Responsive + Mobile Preview Rules ---------- */
+    @media (max-width: 960px) {
+      .dash-hero-matrix {
+        grid-template-columns: 1fr;
+      }
+      .dash-mission-cell,
+      .dash-spec-cell {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .chain-grid.cols-6,
+      .chain-grid.cols-5 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .chain-card {
+        border-bottom: 1px solid var(--line);
+      }
+      .quest-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .quest-card {
+        border-bottom: 1px solid var(--line);
+      }
+      .split-2col,
+      .grid-2col-main,
+      .auth-split,
+      .lesson-grid-2 {
+        grid-template-columns: 1fr;
+      }
+      .split-pane,
+      .col-main,
+      .auth-left,
+      .lesson-grid-cell {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+    }
+
+    @media (max-width: 760px) {
+      .topbar {
+        grid-template-columns: 1fr auto;
+      }
+      .nav-center {
+        display: none;
+      }
+      .mobile-nav {
+        display: grid;
+      }
+      .trophy-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .trophy-tile:nth-child(2n) {
+        border-right: 0;
+      }
+      .trophy-tile:nth-child(n + 5) {
+        border-bottom: 1px solid var(--line);
+      }
+      .trophy-tile:nth-child(n + 7) {
+        border-bottom: 0;
+      }
+      .curr-row {
+        grid-template-columns: 38px 1fr;
+      }
+      .podium {
+        grid-template-columns: 1fr;
+      }
+      .podium-slot {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+    }
+
+    /* Mobile Preview Force Override (390px) */
+    body.mobile-preview .topbar {
+      grid-template-columns: 1fr auto;
+    }
+    body.mobile-preview .brand {
+      padding: 0 12px;
+    }
+    body.mobile-preview .nav-center {
+      display: none;
+    }
+    body.mobile-preview .top-hud {
+      padding: 6px 10px;
+      gap: 6px;
+    }
+    body.mobile-preview .hud-hide-mobile {
+      display: none;
+    }
+    body.mobile-preview .mobile-nav {
+      display: grid;
+    }
+    body.mobile-preview .hero-mega {
+      font-size: 27px;
+      padding: 0 14px 10px;
+    }
+    body.mobile-preview .dash-hero-matrix,
+    body.mobile-preview .split-2col,
+    body.mobile-preview .grid-2col-main,
+    body.mobile-preview .auth-split,
+    body.mobile-preview .lesson-grid-2,
+    body.mobile-preview .quest-grid,
+    body.mobile-preview .podium {
+      grid-template-columns: 1fr;
+    }
+    body.mobile-preview .dash-mission-cell,
+    body.mobile-preview .dash-spec-cell,
+    body.mobile-preview .split-pane,
+    body.mobile-preview .col-main,
+    body.mobile-preview .auth-left,
+    body.mobile-preview .lesson-grid-cell,
+    body.mobile-preview .quest-card,
+    body.mobile-preview .podium-slot {
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+    }
+    body.mobile-preview .chain-grid.cols-6,
+    body.mobile-preview .chain-grid.cols-5,
+    body.mobile-preview .trophy-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    body.mobile-preview .chain-card:nth-child(2n),
+    body.mobile-preview .trophy-tile:nth-child(2n) {
+      border-right: 0;
+    }
+    body.mobile-preview .chain-card {
+      border-bottom: 1px solid var(--line);
+    }
+    body.mobile-preview .curr-row {
+      grid-template-columns: 38px 1fr;
+    }
+  </style>
+</head>
+<body>
+  <!-- ==================== DRAFT REVIEW TOOLBAR ==================== -->
+  <div class="draft-bar" role="region" aria-label="Draft UI screen switcher">
+    <span class="draft-bar-title"><i></i> STREAKBYTE UI DRAFT</span>
+    <div class="draft-group" id="draft-view-pills">
+      <button type="button" class="draft-btn active" data-view="dashboard">Dashboard</button>
+      <button type="button" class="draft-btn" data-view="curriculum">Curriculum</button>
+      <button type="button" class="draft-btn" data-view="learn">Lesson</button>
+      <button type="button" class="draft-btn" data-view="quiz">Quiz</button>
+      <button type="button" class="draft-btn" data-view="lab-pc">PC Lab</button>
+      <button type="button" class="draft-btn" data-view="lab-net">Net Lab</button>
+      <button type="button" class="draft-btn" data-view="complete">Complete</button>
+      <button type="button" class="draft-btn" data-view="practice">Practice</button>
+      <button type="button" class="draft-btn" data-view="achievements">Achievements</button>
+      <button type="button" class="draft-btn" data-view="leaderboard">Leaderboard</button>
+      <button type="button" class="draft-btn" data-view="profile">Profile</button>
+      <button type="button" class="draft-btn" data-view="login">Login</button>
+      <button type="button" class="draft-btn" data-view="onboarding">Onboarding</button>
+    </div>
+    <span class="draft-sep" aria-hidden="true"></span>
+    <div class="draft-group">
+      <button type="button" class="draft-btn overlay-trigger" data-overlay="chat">Chat</button>
+      <button type="button" class="draft-btn overlay-trigger" data-overlay="setup">Setup Modal</button>
+      <button type="button" class="draft-btn overlay-trigger" data-overlay="levelup">Level Up</button>
+      <button type="button" class="draft-btn overlay-trigger" data-overlay="streak">Streak Popover</button>
+    </div>
+    <div class="draft-viewport-toggle" role="group" aria-label="Viewport preview size">
+      <button type="button" id="vp-desktop" class="active">Desktop</button>
+      <button type="button" id="vp-mobile">Mobile (390px)</button>
+    </div>
+  </div>
+
+  <!-- ==================== FRAMED APP SHEET ==================== -->
+  <div class="stage">
+    <div class="sheet" id="app-sheet">
+      <!-- GLOBAL TOPBAR (Hidden on Login / Onboarding) -->
+      <header class="topbar" id="app-topbar">
+        <a href="#dashboard" class="brand" data-nav="dashboard">
+          <span class="brand-mark" aria-hidden="true"><span></span></span>
+          <span class="brand-word">STREAK<b>BYTE</b></span>
+        </a>
+
+        <nav class="nav-center" aria-label="Main navigation">
+          <button type="button" class="nav-tab active" data-nav="dashboard">HOME</button>
+          <button type="button" class="nav-tab" data-nav="curriculum">LEARN</button>
+          <button type="button" class="nav-tab" data-nav="practice">PRACTICE</button>
+          <button type="button" class="nav-tab" data-nav="leaderboard">LEAGUE</button>
+          <button type="button" class="nav-tab" data-nav="achievements">BADGES</button>
+        </nav>
+
+        <div class="top-hud">
+          <button type="button" class="hud-stat clickable" id="streak-trigger" aria-expanded="false">
+            <span class="sq"></span>
+            <span>STREAK <span id="hud-streak">1</span></span>
+          </button>
+          <span class="hud-stat hud-hide-mobile"><span id="hud-xp">610</span> XP</span>
+          <button type="button" class="hud-profile-btn hud-hide-mobile" data-nav="profile">CRIS · LVL 3</button>
+          <button type="button" class="btn btn-orange btn-sm cut-sm" id="claim-daily-top">CLAIM DAILY</button>
+
+          <!-- STREAK POPOVER -->
+          <div class="streak-popover" id="streak-popover" role="dialog" aria-label="Daily streak details">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="eyebrow"><span class="sq"></span> DAILY STREAK</span>
+              <span class="pill pill-orange">1 SHIELD READY</span>
+            </div>
+            <div style="font-family:var(--f-disp);font-size:26px;margin-top:6px;">1 DAY STREAK</div>
+            <div class="week-strip" aria-label="7 day activity">
+              <div class="week-day on">M</div>
+              <div class="week-day on">T</div>
+              <div class="week-day on">W</div>
+              <div class="week-day">T</div>
+              <div class="week-day today">F</div>
+              <div class="week-day">S</div>
+              <div class="week-day">S</div>
+            </div>
+            <p style="margin:0 0 10px;font-size:11px;color:var(--muted);">
+              Complete 1 lesson quiz today before midnight Manila time to extend your streak.
+            </p>
+            <button type="button" class="btn btn-black btn-sm cut-sm" style="width:100%;" data-nav="curriculum">
+              GO TO TODAY'S MISSION ▶
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main id="main-content">
+        <!-- ==================== 1. DASHBOARD ==================== -->
+        <section class="view-pane active" data-view-pane="dashboard" aria-label="Dashboard">
+          <!-- Giant Hero Poster -->
+          <div class="hero-poster">
+            <div class="hero-poster-squares">
+              <span class="sq"></span>
+              <span class="sq"></span>
+            </div>
+            <h1 class="hero-mega">WELCOME BACK, <span id="hero-first-name" style="color:var(--orange);">CRIS</span></h1>
+            <div class="hero-substrip">
+              <div class="eyebrow">
+                <span class="sq"></span>
+                <span>TRAINING MODE &nbsp;·&nbsp; HARDWARE + NETWORKING</span>
+              </div>
+              <span style="font-size:10px;color:var(--muted);letter-spacing:0.06em;">LEADING THE BOARD THIS WEEK · CLASS RANK #1</span>
+            </div>
+          </div>
+
+          <!-- 3-Column Hero Matrix -->
+          <div class="dash-hero-matrix">
+            <div class="dash-mission-cell">
+              <div>
+                <div class="eyebrow">MISSION 02 · HARDWARE BASICS</div>
+                <h2 class="dash-mission-title">The<br />motherboard</h2>
+                <p class="dash-mission-copy">
+                  Sockets, slots and ports. Score 3 of 4 on the quiz to clear it and unlock Memory. Perfect score pays a +20 XP bonus.
+                </p>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">
+                  <span class="pill pill-black">+110 XP</span>
+                  <span class="pill">6 MIN</span>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button type="button" class="btn btn-orange cut" id="dash-start-mission">START MISSION ▶</button>
+                <button type="button" class="btn btn-black cut" data-nav="learn">READ FIRST</button>
+              </div>
+            </div>
+
+            <div class="dash-spec-cell brackets" data-nav="learn" role="button" tabindex="0" aria-label="Inspect Motherboard schematic in lesson">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <span class="eyebrow"><span class="sq"></span> FIG 02 // BOARD SPEC</span>
+                <span class="pill" style="padding:2px 6px;font-size:9px;">ATX</span>
+              </div>
+              <div class="dash-spec-stage">
+                <svg viewBox="0 0 320 180" style="width:100%;max-width:340px;height:auto;display:block;" role="img" aria-label="ATX Motherboard schematic highlighting CPU socket, DIMM A2/B2, M.2, PCIe x16, and 24-pin power">
+                  <rect x="8" y="8" width="304" height="164" fill="#FFFFFF" stroke="#141414" stroke-width="2" />
+                  <!-- Rear I/O -->
+                  <rect x="16" y="18" width="32" height="144" fill="#DFDFDF" stroke="#141414" stroke-width="1.4" />
+                  <text x="32" y="92" text-anchor="middle" font-family="JetBrains Mono" font-size="8" font-weight="700" fill="#141414" transform="rotate(-90 32 92)">REAR I/O</text>
+                  <!-- CPU Socket -->
+                  <rect x="68" y="24" width="76" height="68" fill="#141414" />
+                  <rect x="80" y="36" width="52" height="44" fill="none" stroke="#FF5500" stroke-width="1.8" />
+                  <text x="106" y="61" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" font-weight="700" fill="#FFFFFF">CPU</text>
+                  <!-- DIMM Slots A2 / B2 -->
+                  <g>
+                    <rect x="162" y="24" width="8" height="68" fill="#F3F3F3" stroke="#141414" stroke-width="1" />
+                    <rect x="175" y="24" width="8" height="68" fill="#FF5500" stroke="#141414" stroke-width="1" />
+                    <rect x="188" y="24" width="8" height="68" fill="#F3F3F3" stroke="#141414" stroke-width="1" />
+                    <rect x="201" y="24" width="8" height="68" fill="#FF5500" stroke="#141414" stroke-width="1" />
+                    <text x="185" y="105" text-anchor="middle" font-family="JetBrains Mono" font-size="7.5" font-weight="700" fill="#141414">DIMM A2/B2</text>
+                  </g>
+                  <!-- 24-pin ATX -->
+                  <rect x="230" y="24" width="70" height="22" fill="#141414" />
+                  <text x="265" y="38" text-anchor="middle" font-family="JetBrains Mono" font-size="7.5" font-weight="700" fill="#FFFFFF">24-PIN ATX</text>
+                  <!-- M.2 Slot -->
+                  <rect x="228" y="64" width="72" height="22" fill="#FFF0E8" stroke="#FF5500" stroke-width="1.4" stroke-dasharray="4 2" />
+                  <text x="264" y="78" text-anchor="middle" font-family="JetBrains Mono" font-size="7.5" font-weight="700" fill="#FF5500">M.2 NVMe</text>
+                  <!-- PCIe x16 -->
+                  <rect x="68" y="132" width="142" height="16" fill="#141414" />
+                  <text x="139" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="7.5" font-weight="700" fill="#FFFFFF">PCIe x16 (GPU)</text>
+                  <!-- Chipset -->
+                  <rect x="242" y="118" width="52" height="40" fill="#DFDFDF" stroke="#141414" stroke-width="1.2" />
+                  <text x="268" y="141" text-anchor="middle" font-family="JetBrains Mono" font-size="7" font-weight="700" fill="#141414">CHIPSET</text>
+                </svg>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:9.5px;color:var(--muted);letter-spacing:0.06em;">
+                <span>5 KEY ZONES · SOCKETS, SLOTS &amp; PORTS</span>
+                <span class="spec-link" style="font-weight:700;">OPEN LESSON ↗</span>
+              </div>
+            </div>
+
+            <div class="dash-reward-col">
+              <div class="dash-reward-dark brackets brackets-light">
+                <svg width="58" height="58" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                  <polygon points="32,6 56,20 56,44 32,58 8,44 8,20" stroke="#ffffff" stroke-width="1.6" />
+                  <polyline points="8,20 32,34 56,20" stroke="#ffffff" stroke-width="1.6" />
+                  <line x1="32" y1="34" x2="32" y2="58" stroke="#ffffff" stroke-width="1.6" />
+                  <circle cx="32" cy="34" r="4.5" fill="#FF5500" />
+                </svg>
+                <div style="font-size:9.5px;letter-spacing:0.1em;color:#999999;text-transform:uppercase;">NEXT REWARD</div>
+                <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">
+                  STREAK SHIELD AT LEVEL 4
+                </div>
+              </div>
+              <div class="dash-xp-footer">
+                <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;letter-spacing:0.06em;">
+                  <span style="color:var(--muted);">XP TO LEVEL 4</span>
+                  <span id="dash-level-xp">110 / 250</span>
+                </div>
+                <div class="seg-bar" style="grid-template-columns:repeat(10,1fr);" id="dash-level-bar">
+                  <i class="fill-orange"></i><i class="fill-orange"></i><i class="fill-orange"></i><i class="fill-orange"></i><i class="fill-orange"></i>
+                  <i></i><i></i><i></i><i></i><i></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mission Map -->
+          <section class="section-band" aria-labelledby="mission-map-h">
+            <div class="section-head">
+              <div>
+                <div class="eyebrow">MISSION MAP</div>
+                <h2 class="section-h2" id="mission-map-h">Clear the chain</h2>
+              </div>
+              <div class="seg-toggle" role="group" aria-label="Mission track selector">
+                <button type="button" class="active" data-map-track="hw">HARDWARE</button>
+                <button type="button" data-map-track="net">NETWORKING</button>
+              </div>
+            </div>
+            <div class="chain-grid cols-6" id="dash-mission-chain"></div>
+          </section>
+
+          <!-- Daily Quests -->
+          <section class="section-band" id="daily-quests-band" aria-labelledby="quests-h">
+            <div class="section-head">
+              <div>
+                <div class="eyebrow">DAILY QUESTS · RESETS MIDNIGHT MANILA</div>
+                <h2 class="section-h2" id="quests-h">Collect today's XP</h2>
+              </div>
+              <div class="eyebrow" id="quests-claimed-label">0 / 3 CLAIMED</div>
+            </div>
+
+            <div class="quest-grid" id="dash-quest-grid">
+              <article class="quest-card" data-quest="q1" data-xp="40">
+                <div class="quest-top">
+                  <span class="eyebrow">QUEST 01</span>
+                  <span class="pill pill-orange">+40 XP</span>
+                </div>
+                <h3 class="quest-title">Pass 1 lesson quiz</h3>
+                <p class="quest-desc">Score at least 3 of 4 on any lesson quiz.</p>
+                <button type="button" class="btn btn-orange cut quest-claim-btn">CLAIM</button>
+              </article>
+
+              <article class="quest-card" data-quest="q2" data-xp="60">
+                <div class="quest-top">
+                  <span class="eyebrow">QUEST 02</span>
+                  <span class="pill pill-orange">+60 XP</span>
+                </div>
+                <h3 class="quest-title">Finish 1 hands-on lab</h3>
+                <p class="quest-desc">Complete the PC Build or Network Build lab.</p>
+                <button type="button" class="btn btn-orange cut quest-claim-btn">CLAIM</button>
+              </article>
+
+              <article class="quest-card" data-quest="q3" data-xp="25">
+                <div class="quest-top">
+                  <span class="eyebrow">QUEST 03</span>
+                  <span class="pill pill-orange">+25 XP</span>
+                </div>
+                <h3 class="quest-title">Ask BYTE 1 question</h3>
+                <p class="quest-desc">Chat with Study Buddy about any topic.</p>
+                <button type="button" class="btn btn-orange cut quest-claim-btn">CLAIM</button>
+              </article>
+
+              <aside class="quest-card crate" id="daily-crate-card">
+                <div class="eyebrow" style="color:#999999;">DAILY CRATE</div>
+                <div style="font-family:var(--f-head);font-size:20px;font-weight:700;" id="crate-status">Locked</div>
+                <div class="seg-bar dark-track" style="grid-template-columns:repeat(3,1fr);" id="crate-bar">
+                  <i></i><i></i><i></i>
+                </div>
+                <p style="margin:0;font-size:11px;color:#b8b8b8;" id="crate-copy">
+                  Claim all 3 quests to unlock (0 of 3).
+                </p>
+                <button type="button" class="btn btn-orange cut-sm" id="crate-open-btn" style="display:none;margin-top:auto;">
+                  OPEN CRATE (+50 XP) ▶
+                </button>
+              </aside>
+            </div>
+          </section>
+
+          <!-- Bottom 2-Column Split: Leaderboard & Trophy Wall -->
+          <div class="split-2col">
+            <section class="split-pane" aria-labelledby="dash-league-h">
+              <div class="section-head">
+                <div>
+                  <div class="eyebrow">CLASS LEAGUE · RESETS SUNDAY 12 AM MANILA</div>
+                  <h2 class="section-h2" id="dash-league-h">Leaderboard</h2>
+                </div>
+                <div class="seg-toggle" role="group" aria-label="Leaderboard timeframe">
+                  <button type="button" class="active" data-league-period="w">WEEK</button>
+                  <button type="button" data-league-period="a">ALL TIME</button>
+                </div>
+              </div>
+              <div class="league-table" id="dash-league-rows"></div>
+              <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:10px;color:var(--muted);">Live class standings · Manila timezone</span>
+                <button type="button" class="btn btn-outline btn-sm" data-nav="leaderboard">FULL BOARD →</button>
+              </div>
+            </section>
+
+            <section class="split-pane" aria-labelledby="dash-trophy-h">
+              <div class="section-head">
+                <div>
+                  <div class="eyebrow">BADGES · 3 OF 8 UNLOCKED</div>
+                  <h2 class="section-h2" id="dash-trophy-h">Trophy wall</h2>
+                </div>
+                <button type="button" class="btn btn-outline btn-sm" data-nav="achievements">ALL BADGES →</button>
+              </div>
+              <div class="trophy-grid" id="dash-trophy-grid"></div>
+            </section>
+          </div>
+        </section>
+
+        <!-- ==================== 2. CURRICULUM ==================== -->
+        <section class="view-pane" data-view-pane="curriculum" aria-label="Curriculum">
+          <div class="view-header">
+            <div>
+              <div class="eyebrow"><span class="sq"></span> MISSION DIRECTORY</div>
+              <h1 class="view-h1" id="curr-track-title">Hardware Basics</h1>
+              <p class="view-sub" id="curr-track-desc">Build and understand a computer, one short lesson at a time.</p>
+            </div>
+            <div class="seg-toggle" role="group" aria-label="Curriculum track toggle">
+              <button type="button" class="active" data-curr-track="hw">HARDWARE (6)</button>
+              <button type="button" data-curr-track="net">NETWORKING (5)</button>
+            </div>
+          </div>
+
+          <div class="grid-2col-main">
+            <div class="col-main">
+              <div style="margin-bottom:14px;">
+                <label class="field-label" for="curr-search">FILTER LESSONS, PARTS, TOPICS</label>
+                <input id="curr-search" class="input" type="search" placeholder="Search e.g. motherboard, RAM, subnet..." />
+              </div>
+              <div class="curr-list" id="curr-lesson-list"></div>
+            </div>
+
+            <aside class="col-side">
+              <div class="panel-box">
+                <div class="eyebrow"><span class="sq"></span> TRACK TELEMETRY</div>
+                <h2 class="h-title" style="font-size:18px;margin-top:6px;" id="curr-side-title">Hardware Basics</h2>
+                <p style="font-size:11px;color:var(--muted);margin:6px 0 12px;" id="curr-side-count">1 of 6 lessons cleared</p>
+                <div class="seg-bar" style="grid-template-columns:repeat(6,1fr);margin-bottom:14px;" id="curr-side-bar"></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;border:1px solid var(--line);background:var(--surface-2);margin-bottom:14px;">
+                  <span style="font-size:10px;color:var(--muted);font-weight:700;">NEXT BADGE</span>
+                  <span class="pill pill-orange" id="curr-side-badge">RAM MASTER</span>
+                </div>
+                <button type="button" class="btn btn-orange cut" style="width:100%;margin-bottom:8px;" data-nav="learn">
+                  OPEN NEXT LESSON ▶
+                </button>
+                <button type="button" class="btn btn-black cut" style="width:100%;" data-nav="quiz">
+                  TAKE KNOWLEDGE QUIZ
+                </button>
+              </div>
+
+              <div class="panel-box-dark brackets brackets-light">
+                <div class="eyebrow" style="color:#999999;">BOSS LAB ACCESS</div>
+                <div style="font-family:var(--f-head);font-size:16px;font-weight:700;margin:8px 0 6px;">
+                  Hands-on Build Simulator
+                </div>
+                <p style="font-size:11px;color:#b8b8b8;margin:0 0 14px;">
+                  Preview or replay the interactive PC Build and Network Topology labs anytime.
+                </p>
+                <div style="display:grid;gap:8px;">
+                  <button type="button" class="btn btn-orange btn-sm cut-sm" data-nav="lab-pc">LAUNCH PC LAB ▶</button>
+                  <button type="button" class="btn btn-ghost-dark btn-sm" data-nav="lab-net">LAUNCH NET LAB ▶</button>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <!-- ==================== 3. LESSON READER ==================== -->
+        <section class="view-pane" data-view-pane="learn" aria-label="Lesson reader">
+          <div class="view-header">
+            <div>
+              <div class="eyebrow"><span class="sq"></span> LESSON 02 · HARDWARE BASICS</div>
+              <h1 class="view-h1">The motherboard</h1>
+              <p class="view-sub"><b>GOAL:</b> Find and explain the main sockets, slots and connectors on a motherboard.</p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button type="button" class="btn btn-outline btn-sm" data-nav="curriculum">← BACK TO CHAIN</button>
+              <button type="button" class="btn btn-orange btn-sm cut-sm" data-nav="quiz">TAKE QUIZ (4 Q) ▶</button>
+            </div>
+          </div>
+
+          <div class="lesson-body">
+            <!-- Definitions -->
+            <div class="eyebrow" style="margin-bottom:10px;"><span class="sq"></span> 01 // CORE DEFINITIONS</div>
+            <div class="lesson-grid-2" style="margin-bottom:24px;">
+              <div class="lesson-grid-cell">
+                <strong style="font-family:var(--f-head);font-size:15px;">CPU socket</strong>
+                <p style="margin:6px 0 0;font-size:12px;color:var(--muted);">
+                  The place where the CPU sits on the board. Names such as AM5 and LGA 1700 come from pin layout — your CPU must match the socket.
+                </p>
+              </div>
+              <div class="lesson-grid-cell">
+                <strong style="font-family:var(--f-head);font-size:15px;">DIMM &amp; PCIe x16 slots</strong>
+                <p style="margin:6px 0 0;font-size:12px;color:var(--muted);">
+                  DIMM slots hold RAM sticks with locking clips at both ends. The longest PCIe x16 slot normally houses the graphics card.
+                </p>
+              </div>
+              <div class="lesson-grid-cell" style="border-bottom:0;">
+                <strong style="font-family:var(--f-head);font-size:15px;">M.2 slot</strong>
+                <p style="margin:6px 0 0;font-size:12px;color:var(--muted);">
+                  A compact flat connector directly on the board for fast NVMe solid-state drives — no separate power or SATA cables needed.
+                </p>
+              </div>
+              <div class="lesson-grid-cell" style="border-bottom:0;">
+                <strong style="font-family:var(--f-head);font-size:15px;">Rear I/O panel</strong>
+                <p style="margin:6px 0 0;font-size:12px;color:var(--muted);">
+                  The external bank of USB, display, audio, and Ethernet ports along the rear edge of the motherboard.
+                </p>
+              </div>
+            </div>
+
+            <!-- Schematic Visual -->
+            <div class="eyebrow" style="margin-bottom:10px;"><span class="sq"></span> 02 // BOARD SCHEMATIC</div>
+            <div class="brackets" style="border:1px solid var(--line);background:var(--surface-2);padding:20px;margin-bottom:24px;">
+              <span class="b-tl"></span><span class="b-tr"></span><span class="b-bl"></span><span class="b-br"></span>
+              <svg viewBox="0 0 680 210" style="width:100%;height:auto;display:block;" role="img" aria-label="Motherboard layout diagram">
+                <rect x="20" y="14" width="640" height="182" fill="#FFFFFF" stroke="#141414" stroke-width="2" />
+                <rect x="34" y="28" width="64" height="154" fill="#DFDFDF" stroke="#141414" stroke-width="1.5" />
+                <text x="66" y="110" text-anchor="middle" font-family="JetBrains Mono" font-size="10" font-weight="700" fill="#141414" transform="rotate(-90 66 110)">REAR I/O</text>
+                <rect x="150" y="34" width="130" height="110" fill="#141414" />
+                <rect x="172" y="56" width="86" height="66" fill="none" stroke="#FF5500" stroke-width="2" />
+                <text x="215" y="93" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="700" fill="#FFFFFF">CPU SOCKET</text>
+                <g>
+                  <rect x="318" y="34" width="14" height="110" fill="#F3F3F3" stroke="#141414" />
+                  <rect x="340" y="34" width="14" height="110" fill="#FF5500" stroke="#141414" />
+                  <rect x="362" y="34" width="14" height="110" fill="#F3F3F3" stroke="#141414" />
+                  <rect x="384" y="34" width="14" height="110" fill="#FF5500" stroke="#141414" />
+                  <text x="358" y="160" text-anchor="middle" font-family="JetBrains Mono" font-size="10" font-weight="700" fill="#141414">DIMM A2 / B2</text>
+                </g>
+                <rect x="430" y="34" width="206" height="28" fill="#141414" />
+                <text x="533" y="52" text-anchor="middle" font-family="JetBrains Mono" font-size="10" font-weight="700" fill="#FFFFFF">24-PIN ATX POWER</text>
+                <rect x="430" y="84" width="140" height="26" fill="#FFF0E8" stroke="#FF5500" stroke-width="1.5" stroke-dasharray="4 3" />
+                <text x="500" y="101" text-anchor="middle" font-family="JetBrains Mono" font-size="10" font-weight="700" fill="#FF5500">M.2 NVMe SLOT</text>
+                <rect x="150" y="166" width="248" height="16" fill="#141414" />
+                <text x="274" y="178" text-anchor="middle" font-family="JetBrains Mono" font-size="10" font-weight="700" fill="#FFFFFF">PCIe x16 (GPU)</text>
+              </svg>
+            </div>
+
+            <!-- Key Points + Mistakes -->
+            <div class="lesson-grid-2" style="margin-bottom:24px;">
+              <div class="lesson-grid-cell" style="border-bottom:0;">
+                <div class="eyebrow" style="margin-bottom:8px;"><span class="sq"></span> KEY POINTS</div>
+                <ul style="margin:0;padding-left:16px;display:grid;gap:6px;font-size:12px;">
+                  <li>Verify CPU socket compatibility before buying parts.</li>
+                  <li>Use dual-channel slots A2 &amp; B2 first for two RAM sticks.</li>
+                  <li>Never force a connector — match key notches first.</li>
+                </ul>
+              </div>
+              <div class="lesson-grid-cell" style="border-bottom:0;background:var(--surface-2);">
+                <div class="eyebrow" style="margin-bottom:8px;"><span class="sq sq-dark"></span> COMMON MISTAKES</div>
+                <ul style="margin:0;padding-left:16px;display:grid;gap:6px;font-size:12px;color:var(--muted);">
+                  <li>Forgetting the rear I/O shield before screwing the board in.</li>
+                  <li>Putting the graphics card in a shorter x4 slot instead of x16.</li>
+                  <li>Missing a case standoff under the board, causing a short.</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Quiz CTA -->
+            <div style="border:1px solid var(--ink);background:var(--ink);color:#ffffff;padding:20px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;">
+              <div>
+                <div class="eyebrow" style="color:var(--orange);"><span class="sq"></span> READY FOR CHECKPOINT</div>
+                <h2 class="h-title" style="font-size:20px;margin-top:4px;">Motherboard Knowledge Check</h2>
+                <p style="margin:4px 0 0;font-size:11.5px;color:#bbbbbb;">4 questions · Score 3 of 4 to unlock Lesson 03: Memory (RAM).</p>
+              </div>
+              <button type="button" class="btn btn-orange cut" data-nav="quiz">START QUIZ (+110 XP) ▶</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 4. QUIZ ==================== -->
+        <section class="view-pane" data-view-pane="quiz" aria-label="Quiz">
+          <div class="lab-hud">
+            <button type="button" class="btn btn-outline btn-sm" data-nav="curriculum">← EXIT QUIZ</button>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <span class="pill pill-orange-solid" id="quiz-combo-pill" style="display:none;">2X STREAK</span>
+              <span class="pill pill-black" id="quiz-counter">QUESTION 1 OF 4</span>
+            </div>
+          </div>
+
+          <div class="quiz-shell">
+            <div class="seg-bar" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px;" id="quiz-progress-bar">
+              <i class="fill-orange"></i><i></i><i></i><i></i>
+            </div>
+
+            <div style="border:1px solid var(--line);padding:22px;background:var(--surface);">
+              <div class="eyebrow" style="margin-bottom:6px;"><span class="sq"></span> LESSON 02 · THE MOTHERBOARD</div>
+              <h1 class="h-title" style="font-size:22px;margin-bottom:18px;" id="quiz-prompt"></h1>
+              <div style="display:grid;gap:8px;" id="quiz-choices" role="radiogroup" aria-labelledby="quiz-prompt"></div>
+
+              <div id="quiz-feedback" style="display:none;margin-top:16px;padding:14px;border:1px solid var(--line);background:var(--surface-2);">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                  <strong id="quiz-feedback-head"></strong>
+                  <span class="pill pill-green" id="quiz-feedback-xp" style="display:none;">+28 XP</span>
+                </div>
+                <p style="margin:6px 0 0;font-size:12px;color:var(--muted);" id="quiz-feedback-body"></p>
+              </div>
+
+              <div style="margin-top:18px;display:flex;justify-content:flex-end;gap:10px;">
+                <button type="button" class="btn btn-orange cut" id="quiz-submit-btn" disabled>CHECK ANSWER ▶</button>
+                <button type="button" class="btn btn-black cut" id="quiz-next-btn" style="display:none;">NEXT QUESTION ▶</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 5. PC BUILD LAB ==================== -->
+        <section class="view-pane" data-view-pane="lab-pc" aria-label="PC Build Lab">
+          <div class="lab-hud">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <button type="button" class="btn btn-outline btn-sm" data-nav="curriculum">← EXIT</button>
+              <div class="seg-toggle">
+                <button type="button" class="active" data-nav="lab-pc">BOSS LAB: BUILD A PC</button>
+                <button type="button" data-nav="lab-net">BOSS LAB: BUILD A NETWORK</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <span class="pill pill-orange-solid" id="pc-step-pill">STEP 3 OF 6</span>
+              <span class="pill">TIME 01:42</span>
+            </div>
+          </div>
+
+          <div class="grid-2col-main">
+            <div class="col-main">
+              <div class="eyebrow" style="margin-bottom:8px;"><span class="sq"></span> INTERACTIVE MOTHERBOARD CHASSIS // CLICK A PART THEN CLICK ITS SLOT</div>
+              <div class="brackets" style="border:1px solid var(--line);background:var(--surface-2);padding:16px;">
+                <span class="b-tl"></span><span class="b-tr"></span><span class="b-bl"></span><span class="b-br"></span>
+                <svg viewBox="0 0 640 340" style="width:100%;height:auto;display:block;" role="img" aria-label="Interactive PC motherboard">
+                  <rect x="20" y="16" width="600" height="308" fill="#141414" stroke="#141414" stroke-width="2" />
+                  <rect x="44" y="40" width="140" height="120" fill="#222222" stroke="#129954" stroke-width="2" />
+                  <text x="114" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="700" fill="#FFFFFF">CPU + COOLER</text>
+                  <text x="114" y="114" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#129954">INSTALLED ✓</text>
+
+                  <!-- RAM A2 / B2 -->
+                  <g class="lab-svg-slot" data-pc-slot="ramA2">
+                    <rect class="slot-box" x="235" y="40" width="24" height="125" fill="#1e1e1e" stroke="#FF5500" stroke-width="1.8" stroke-dasharray="5 3" />
+                    <text x="247" y="182" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#cccccc">A2</text>
+                  </g>
+                  <g class="lab-svg-slot" data-pc-slot="ramB2">
+                    <rect class="slot-box" x="275" y="40" width="24" height="125" fill="#1e1e1e" stroke="#FF5500" stroke-width="1.8" stroke-dasharray="5 3" />
+                    <text x="287" y="182" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#cccccc">B2</text>
+                  </g>
+
+                  <!-- M.2 -->
+                  <g class="lab-svg-slot" data-pc-slot="m2">
+                    <rect class="slot-box" x="340" y="64" width="150" height="34" fill="#1e1e1e" stroke="#FF5500" stroke-width="1.8" stroke-dasharray="5 3" />
+                    <text x="415" y="85" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#ffffff">M.2 NVMe SLOT</text>
+                  </g>
+
+                  <!-- GPU -->
+                  <g class="lab-svg-slot" data-pc-slot="gpu">
+                    <rect class="slot-box" x="44" y="216" width="290" height="42" fill="#1e1e1e" stroke="#FF5500" stroke-width="1.8" stroke-dasharray="5 3" />
+                    <text x="189" y="241" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#ffffff">PCIe x16 GRAPHICS CARD</text>
+                  </g>
+
+                  <!-- PSU -->
+                  <g class="lab-svg-slot" data-pc-slot="psu">
+                    <rect class="slot-box" x="450" y="190" width="144" height="106" fill="#1e1e1e" stroke="#FF5500" stroke-width="1.8" stroke-dasharray="5 3" />
+                    <text x="522" y="246" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#ffffff">24-PIN + PSU BAY</text>
+                  </g>
+                </svg>
+              </div>
+              <p style="margin:10px 0 0;font-size:11px;color:var(--muted);" id="pc-lab-status">
+                Select a component from the tray on the right, then click its matching slot on the board.
+              </p>
+            </div>
+
+            <aside class="col-side">
+              <div class="panel-box">
+                <div class="eyebrow"><span class="sq"></span> PARTS TRAY</div>
+                <div style="display:grid;gap:8px;margin-top:12px;" id="pc-parts-tray">
+                  <button type="button" class="part-btn" data-pc-part="ram"><span>RAM Stick (DDR5)</span><span class="pill" id="pc-ram-count">0/2</span></button>
+                  <button type="button" class="part-btn" data-pc-part="m2"><span>M.2 NVMe SSD</span><span class="pill">SLOT</span></button>
+                  <button type="button" class="part-btn" data-pc-part="gpu"><span>Graphics Card (GPU)</span><span class="pill">PCIe</span></button>
+                  <button type="button" class="part-btn" data-pc-part="psu"><span>Power Supply (PSU)</span><span class="pill">ATX</span></button>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:14px;">
+                  <button type="button" class="btn btn-outline btn-sm" id="pc-reset-btn" style="flex:1;">RESET</button>
+                  <button type="button" class="btn btn-orange btn-sm cut-sm" id="pc-finish-btn" style="flex:1;" data-nav="complete">FINISH BUILD ▶</button>
+                </div>
+              </div>
+
+              <div class="panel-box">
+                <div class="eyebrow">BUILD CHECKLIST</div>
+                <ul style="margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px;font-size:11px;" id="pc-checklist">
+                  <li>✓ 1. Seat CPU in socket</li>
+                  <li>✓ 2. Mount CPU cooler</li>
+                  <li id="chk-ram">○ 3. Install dual-channel RAM (A2 + B2)</li>
+                  <li id="chk-m2">○ 4. Fasten M.2 NVMe SSD</li>
+                  <li id="chk-gpu">○ 5. Seat GPU in PCIe x16</li>
+                  <li id="chk-psu">○ 6. Connect 24-pin ATX PSU</li>
+                </ul>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <!-- ==================== 6. NETWORK BUILD LAB ==================== -->
+        <section class="view-pane" data-view-pane="lab-net" aria-label="Network Build Lab">
+          <div class="lab-hud">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <button type="button" class="btn btn-outline btn-sm" data-nav="curriculum">← EXIT</button>
+              <div class="seg-toggle">
+                <button type="button" data-nav="lab-pc">BOSS LAB: BUILD A PC</button>
+                <button type="button" class="active" data-nav="lab-net">BOSS LAB: BUILD A NETWORK</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span class="pill pill-black">LAN TOPOLOGY 192.168.1.0/24</span>
+            </div>
+          </div>
+
+          <div class="grid-2col-main">
+            <div class="col-main">
+              <div class="eyebrow" style="margin-bottom:8px;"><span class="sq"></span> TOPOLOGY CANVAS // SELECT CABLE AND RUN PING</div>
+              <div class="brackets" style="border:1px solid var(--line);background:var(--surface-2);padding:18px;margin-bottom:16px;">
+                <span class="b-tl"></span><span class="b-tr"></span><span class="b-bl"></span><span class="b-br"></span>
+                <svg viewBox="0 0 640 240" style="width:100%;height:auto;display:block;" role="img" aria-label="Network topology">
+                  <line x1="120" y1="120" x2="310" y2="120" stroke="#FF5500" stroke-width="3.5" id="net-link-1" />
+                  <line x1="310" y1="120" x2="500" y2="70" stroke="#FF5500" stroke-width="3.5" id="net-link-2" />
+                  <line x1="310" y1="120" x2="500" y2="170" stroke="#141414" stroke-width="3.5" stroke-dasharray="6 4" id="net-link-3" />
+
+                  <rect x="44" y="88" width="96" height="64" fill="#FFFFFF" stroke="#141414" stroke-width="2" />
+                  <text x="92" y="116" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="700">ROUTER</text>
+                  <text x="92" y="134" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#666666">192.168.1.1</text>
+
+                  <rect x="262" y="88" width="96" height="64" fill="#141414" />
+                  <text x="310" y="116" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="700" fill="#FFFFFF">SWITCH</text>
+                  <text x="310" y="134" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#FF5500">8-PORT L2</text>
+
+                  <rect x="480" y="42" width="114" height="54" fill="#FFFFFF" stroke="#141414" stroke-width="2" />
+                  <text x="537" y="66" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="700">WORKSTATION</text>
+                  <text x="537" y="82" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#666666">192.168.1.10</text>
+
+                  <rect x="480" y="144" width="114" height="54" fill="#FFFFFF" stroke="#141414" stroke-width="2" />
+                  <text x="537" y="168" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="700">LAPTOP</text>
+                  <text x="537" y="184" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#666666">192.168.1.11</text>
+                </svg>
+              </div>
+
+              <!-- Dark Terminal -->
+              <div class="panel-box-dark">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                  <span class="eyebrow" style="color:var(--orange);"><span class="sq"></span> DIAGNOSTIC TERMINAL</span>
+                  <button type="button" class="btn btn-orange btn-sm cut-sm" id="net-ping-btn">RUN PING TEST ▶</button>
+                </div>
+                <pre id="net-terminal-out" style="margin:0;font-family:var(--f-mono);font-size:11px;color:#d6d6d6;line-height:1.55;">$ ready — select Cat6 Ethernet and run ping 192.168.1.1</pre>
+              </div>
+            </div>
+
+            <aside class="col-side">
+              <div class="panel-box">
+                <div class="eyebrow"><span class="sq"></span> CABLE SELECTION</div>
+                <div style="display:grid;gap:8px;margin-top:12px;" id="net-cable-list">
+                  <button type="button" class="part-btn selected" data-cable="eth"><span>Ethernet (Cat6)</span><span class="pill pill-orange">LAN</span></button>
+                  <button type="button" class="part-btn" data-cable="fiber"><span>Fiber Optic</span><span class="pill">OPTICAL</span></button>
+                  <button type="button" class="part-btn" data-cable="coax"><span>Coaxial</span><span class="pill">ISP</span></button>
+                </div>
+                <button type="button" class="btn btn-black cut" style="width:100%;margin-top:14px;" data-nav="complete">
+                  SUBMIT TOPOLOGY ▶
+                </button>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <!-- ==================== 7. LESSON COMPLETE ==================== -->
+        <section class="view-pane" data-view-pane="complete" aria-label="Lesson complete">
+          <div style="background:var(--ink);color:#ffffff;padding:28px 22px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;">
+            <div>
+              <div class="eyebrow" style="color:var(--orange);"><span class="sq"></span> SYSTEMS ONLINE</div>
+              <h1 class="disp-num" style="font-size:38px;margin:8px 0 6px;">NICE BUILD!</h1>
+              <p style="margin:0 0 18px;font-size:12px;color:#cccccc;">
+                You cleared the checkpoint and kept your streak alive.
+              </p>
+              <div style="display:flex;gap:26px;flex-wrap:wrap;">
+                <div>
+                  <div class="eyebrow" style="color:#999999;">XP EARNED</div>
+                  <div class="disp-num" style="font-size:28px;color:var(--orange);margin-top:4px;">+120</div>
+                </div>
+                <div style="border-left:1px solid #333333;padding-left:22px;">
+                  <div class="eyebrow" style="color:#999999;">ACCURACY</div>
+                  <div class="disp-num" style="font-size:28px;margin-top:4px;">100%</div>
+                </div>
+                <div style="border-left:1px solid #333333;padding-left:22px;">
+                  <div class="eyebrow" style="color:#999999;">SCORE</div>
+                  <div class="disp-num" style="font-size:28px;margin-top:4px;">4 / 4</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="border:1px solid #3a3a3a;background:#1a1a1a;padding:16px;min-width:250px;">
+              <div class="eyebrow" style="color:#ffffff;"><span class="sq"></span> 2 DAY STREAK</div>
+              <div class="week-strip">
+                <div class="week-day on">M</div>
+                <div class="week-day on">T</div>
+                <div class="week-day on">W</div>
+                <div class="week-day">T</div>
+                <div class="week-day on today">F</div>
+                <div class="week-day">S</div>
+                <div class="week-day">S</div>
+              </div>
+              <p style="margin:0;font-size:10.5px;color:#aaaaaa;">Streak locked in for today.</p>
+            </div>
+          </div>
+
+          <div class="split-2col">
+            <div class="split-pane">
+              <div class="eyebrow"><span class="sq"></span> SAVED FOR REVIEW</div>
+              <h2 class="section-h2" style="margin-bottom:12px;">Concept log</h2>
+              <div class="league-table" style="margin-bottom:14px;">
+                <div class="league-row">
+                  <span class="sq"></span>
+                  <span class="league-name">Dual-channel RAM (A2 + B2)</span>
+                  <span class="pill pill-green">CLEAR</span>
+                  <button type="button" class="btn btn-outline btn-sm" data-nav="practice">REVIEW</button>
+                </div>
+                <div class="league-row">
+                  <span class="sq sq-dark"></span>
+                  <span class="league-name">PCIe x16 slot placement</span>
+                  <span class="pill pill-orange">PRACTICE</span>
+                  <button type="button" class="btn btn-outline btn-sm" data-nav="practice">REVIEW</button>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button type="button" class="btn btn-outline" data-nav="curriculum">BACK TO CURRICULUM</button>
+                <button type="button" class="btn btn-black cut" data-nav="practice">OPEN PRACTICE</button>
+              </div>
+            </div>
+
+            <div class="split-pane" style="display:flex;flex-direction:column;justify-content:space-between;">
+              <div>
+                <div class="eyebrow">UP NEXT · MISSION 03</div>
+                <h2 class="section-h2" style="margin-bottom:6px;">Memory (RAM)</h2>
+                <p style="font-size:12px;color:var(--muted);margin:0 0 14px;">
+                  DIMM slots, DDR4 vs DDR5, dual-channel · 5 min · +120 XP
+                </p>
+              </div>
+              <button type="button" class="btn btn-orange cut" style="align-self:flex-start;" data-nav="curriculum">
+                CONTINUE TO NEXT MISSION ▶
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 8. PRACTICE ==================== -->
+        <section class="view-pane" data-view-pane="practice" aria-label="Practice">
+          <div class="view-header" style="background:var(--surface-2);">
+            <div>
+              <div class="eyebrow"><span class="sq"></span> DRILL &amp; RETENTION</div>
+              <h1 class="view-h1">Answer it again.</h1>
+              <p class="view-sub">Redo completed quizzes. Missed topics surface first so they lock in.</p>
+            </div>
+            <div style="display:flex;gap:22px;flex-wrap:wrap;">
+              <div>
+                <div class="eyebrow">TO REVIEW</div>
+                <div class="disp-num" style="font-size:28px;color:var(--orange);margin-top:4px;">1</div>
+              </div>
+              <div style="border-left:1px solid var(--line);padding-left:18px;">
+                <div class="eyebrow">MASTERED</div>
+                <div class="disp-num" style="font-size:28px;margin-top:4px;">2</div>
+              </div>
+              <div style="border-left:1px solid var(--line);padding-left:18px;">
+                <div class="eyebrow">DONE BEFORE</div>
+                <div class="disp-num" style="font-size:28px;margin-top:4px;">3</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-band" style="border-bottom:0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+              <div class="seg-toggle" id="practice-filters" role="group" aria-label="Filter practice lessons">
+                <button type="button" class="active" data-pf="all">ALL · 3</button>
+                <button type="button" data-pf="need">NEEDS REVIEW · 1</button>
+                <button type="button" data-pf="hw">HARDWARE · 2</button>
+                <button type="button" data-pf="net">NETWORKING · 1</button>
+              </div>
+              <button type="button" class="btn btn-orange btn-sm cut-sm" data-nav="quiz">PRACTICE MISSED (1) ▶</button>
+            </div>
+
+            <div class="league-table" id="practice-list"></div>
+          </div>
+        </section>
+
+        <!-- ==================== 9. ACHIEVEMENTS ==================== -->
+        <section class="view-pane" data-view-pane="achievements" aria-label="Achievements">
+          <div class="view-header">
+            <div>
+              <div class="eyebrow"><span class="sq"></span> BADGES · 3 OF 8 UNLOCKED</div>
+              <h1 class="view-h1">Trophy wall</h1>
+              <p class="view-sub">Unlock badges by clearing lessons, maintaining streaks, and topping your class league.</p>
+            </div>
+            <div class="seg-toggle" id="ach-filters" role="group" aria-label="Filter badges">
+              <button type="button" class="active" data-af="all">ALL (8)</button>
+              <button type="button" class="active-muted" data-af="on">UNLOCKED (3)</button>
+              <button type="button" data-af="off">LOCKED (5)</button>
+            </div>
+          </div>
+
+          <div class="section-band" style="background:var(--surface-2);">
+            <div class="panel-box" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+              <div>
+                <div class="eyebrow"><span class="sq"></span> NEXT UNLOCK TARGET</div>
+                <h2 class="h-title" style="font-size:19px;margin:4px 0;">5-Day Run</h2>
+                <p style="margin:0;font-size:11.5px;color:var(--muted);">Keep a 5-day learning streak · 1 / 5 days complete</p>
+              </div>
+              <div style="min-width:220px;flex:0 1 280px;">
+                <div class="seg-bar" style="grid-template-columns:repeat(5,1fr);margin-bottom:4px;">
+                  <i class="fill-orange"></i><i></i><i></i><i></i><i></i>
+                </div>
+                <div style="font-size:10px;text-align:right;color:var(--muted);">20% COMPLETE</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-band" style="border-bottom:0;">
+            <div class="trophy-grid" id="ach-full-grid"></div>
+          </div>
+        </section>
+
+        <!-- ==================== 10. LEADERBOARD ==================== -->
+        <section class="view-pane" data-view-pane="leaderboard" aria-label="Leaderboard">
+          <div class="view-header">
+            <div>
+              <div class="eyebrow"><span class="sq"></span> CLASS LEAGUE · RESETS SUNDAY 12 AM MANILA</div>
+              <h1 class="view-h1">Leaderboard</h1>
+              <p class="view-sub">Earn XP from quizzes, daily quests, and hands-on labs to hold the #1 seat.</p>
+            </div>
+            <div class="seg-toggle" role="group" aria-label="Leaderboard period">
+              <button type="button" class="active" data-league-period="w">WEEK</button>
+              <button type="button" data-league-period="a">ALL TIME</button>
+            </div>
+          </div>
+
+          <div class="grid-2col-main">
+            <div class="col-main">
+              <div class="podium" id="lb-podium"></div>
+              <div class="league-table" id="lb-full-rows"></div>
+            </div>
+
+            <aside class="col-side">
+              <div class="panel-box-dark brackets brackets-light">
+                <div class="eyebrow" style="color:var(--orange);"><span class="sq"></span> YOUR STANDING</div>
+                <div class="disp-num" style="font-size:36px;margin:8px 0 4px;">#1 <span style="font-size:12px;font-family:var(--f-mono);color:#aaaaaa;">OF 5 LEARNERS</span></div>
+                <p style="font-size:11px;color:#bbbbbb;margin:0 0 12px;">
+                  You lead Mika Reyes by 70 XP this week. Finish Mission 02 to widen the gap.
+                </p>
+                <div class="seg-bar dark-track" style="grid-template-columns:repeat(10,1fr);margin-bottom:14px;">
+                  <i class="fill-orange"></i><i class="fill-orange"></i><i class="fill-orange"></i><i class="fill-orange"></i><i class="fill-orange"></i>
+                  <i class="fill-orange"></i><i class="fill-orange"></i><i class="fill-orange"></i><i class="fill-orange"></i><i></i>
+                </div>
+                <button type="button" class="btn btn-orange btn-sm cut-sm" style="width:100%;" data-nav="curriculum">EARN XP NOW ▶</button>
+              </div>
+
+              <div class="panel-box">
+                <div class="eyebrow">HOW XP IS EARNED</div>
+                <p style="margin:8px 0 0;font-size:11.5px;color:var(--muted);">
+                  Lesson quizzes award 110–150 XP plus a +20 XP perfect score bonus. Daily quests and labs award bonus XP.
+                </p>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <!-- ==================== 11. PROFILE ==================== -->
+        <section class="view-pane" data-view-pane="profile" aria-label="Profile and settings">
+          <div class="view-header" style="background:var(--surface-2);">
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div style="width:68px;height:68px;background:var(--orange);color:#ffffff;display:grid;place-items:center;font-family:var(--f-disp);font-size:26px;">
+                CS
+              </div>
+              <div>
+                <div class="eyebrow"><span class="sq"></span> LEVEL 3 · CIRCUIT CADET</div>
+                <h1 class="view-h1" style="margin:2px 0 4px;">Cris Santos</h1>
+                <p class="view-sub">610 TOTAL XP · 140 XP TO LEVEL 4 (STREAK SHIELD)</p>
+              </div>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" data-nav="login">LOG OUT</button>
+          </div>
+
+          <div class="grid-2col-main">
+            <div class="col-main" style="display:grid;gap:20px;">
+              <div class="panel-box">
+                <div class="eyebrow" style="margin-bottom:12px;"><span class="sq"></span> TRACK PROGRESS</div>
+                <div style="display:grid;gap:14px;">
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:6px;">
+                      <span>HARDWARE BASICS</span><span>1 / 6 LESSONS (17%)</span>
+                    </div>
+                    <div class="seg-bar" style="grid-template-columns:repeat(6,1fr);">
+                      <i class="fill-orange"></i><i></i><i></i><i></i><i></i><i></i>
+                    </div>
+                  </div>
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:6px;">
+                      <span>NETWORKING BASICS</span><span>1 / 5 LESSONS (20%)</span>
+                    </div>
+                    <div class="seg-bar" style="grid-template-columns:repeat(5,1fr);">
+                      <i class="fill-black"></i><i></i><i></i><i></i><i></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel-box">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                  <span class="eyebrow"><span class="sq"></span> ACTIVITY · LAST 5 WEEKS</span>
+                  <span style="font-size:10px;color:var(--muted);">LESS ■ ■ ■ MORE</span>
+                </div>
+                <div class="heat-grid">
+                  <span>M</span><div class="heat-cell"></div><div class="heat-cell heat-1"></div><div class="heat-cell heat-2"></div><div class="heat-cell"></div><div class="heat-cell heat-3"></div>
+                  <span>T</span><div class="heat-cell heat-1"></div><div class="heat-cell"></div><div class="heat-cell heat-3"></div><div class="heat-cell heat-2"></div><div class="heat-cell heat-2"></div>
+                  <span>W</span><div class="heat-cell"></div><div class="heat-cell heat-2"></div><div class="heat-cell heat-1"></div><div class="heat-cell heat-3"></div><div class="heat-cell heat-1"></div>
+                  <span>T</span><div class="heat-cell"></div><div class="heat-cell"></div><div class="heat-cell heat-2"></div><div class="heat-cell"></div><div class="heat-cell"></div>
+                  <span>F</span><div class="heat-cell heat-2"></div><div class="heat-cell heat-1"></div><div class="heat-cell"></div><div class="heat-cell heat-2"></div><div class="heat-cell heat-3"></div>
+                  <span>S</span><div class="heat-cell"></div><div class="heat-cell"></div><div class="heat-cell"></div><div class="heat-cell heat-1"></div><div class="heat-cell"></div>
+                  <span>S</span><div class="heat-cell"></div><div class="heat-cell heat-1"></div><div class="heat-cell"></div><div class="heat-cell"></div><div class="heat-cell"></div>
+                </div>
+              </div>
+            </div>
+
+            <aside class="col-side">
+              <form class="panel-box" id="profile-settings-form" style="display:grid;gap:12px;">
+                <div class="eyebrow"><span class="sq"></span> SYSTEM SETTINGS</div>
+                <div>
+                  <label class="field-label" for="prof-name">DISPLAY NAME</label>
+                  <input id="prof-name" class="input" value="Cris Santos" />
+                </div>
+                <div>
+                  <label class="field-label" for="prof-email">SCHOOL EMAIL</label>
+                  <input id="prof-email" class="input" value="cris.santos@school.edu" />
+                </div>
+                <div>
+                  <span class="field-label">CURRICULUM TRACKS</span>
+                  <div class="seg-toggle" style="width:100%;display:grid;grid-template-columns:1fr 1fr 1fr;">
+                    <button type="button" data-prof-track="hw">HW</button>
+                    <button type="button" data-prof-track="net">NET</button>
+                    <button type="button" class="active" data-prof-track="both">BOTH</button>
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:10px;">
+                  <span style="font-size:11px;font-weight:700;">DAILY REMINDER</span>
+                  <button type="button" class="mech-switch" role="switch" aria-checked="true" aria-label="Daily reminder"></button>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:10px;">
+                  <span style="font-size:11px;font-weight:700;">SOUND EFFECTS</span>
+                  <button type="button" class="mech-switch" role="switch" aria-checked="true" aria-label="Sound effects"></button>
+                </div>
+                <button type="submit" class="btn btn-orange cut">SAVE CHANGES ▶</button>
+              </form>
+            </aside>
+          </div>
+        </section>
+
+        <!-- ==================== 12. LOGIN ==================== -->
+        <section class="view-pane" data-view-pane="login" aria-label="Login">
+          <div class="auth-split">
+            <div class="auth-left brackets brackets-light">
+              <div class="eyebrow" style="color:var(--orange);"><span class="sq"></span> STREAKBYTE // TRAINING TERMINAL</div>
+              <div style="display:grid;place-items:center;padding:20px 0;" id="login-mascot-host"></div>
+              <div>
+                <div class="disp-num" style="font-size:32px;line-height:1.05;margin-bottom:8px;">BUILD HARDWARE.<br />MASTER NETWORKS.</div>
+                <p style="margin:0;font-size:11.5px;color:#aaaaaa;">
+                  Daily 5-minute missions, hands-on PC &amp; LAN labs, and live class leagues.
+                </p>
+              </div>
+            </div>
+
+            <div class="auth-right">
+              <div class="seg-toggle" style="align-self:flex-start;" id="auth-mode-tabs">
+                <button type="button" class="active" data-auth-mode="login">LOG IN</button>
+                <button type="button" data-auth-mode="signup">CREATE ACCOUNT</button>
+              </div>
+              <h1 class="h-title" style="font-size:26px;" id="auth-heading">Welcome back</h1>
+              <div style="display:grid;gap:12px;">
+                <div>
+                  <label class="field-label" for="auth-email">SCHOOL EMAIL OR USERNAME</label>
+                  <input id="auth-email" class="input" placeholder="you@school.edu" />
+                </div>
+                <div>
+                  <label class="field-label" for="auth-pass">PASSWORD</label>
+                  <input id="auth-pass" class="input" type="password" value="••••••••" />
+                </div>
+                <button type="button" class="btn btn-orange cut" data-nav="dashboard">LOG IN ▶</button>
+                <button type="button" class="btn btn-outline" data-nav="onboarding">CONTINUE WITH GOOGLE</button>
+                <button type="button" class="btn btn-black cut" data-nav="dashboard">CONTINUE AS GUEST // DEV MODE</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 13. ONBOARDING ==================== -->
+        <section class="view-pane" data-view-pane="onboarding" aria-label="Onboarding">
+          <div style="max-width:640px;margin:0 auto;padding:36px 22px;">
+            <div class="eyebrow" style="margin-bottom:6px;"><span class="sq"></span> INITIAL CALIBRATION · STEP 1 OF 1</div>
+            <h1 class="h-title" style="font-size:30px;margin-bottom:6px;">Choose your training track</h1>
+            <p style="margin:0 0 20px;font-size:12px;color:var(--muted);">
+              Select one track to focus or train across both. You can change this anytime in Profile settings.
+            </p>
+
+            <div style="display:grid;gap:10px;margin-bottom:20px;" id="onboarding-choices">
+              <button type="button" class="onboard-card" data-ob="hw">
+                <div>
+                  <strong style="font-family:var(--f-head);font-size:16px;">Hardware Basics</strong>
+                  <div style="font-size:11.5px;color:var(--muted);margin-top:4px;">6 missions · CPU, motherboard, RAM, storage, PSU, PC Build Lab</div>
+                </div>
+                <span class="pill">HW</span>
+              </button>
+              <button type="button" class="onboard-card" data-ob="net">
+                <div>
+                  <strong style="font-family:var(--f-head);font-size:16px;">Networking Basics</strong>
+                  <div style="font-size:11.5px;color:var(--muted);margin-top:4px;">5 missions · IPv4, subnet masks, routers, Network Build Lab</div>
+                </div>
+                <span class="pill">NET</span>
+              </button>
+              <button type="button" class="onboard-card selected" data-ob="both">
+                <div>
+                  <strong style="font-family:var(--f-head);font-size:16px;">Both Tracks</strong>
+                  <div style="font-size:11.5px;color:var(--muted);margin-top:4px;">11 missions · Full Hardware &amp; Networking curriculum</div>
+                </div>
+                <span class="pill pill-orange-solid">RECOMMENDED</span>
+              </button>
+            </div>
+
+            <button type="button" class="btn btn-orange cut" style="width:100%;" data-nav="dashboard">
+              START TRAINING ▶
+            </button>
+          </div>
+        </section>
+      </main>
+
+      <!-- MOBILE BOTTOM NAV -->
+      <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+        <button type="button" class="active" data-nav="dashboard">HOME</button>
+        <button type="button" data-nav="curriculum">LEARN</button>
+        <button type="button" data-nav="practice">PRACTICE</button>
+        <button type="button" data-nav="leaderboard">LEAGUE</button>
+        <button type="button" data-nav="profile">PROFILE</button>
+      </nav>
+    </div>
+  </div>
+
+  <!-- ==================== FLOATING BYTE-01 CHAT FAB + DRAWER ==================== -->
+  <button type="button" class="chat-fab" id="chat-fab" aria-label="Open BYTE-01 Study Buddy">
+    <span id="fab-mascot-host"></span>
+  </button>
+
+  <section class="chat-drawer" id="chat-drawer" role="dialog" aria-label="Study Buddy BYTE-01">
+    <header style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--ink);color:#ffffff;">
+      <div class="eyebrow" style="color:#ffffff;"><span class="sq"></span> STUDY BUDDY // BYTE-01</div>
+      <button type="button" class="btn btn-ghost-dark btn-sm" id="chat-close-btn">✕</button>
+    </header>
+    <div class="chat-log" id="chat-log">
+      <div class="chat-msg">
+        <strong>BYTE-01:</strong> Ready to help with sockets, RAM channels, or subnet masks. What are we inspecting?
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid var(--line);background:var(--surface);">
+      <button type="button" class="btn btn-outline btn-sm chat-prompt-btn">Why A2 and B2 for RAM?</button>
+      <button type="button" class="btn btn-outline btn-sm chat-prompt-btn">Router vs Switch?</button>
+    </div>
+    <form id="chat-form" style="display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--line);">
+      <input id="chat-input" class="input" placeholder="Ask BYTE-01..." autocomplete="off" />
+      <button type="submit" class="btn btn-orange btn-sm cut-sm">SEND ▶</button>
+    </form>
+  </section>
+
+  <!-- ==================== SESSION SETUP MODAL ==================== -->
+  <div class="modal-backdrop" id="setup-modal" role="dialog" aria-modal="true" aria-label="Mission setup">
+    <div class="modal-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span class="eyebrow"><span class="sq"></span> MISSION SETUP</span>
+        <button type="button" class="btn btn-outline btn-sm" data-close-modal="setup-modal">✕</button>
+      </div>
+      <h2 class="h-title" style="font-size:20px;margin-bottom:14px;">The motherboard</h2>
+
+      <span class="field-label">MODE</span>
+      <div class="seg-toggle" style="width:100%;display:grid;grid-template-columns:1fr 1fr;margin-bottom:14px;" id="setup-mode-toggle">
+        <button type="button" class="active" data-smode="guided">GUIDED</button>
+        <button type="button" data-smode="timed">TIMED (+BONUS)</button>
+      </div>
+
+      <span class="field-label">SESSION LENGTH</span>
+      <div class="seg-toggle" style="width:100%;display:grid;grid-template-columns:1fr 1fr;margin-bottom:16px;" id="setup-len-toggle">
+        <button type="button" class="active" data-slen="5">5 MIN</button>
+        <button type="button" data-slen="10">10 MIN</button>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <span class="pill pill-black">+110 XP</span>
+        <span class="pill pill-orange">KEEPS STREAK</span>
+      </div>
+      <button type="button" class="btn btn-orange cut" style="width:100%;" id="setup-launch-btn">LAUNCH MISSION ▶</button>
+    </div>
+  </div>
+
+  <!-- ==================== LEVEL UP MODAL ==================== -->
+  <div class="modal-backdrop" id="levelup-modal" role="dialog" aria-modal="true" aria-label="Level up">
+    <div class="modal-box dark brackets brackets-light" style="text-align:center;padding:28px 22px;">
+      <span class="b-tl"></span><span class="b-tr"></span><span class="b-bl"></span><span class="b-br"></span>
+      <div style="display:grid;place-items:center;margin-bottom:12px;">
+        <svg width="56" height="56" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <polygon points="32,6 56,20 56,44 32,58 8,44 8,20" stroke="#ffffff" stroke-width="1.8" />
+          <polyline points="8,20 32,34 56,20" stroke="#ffffff" stroke-width="1.8" />
+          <line x1="32" y1="34" x2="32" y2="58" stroke="#ffffff" stroke-width="1.8" />
+          <circle cx="32" cy="34" r="5" fill="#FF5500" />
+        </svg>
+      </div>
+      <div class="eyebrow" style="justify-content:center;color:var(--orange);"><span class="sq"></span> RANK PROMOTION</div>
+      <h2 class="disp-num" style="font-size:32px;margin:8px 0 6px;">LEVEL 4</h2>
+      <div style="font-family:var(--f-head);font-size:18px;font-weight:700;margin-bottom:10px;">Bus Architect</div>
+      <p style="font-size:11.5px;color:#bbbbbb;margin:0 0 18px;">
+        Reward unlocked: <strong style="color:#ffffff;">+1 Streak Shield</strong> added to your inventory.
+      </p>
+      <button type="button" class="btn btn-orange cut" style="width:100%;" data-close-modal="levelup-modal">KEEP GOING ▶</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      function byteSvg(size) {
+        return `
+          <svg width="${size}" height="${size}" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <ellipse cx="70" cy="126" rx="34" ry="5" fill="rgba(0,0,0,0.12)" />
+            <line x1="70" y1="12" x2="70" y2="24" stroke="#B0B4BA" stroke-width="3" />
+            <circle cx="70" cy="10" r="4" fill="#FF5500" />
+            <g fill="#B4B8BE">
+              <rect x="46" y="21" width="9" height="7" rx="1.5" /><rect x="65.5" y="21" width="9" height="7" rx="1.5" /><rect x="85" y="21" width="9" height="7" rx="1.5" />
+              <rect x="46" y="112" width="9" height="7" rx="1.5" /><rect x="65.5" y="112" width="9" height="7" rx="1.5" /><rect x="85" y="112" width="9" height="7" rx="1.5" />
+              <rect x="21" y="46" width="7" height="9" rx="1.5" /><rect x="21" y="65.5" width="7" height="9" rx="1.5" /><rect x="21" y="85" width="7" height="9" rx="1.5" />
+              <rect x="112" y="46" width="7" height="9" rx="1.5" /><rect x="112" y="65.5" width="7" height="9" rx="1.5" /><rect x="112" y="85" width="7" height="9" rx="1.5" />
+            </g>
+            <rect x="28" y="28" width="84" height="84" rx="18" fill="#E3E5E8" stroke="#C5C8CE" stroke-width="1.5" />
+            <rect x="36" y="36" width="68" height="68" rx="12" fill="none" stroke="#FF5500" stroke-width="3.5" />
+            <rect x="42" y="42" width="56" height="56" rx="8" fill="#18191C" />
+            <path d="M56 42v56M70 42v56M84 42v56M42 56h56M42 70h56M42 84h56" stroke="#282A30" stroke-width="1" />
+            <circle cx="59" cy="70" r="4.5" fill="#FFFFFF" />
+            <circle cx="81" cy="70" r="4.5" fill="#FFFFFF" />
+          </svg>
+        `;
+      }
+
+      document.getElementById('login-mascot-host').innerHTML = byteSvg(138);
+      document.getElementById('fab-mascot-host').innerHTML = byteSvg(40);
+
+      const DATA = {
+        hw: [
+          { num: '01', title: 'Inside the PC', sub: 'Case, motherboard, CPU and cooling', xp: 110, min: 5, status: 'done' },
+          { num: '02', title: 'The motherboard', sub: 'Sockets, slots and ports', xp: 110, min: 6, status: 'active' },
+          { num: '03', title: 'Memory (RAM)', sub: 'DIMM slots, DDR4 vs DDR5, dual-channel', xp: 120, min: 5, status: 'locked' },
+          { num: '04', title: 'Storage', sub: 'HDD, SSD and M.2', xp: 120, min: 6, status: 'locked' },
+          { num: '05', title: 'Power supply', sub: 'Wattage, cables and connectors', xp: 120, min: 6, status: 'locked' },
+          { num: '06', title: 'Boss: Build a PC', sub: 'Put the parts together safely', xp: 150, min: 8, status: 'boss' },
+        ],
+        net: [
+          { num: '01', title: 'What is a network?', sub: 'Devices, links and the internet', xp: 110, min: 5, status: 'done' },
+          { num: '02', title: 'IP address basics', sub: 'Addresses, masks and gateways', xp: 120, min: 6, status: 'active' },
+          { num: '03', title: 'Subnet masks', sub: 'Split one network into parts', xp: 120, min: 6, status: 'locked' },
+          { num: '04', title: 'Routers and switches', sub: 'How traffic finds its way', xp: 120, min: 6, status: 'locked' },
+          { num: '05', title: 'Boss: Build a Network', sub: 'Wire up a LAN and test with ping', xp: 150, min: 8, status: 'boss' },
+        ],
+        leagueW: [
+          { rank: 1, name: 'Cris (you)', streak: 13, xp: 610, you: true },
+          { rank: 2, name: 'Mika Reyes', streak: 6, xp: 540 },
+          { rank: 3, name: 'Joel Mendoza', streak: 3, xp: 480 },
+          { rank: 4, name: 'Ana Cruz', streak: 2, xp: 320 },
+          { rank: 5, name: 'Leo Santos', streak: 1, xp: 210 },
+        ],
+        leagueA: [
+          { rank: 1, name: 'Mika Reyes', streak: 24, xp: 1940 },
+          { rank: 2, name: 'Cris (you)', streak: 13, xp: 1620, you: true },
+          { rank: 3, name: 'Joel Mendoza', streak: 11, xp: 1410 },
+          { rank: 4, name: 'Ana Cruz', streak: 8, xp: 1120 },
+          { rank: 5, name: 'Leo Santos', streak: 5, xp: 890 },
+        ],
+        badges: [
+          { title: 'First Build', state: 'UNLOCKED', unlocked: true, desc: 'Complete your first lesson quiz.' },
+          { title: '5-Day Run', state: '1 / 5 DAYS', unlocked: false, desc: 'Keep a 5-day streak.' },
+          { title: 'RAM Master', state: 'UNLOCKED', unlocked: true, desc: 'Complete Lesson 3: Memory (RAM).' },
+          { title: 'Net Ninja', state: 'UNLOCKED', unlocked: true, desc: 'Complete Lesson 1: What is a network?' },
+          { title: '30-Day Run', state: '1 / 30 DAYS', unlocked: false, desc: 'Keep a 30-day streak.' },
+          { title: 'Top of the Board', state: 'LOCKED', unlocked: false, desc: 'Reach #1 on weekly leaderboard.' },
+          { title: 'Clean Build', state: 'LOCKED', unlocked: false, desc: 'Complete all Hardware lessons.' },
+          { title: 'Subnet Sage', state: 'LOCKED', unlocked: false, desc: 'Score 100% on Subnet masks.' },
+        ],
+        quiz: [
+          {
+            prompt: 'What is a CPU socket?',
+            choices: ['The slot where RAM is installed', 'The place on the motherboard where the CPU sits', 'The port for the power cable', 'The place where the case fan plugs in'],
+            correct: 1,
+            explain: 'The socket holds the CPU on the board. Names such as AM5 and LGA 1700 are sockets.',
+          },
+          {
+            prompt: 'Which slot is normally used for a graphics card?',
+            choices: ['DIMM slot', 'M.2 slot', 'PCIe x16 slot', 'SATA port'],
+            correct: 2,
+            explain: 'The PCIe x16 slot is the longest slot on the board and houses the graphics card.',
+          },
+          {
+            prompt: 'What does the rear I/O panel provide?',
+            choices: ['Back ports such as USB, video, audio and network', 'OS storage', 'CPU cooling', 'Main DC power'],
+            correct: 0,
+            explain: 'The rear I/O panel exposes external USB, display, audio, and network ports.',
+          },
+          {
+            prompt: 'Which statement about CPU sockets is true?',
+            choices: ['Any CPU fits any motherboard', 'A CPU only fits a socket made for it', 'Socket type only matters for laptops', 'The socket holds RAM'],
+            correct: 1,
+            explain: 'Your CPU must match the motherboard socket (AM5, LGA 1700, etc.).',
+          },
+        ],
+        practice: [
+          { title: 'Lesson 2: IP address basics', track: 'net', meta: 'Networking · Last score 75%', best: 75, state: 'need' },
+          { title: 'Lesson 1: Inside the PC', track: 'hw', meta: 'Hardware · Last score 100%', best: 100, state: 'mastered' },
+          { title: 'Lesson 1: What is a network?', track: 'net', meta: 'Networking · Last score 100%', best: 100, state: 'mastered' },
+        ],
+      };
+
+      const state = {
+        view: 'dashboard',
+        mapTrack: 'hw',
+        currTrack: 'hw',
+        leaguePeriod: 'w',
+        practiceFilter: 'all',
+        achFilter: 'all',
+        xp: 610,
+        claimedQuests: new Set(),
+        crateOpened: false,
+        quizIdx: 0,
+        quizSelected: null,
+        quizSubmitted: false,
+        quizCombo: 0,
+        pcSelectedPart: null,
+        pcInstalled: { ramA2: false, ramB2: false, m2: false, gpu: false, psu: false },
+      };
+
+      function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => el.classList.remove('show'), 2400);
+      }
+
+      function setView(viewId) {
+        state.view = viewId;
+        document.querySelectorAll('.view-pane').forEach((pane) => {
+          pane.classList.toggle('active', pane.dataset.viewPane === viewId);
+        });
+        document.querySelectorAll('#draft-view-pills .draft-btn').forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.view === viewId);
+        });
+        const navMap = { learn: 'curriculum', quiz: 'curriculum', 'lab-pc': 'curriculum', 'lab-net': 'curriculum', complete: 'curriculum' };
+        const activeNav = navMap[viewId] || viewId;
+        document.querySelectorAll('.nav-tab, #mobile-nav button').forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.nav === activeNav);
+        });
+        const hideShell = viewId === 'login' || viewId === 'onboarding';
+        document.getElementById('app-topbar').style.display = hideShell ? 'none' : '';
+        document.getElementById('mobile-nav').style.display = hideShell ? 'none' : '';
+        document.getElementById('chat-fab').style.display = hideShell ? 'none' : '';
+        document.getElementById('streak-popover').classList.remove('open');
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }
+
+      function renderMissionMap() {
+        const host = document.getElementById('dash-mission-chain');
+        const list = DATA[state.mapTrack];
+        host.className = `chain-grid ${list.length === 6 ? 'cols-6' : 'cols-5'}`;
+        host.innerHTML = list
+          .map((item) => {
+            const cls =
+              item.status === 'done'
+                ? 'state-done'
+                : item.status === 'active'
+                  ? 'state-active'
+                  : item.status === 'boss'
+                    ? 'state-boss'
+                    : 'state-locked';
+            const icon = item.status === 'done' ? '✓' : item.status === 'active' ? '▶' : item.status === 'boss' ? '♛' : '🔒';
+            const target = item.status === 'boss' ? (state.mapTrack === 'hw' ? 'lab-pc' : 'lab-net') : item.status === 'active' ? 'learn' : 'curriculum';
+            const pill =
+              item.status === 'done'
+                ? `<button type="button" class="btn btn-black btn-sm cut-sm" data-nav="${target}">CLEARED</button>`
+                : item.status === 'active'
+                  ? `<button type="button" class="btn btn-black btn-sm cut-sm" data-nav="learn">PLAY NOW</button>`
+                  : item.status === 'boss'
+                    ? `<button type="button" class="btn btn-orange btn-sm cut-sm" data-nav="${target}">BOSS LAB</button>`
+                    : `<span class="pill pill-muted cut-sm">LOCKED</span>`;
+            return `
+              <article class="chain-card ${cls}">
+                <div class="chain-top">
+                  <span class="chain-num">${item.num}</span>
+                  <span aria-hidden="true">${icon}</span>
+                </div>
+                <h3 class="chain-title">${item.title}</h3>
+                <div class="chain-meta">${item.status === 'boss' ? 'LAB' : '+' + item.xp + ' XP'} · ${item.min} MIN</div>
+                <div class="chain-foot">${pill}</div>
+              </article>
+            `;
+          })
+          .join('');
+      }
+
+      function renderLeague() {
+        const rows = state.leaguePeriod === 'w' ? DATA.leagueW : DATA.leagueA;
+        const rowHtml = (r) => `
+          <div class="league-row ${r.you ? 'is-you' : ''}">
+            <span class="league-rank">${r.rank}</span>
+            <span class="league-name">${r.name}</span>
+            <span class="league-streak">${r.streak} STREAK</span>
+            <span class="league-xp">${r.you && state.leaguePeriod === 'w' ? state.xp : r.xp}</span>
+          </div>
+        `;
+        document.getElementById('dash-league-rows').innerHTML = rows.map(rowHtml).join('');
+        const p = [rows[1], rows[0], rows[2]];
+        const variants = ['p2', 'p1', 'p3'];
+        document.getElementById('lb-podium').innerHTML = p
+          .map(
+            (r, i) => `
+          <div class="podium-slot ${variants[i]}">
+            <span class="disp-num" style="font-size:24px;">#${r.rank}</span>
+            <strong style="font-family:var(--f-head);font-size:15px;">${r.name}</strong>
+            <span class="disp-num" style="font-size:16px;">${r.you && state.leaguePeriod === 'w' ? state.xp : r.xp} XP</span>
+            <span style="font-size:10px;opacity:0.8;">${r.streak} DAY STREAK</span>
+          </div>
+        `,
+          )
+          .join('');
+        document.getElementById('lb-full-rows').innerHTML = rows.slice(3).map(rowHtml).join('');
+      }
+
+      function renderBadges() {
+        const tile = (b) => `
+          <div class="trophy-tile ${b.unlocked ? '' : 'locked'}">
+            <div class="trophy-icon">${b.unlocked ? '★' : '🔒'}</div>
+            <div class="trophy-name">${b.title}</div>
+            <div class="trophy-state">${b.state}</div>
+          </div>
+        `;
+        document.getElementById('dash-trophy-grid').innerHTML = DATA.badges.map(tile).join('');
+        const filtered = DATA.badges.filter((b) => (state.achFilter === 'all' ? true : state.achFilter === 'on' ? b.unlocked : !b.unlocked));
+        document.getElementById('ach-full-grid').innerHTML = filtered.map(tile).join('');
+      }
+
+      function renderCurriculum() {
+        const list = DATA[state.currTrack];
+        const q = document.getElementById('curr-search').value.trim().toLowerCase();
+        const isHw = state.currTrack === 'hw';
+        document.getElementById('curr-track-title').textContent = isHw ? 'Hardware Basics' : 'Networking Basics';
+        document.getElementById('curr-side-title').textContent = isHw ? 'Hardware Basics' : 'Networking Basics';
+        document.getElementById('curr-track-desc').textContent = isHw
+          ? 'Build and understand a computer, one short lesson at a time.'
+          : 'Connect devices and understand how they talk, one short lesson at a time.';
+        document.getElementById('curr-side-count').textContent = `1 of ${list.length} lessons cleared`;
+        document.getElementById('curr-side-badge').textContent = isHw ? 'RAM MASTER' : 'NET NINJA';
+        document.getElementById('curr-side-bar').style.gridTemplateColumns = `repeat(${list.length}, 1fr)`;
+        document.getElementById('curr-side-bar').innerHTML = list.map((l) => `<i class="${l.status === 'done' ? 'fill-orange' : ''}"></i>`).join('');
+
+        const filtered = list.filter((l) => !q || l.title.toLowerCase().includes(q) || l.sub.toLowerCase().includes(q));
+        document.getElementById('curr-lesson-list').innerHTML =
+          filtered.length === 0
+            ? `<div style="padding:20px;color:var(--muted);">No lessons match "${q}".</div>`
+            : filtered
+                .map((l) => {
+                  const rowCls = l.status === 'done' ? 'is-done' : l.status === 'active' ? 'is-current' : l.status === 'locked' ? 'is-locked' : '';
+                  const actions =
+                    l.status === 'locked'
+                      ? `<span class="pill pill-muted">LOCKED</span>`
+                      : l.status === 'boss'
+                        ? `<button type="button" class="btn btn-black btn-sm cut-sm" data-nav="${isHw ? 'lab-pc' : 'lab-net'}">LAUNCH LAB ▶</button>`
+                        : `<button type="button" class="btn ${l.status === 'active' ? 'btn-orange' : 'btn-outline'} btn-sm cut-sm" data-nav="learn">${l.status === 'done' ? 'REVIEW' : 'OPEN'}</button>
+                           <button type="button" class="btn btn-outline btn-sm" data-nav="quiz">QUIZ</button>`;
+                  return `
+                    <div class="curr-row ${rowCls}">
+                      <div class="curr-idx">${l.status === 'done' ? '✓' : l.num}</div>
+                      <div>
+                        <strong style="font-family:var(--f-head);font-size:15px;">${l.title}</strong>
+                        <div style="font-size:11px;color:var(--muted);">${l.sub}</div>
+                      </div>
+                      <span class="pill">+${l.xp} XP · ${l.min}M</span>
+                      <div style="display:flex;gap:6px;flex-wrap:wrap;">${actions}</div>
+                    </div>
+                  `;
+                })
+                .join('');
+      }
+
+      function renderQuiz() {
+        const q = DATA.quiz[state.quizIdx];
+        document.getElementById('quiz-counter').textContent = `QUESTION ${state.quizIdx + 1} OF ${DATA.quiz.length}`;
+        document.getElementById('quiz-prompt').textContent = q.prompt;
+        const bar = document.getElementById('quiz-progress-bar');
+        bar.innerHTML = DATA.quiz
+          .map((_, i) => `<i class="${i < state.quizIdx ? 'fill-green' : i === state.quizIdx ? (state.quizSubmitted ? (state.quizSelected === q.correct ? 'fill-green' : 'fill-orange') : 'fill-orange') : ''}"></i>`)
+          .join('');
+        const letters = ['A', 'B', 'C', 'D'];
+        document.getElementById('quiz-choices').innerHTML = q.choices
+          .map((c, idx) => {
+            let cls = 'quiz-choice';
+            let tag = '';
+            if (state.quizSubmitted) {
+              if (idx === q.correct) {
+                cls += ' correct';
+                tag = '<span class="pill pill-green">CORRECT ✓</span>';
+              } else if (idx === state.quizSelected) {
+                cls += ' wrong';
+                tag = '<span class="pill" style="color:var(--red);border-color:var(--red);">YOUR ANSWER</span>';
+              }
+            } else if (idx === state.quizSelected) {
+              cls += ' selected';
+            }
+            return `
+              <button type="button" class="${cls}" data-qchoice="${idx}" ${state.quizSubmitted ? 'disabled' : ''}>
+                <span class="quiz-letter">${letters[idx]}</span>
+                <span>${c}</span>
+                ${tag}
+              </button>
+            `;
+          })
+          .join('');
+
+        const fb = document.getElementById('quiz-feedback');
+        if (state.quizSubmitted) {
+          const ok = state.quizSelected === q.correct;
+          fb.style.display = 'block';
+          document.getElementById('quiz-feedback-head').textContent = ok ? 'CORRECT.' : 'NOT QUITE.';
+          document.getElementById('quiz-feedback-head').style.color = ok ? 'var(--green)' : 'var(--red)';
+          document.getElementById('quiz-feedback-xp').style.display = ok ? 'inline-flex' : 'none';
+          document.getElementById('quiz-feedback-body').textContent = q.explain;
+          document.getElementById('quiz-submit-btn').style.display = 'none';
+          const nextBtn = document.getElementById('quiz-next-btn');
+          nextBtn.style.display = 'inline-flex';
+          nextBtn.textContent = state.quizIdx === DATA.quiz.length - 1 ? 'SEE RESULTS ▶' : 'NEXT QUESTION ▶';
+        } else {
+          fb.style.display = 'none';
+          const sub = document.getElementById('quiz-submit-btn');
+          sub.style.display = 'inline-flex';
+          sub.disabled = state.quizSelected === null;
+          document.getElementById('quiz-next-btn').style.display = 'none';
+        }
+        const combo = document.getElementById('quiz-combo-pill');
+        combo.style.display = state.quizCombo >= 2 ? 'inline-flex' : 'none';
+        combo.textContent = `${state.quizCombo}X STREAK`;
+      }
+
+      function renderPractice() {
+        const list = DATA.practice.filter((item) => {
+          if (state.practiceFilter === 'all') return true;
+          if (state.practiceFilter === 'need') return item.state === 'need';
+          return item.track === state.practiceFilter;
+        });
+        document.getElementById('practice-list').innerHTML = list
+          .map(
+            (p) => `
+          <div class="league-row" style="grid-template-columns:1fr 140px auto auto;">
+            <div>
+              <div class="league-name">${p.title}</div>
+              <div style="font-size:10.5px;color:var(--muted);">${p.meta}</div>
+            </div>
+            <div class="seg-bar" style="grid-template-columns:repeat(4,1fr);">
+              <i class="fill-orange"></i><i class="fill-orange"></i><i class="fill-orange"></i><i class="${p.best === 100 ? 'fill-orange' : ''}"></i>
+            </div>
+            <span class="pill ${p.state === 'need' ? 'pill-orange' : 'pill-green'}">${p.state === 'need' ? 'NEEDS REVIEW' : 'MASTERED'}</span>
+            <button type="button" class="btn ${p.state === 'need' ? 'btn-orange' : 'btn-outline'} btn-sm cut-sm" data-nav="quiz">
+              ${p.state === 'need' ? 'ANSWER AGAIN' : 'REDO'}
+            </button>
+          </div>
+        `,
+          )
+          .join('');
+      }
+
+      function updateXpDisplay() {
+        document.getElementById('hud-xp').textContent = state.xp;
+        const lvlXp = Math.min(250, 110 + (state.xp - 610));
+        document.getElementById('dash-level-xp').textContent = `${lvlXp} / 250`;
+        const segs = Math.min(10, Math.round((lvlXp / 250) * 10));
+        document.getElementById('dash-level-bar').innerHTML = Array.from({ length: 10 }, (_, i) => `<i class="${i < segs ? 'fill-orange' : ''}"></i>`).join('');
+        renderLeague();
+      }
+
+      // Global click delegation for navigation and toggles
+      document.addEventListener('click', (e) => {
+        const navBtn = e.target.closest('[data-nav]');
+        if (navBtn) {
+          e.preventDefault();
+          setView(navBtn.dataset.nav);
+          return;
+        }
+        const draftBtn = e.target.closest('#draft-view-pills .draft-btn');
+        if (draftBtn) {
+          setView(draftBtn.dataset.view);
+          return;
+        }
+        const ovBtn = e.target.closest('.overlay-trigger');
+        if (ovBtn) {
+          const ov = ovBtn.dataset.overlay;
+          if (ov === 'chat') document.getElementById('chat-drawer').classList.toggle('open');
+          if (ov === 'setup') document.getElementById('setup-modal').classList.add('open');
+          if (ov === 'levelup') document.getElementById('levelup-modal').classList.add('open');
+          if (ov === 'streak') {
+            if (state.view === 'login' || state.view === 'onboarding') setView('dashboard');
+            document.getElementById('streak-popover').classList.toggle('open');
+          }
+          return;
+        }
+        const closeModal = e.target.closest('[data-close-modal]');
+        if (closeModal) {
+          document.getElementById(closeModal.dataset.closeModal).classList.remove('open');
+          return;
+        }
+        const mapBtn = e.target.closest('[data-map-track]');
+        if (mapBtn) {
+          state.mapTrack = mapBtn.dataset.mapTrack;
+          document.querySelectorAll('[data-map-track]').forEach((b) => b.classList.toggle('active', b === mapBtn));
+          renderMissionMap();
+          return;
+        }
+        const currBtn = e.target.closest('[data-curr-track]');
+        if (currBtn) {
+          state.currTrack = currBtn.dataset.currTrack;
+          document.querySelectorAll('[data-curr-track]').forEach((b) => b.classList.toggle('active', b === currBtn));
+          renderCurriculum();
+          return;
+        }
+        const lpBtn = e.target.closest('[data-league-period]');
+        if (lpBtn) {
+          state.leaguePeriod = lpBtn.dataset.leaguePeriod;
+          document.querySelectorAll('[data-league-period]').forEach((b) => b.classList.toggle('active', b.dataset.leaguePeriod === state.leaguePeriod));
+          renderLeague();
+          return;
+        }
+        const pfBtn = e.target.closest('[data-pf]');
+        if (pfBtn) {
+          state.practiceFilter = pfBtn.dataset.pf;
+          document.querySelectorAll('[data-pf]').forEach((b) => b.classList.toggle('active', b === pfBtn));
+          renderPractice();
+          return;
+        }
+        const afBtn = e.target.closest('[data-af]');
+        if (afBtn) {
+          state.achFilter = afBtn.dataset.af;
+          document.querySelectorAll('[data-af]').forEach((b) => b.classList.toggle('active', b === afBtn));
+          renderBadges();
+          return;
+        }
+        const qChoice = e.target.closest('[data-qchoice]');
+        if (qChoice && !state.quizSubmitted) {
+          state.quizSelected = Number(qChoice.dataset.qchoice);
+          renderQuiz();
+          return;
+        }
+      });
+
+      // Viewport toggle
+      document.getElementById('vp-desktop').addEventListener('click', () => {
+        document.body.classList.remove('mobile-preview');
+        document.getElementById('vp-desktop').classList.add('active');
+        document.getElementById('vp-mobile').classList.remove('active');
+      });
+      document.getElementById('vp-mobile').addEventListener('click', () => {
+        document.body.classList.add('mobile-preview');
+        document.getElementById('vp-mobile').classList.add('active');
+        document.getElementById('vp-desktop').classList.remove('active');
+      });
+
+      // TopBar controls
+      document.getElementById('streak-trigger').addEventListener('click', () => {
+        const pop = document.getElementById('streak-popover');
+        const open = pop.classList.toggle('open');
+        document.getElementById('streak-trigger').setAttribute('aria-expanded', String(open));
+      });
+      document.getElementById('claim-daily-top').addEventListener('click', () => {
+        if (state.view !== 'dashboard') setView('dashboard');
+        document.getElementById('daily-quests-band').scrollIntoView({ behavior: 'smooth' });
+      });
+
+      // Dashboard triggers
+      document.getElementById('dash-start-mission').addEventListener('click', () => {
+        document.getElementById('setup-modal').classList.add('open');
+      });
+
+      // Daily Quest claiming + Crate unlock
+      document.querySelectorAll('.quest-claim-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const card = btn.closest('.quest-card');
+          const qid = card.dataset.quest;
+          if (state.claimedQuests.has(qid)) return;
+          state.claimedQuests.add(qid);
+          state.xp += Number(card.dataset.xp);
+          btn.textContent = 'CLAIMED ✓';
+          btn.className = 'btn btn-outline btn-sm';
+          btn.disabled = true;
+          const count = state.claimedQuests.size;
+          document.getElementById('quests-claimed-label').textContent = `${count} / 3 CLAIMED`;
+          const crateBar = document.getElementById('crate-bar');
+          crateBar.innerHTML = [0, 1, 2].map((i) => `<i class="${i < count ? 'fill-orange' : ''}"></i>`).join('');
+          if (count === 3) {
+            document.getElementById('crate-status').textContent = 'Unlocked!';
+            document.getElementById('crate-copy').textContent = 'All 3 quests cleared. Claim your crate bonus.';
+            document.getElementById('crate-open-btn').style.display = 'inline-flex';
+          } else {
+            document.getElementById('crate-copy').textContent = `Claim all 3 quests to unlock (${count} of 3).`;
+          }
+          updateXpDisplay();
+          showToast(`+${card.dataset.xp} XP claimed`);
+        });
+      });
+
+      document.getElementById('crate-open-btn').addEventListener('click', (e) => {
+        if (state.crateOpened) return;
+        state.crateOpened = true;
+        state.xp += 50;
+        e.target.textContent = 'CRATE OPENED ✓';
+        e.target.disabled = true;
+        document.getElementById('crate-status').textContent = 'Collected';
+        updateXpDisplay();
+        showToast('+50 XP Daily Crate bonus!');
+      });
+
+      // Quiz submit / next
+      document.getElementById('quiz-submit-btn').addEventListener('click', () => {
+        if (state.quizSelected === null) return;
+        state.quizSubmitted = true;
+        const ok = state.quizSelected === DATA.quiz[state.quizIdx].correct;
+        state.quizCombo = ok ? state.quizCombo + 1 : 0;
+        if (ok) {
+          state.xp += 28;
+          updateXpDisplay();
+        }
+        renderQuiz();
+      });
+      document.getElementById('quiz-next-btn').addEventListener('click', () => {
+        if (state.quizIdx < DATA.quiz.length - 1) {
+          state.quizIdx += 1;
+          state.quizSelected = null;
+          state.quizSubmitted = false;
+          renderQuiz();
+        } else {
+          state.quizIdx = 0;
+          state.quizSelected = null;
+          state.quizSubmitted = false;
+          setView('complete');
+        }
+      });
+
+      // PC Lab interactions
+      document.querySelectorAll('[data-pc-part]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.pcSelectedPart = btn.dataset.pcPart;
+          document.querySelectorAll('[data-pc-part]').forEach((b) => b.classList.toggle('selected', b === btn));
+          document.getElementById('pc-lab-status').textContent = `Selected: ${btn.textContent.trim()}. Now click its matching slot on the motherboard.`;
+        });
+      });
+      document.querySelectorAll('[data-pc-slot]').forEach((slot) => {
+        slot.addEventListener('click', () => {
+          const sId = slot.dataset.pcSlot;
+          const matches = (sId.startsWith('ram') && state.pcSelectedPart === 'ram') || sId === state.pcSelectedPart;
+          if (!state.pcSelectedPart) {
+            showToast('Pick a part from the tray first');
+            return;
+          }
+          if (!matches) {
+            showToast('Wrong slot for this part');
+            return;
+          }
+          state.pcInstalled[sId] = true;
+          slot.querySelector('.slot-box').setAttribute('fill', '#129954');
+          slot.querySelector('.slot-box').setAttribute('stroke', '#ffffff');
+          slot.querySelector('.slot-box').removeAttribute('stroke-dasharray');
+          const ramDone = (state.pcInstalled.ramA2 ? 1 : 0) + (state.pcInstalled.ramB2 ? 1 : 0);
+          document.getElementById('pc-ram-count').textContent = `${ramDone}/2`;
+          if (ramDone === 2) document.getElementById('chk-ram').textContent = '✓ 3. Install dual-channel RAM (A2 + B2)';
+          if (state.pcInstalled.m2) document.getElementById('chk-m2').textContent = '✓ 4. Fasten M.2 NVMe SSD';
+          if (state.pcInstalled.gpu) document.getElementById('chk-gpu').textContent = '✓ 5. Seat GPU in PCIe x16';
+          if (state.pcInstalled.psu) document.getElementById('chk-psu').textContent = '✓ 6. Connect 24-pin ATX PSU';
+          const stepCount = 2 + (ramDone === 2 ? 1 : 0) + (state.pcInstalled.m2 ? 1 : 0) + (state.pcInstalled.gpu ? 1 : 0) + (state.pcInstalled.psu ? 1 : 0);
+          document.getElementById('pc-step-pill').textContent = stepCount === 6 ? 'ALL STEPS DONE ✓' : `STEP ${stepCount + 1} OF 6`;
+          showToast('Component seated!');
+        });
+      });
+      document.getElementById('pc-reset-btn').addEventListener('click', () => {
+        state.pcInstalled = { ramA2: false, ramB2: false, m2: false, gpu: false, psu: false };
+        document.querySelectorAll('[data-pc-slot] .slot-box').forEach((r) => {
+          r.setAttribute('fill', '#1e1e1e');
+          r.setAttribute('stroke', '#FF5500');
+          r.setAttribute('stroke-dasharray', '5 3');
+        });
+        document.getElementById('pc-ram-count').textContent = '0/2';
+        document.getElementById('pc-step-pill').textContent = 'STEP 3 OF 6';
+        showToast('Board reset');
+      });
+
+      // Net Lab
+      document.querySelectorAll('[data-cable]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-cable]').forEach((b) => b.classList.toggle('selected', b === btn));
+        });
+      });
+      document.getElementById('net-ping-btn').addEventListener('click', () => {
+        document.getElementById('net-link-3').removeAttribute('stroke-dasharray');
+        document.getElementById('net-link-3').setAttribute('stroke', '#FF5500');
+        document.getElementById('net-terminal-out').textContent =
+          '$ ping 192.168.1.1 -c 3\n64 bytes from 192.168.1.1: icmp_seq=1 ttl=64 time=1.2 ms\n64 bytes from 192.168.1.1: icmp_seq=2 ttl=64 time=1.1 ms\n3 packets transmitted, 3 received, 0% packet loss — LINK UP';
+      });
+
+      // Curriculum search
+      document.getElementById('curr-search').addEventListener('input', renderCurriculum);
+
+      // Profile switches & form
+      document.querySelectorAll('.mech-switch').forEach((sw) => {
+        sw.addEventListener('click', () => {
+          const next = sw.getAttribute('aria-checked') !== 'true';
+          sw.setAttribute('aria-checked', String(next));
+        });
+      });
+      document.querySelectorAll('[data-prof-track]').forEach((b) => {
+        b.addEventListener('click', () => {
+          document.querySelectorAll('[data-prof-track]').forEach((x) => x.classList.toggle('active', x === b));
+        });
+      });
+      document.getElementById('profile-settings-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const rawName = document.getElementById('prof-name').value.trim();
+        const firstName = (rawName.split(/\s+/)[0] || 'LEARNER').toUpperCase();
+        document.getElementById('hero-first-name').textContent = firstName;
+        showToast('Settings saved');
+      });
+
+      // Login & Onboarding toggles
+      document.querySelectorAll('[data-auth-mode]').forEach((b) => {
+        b.addEventListener('click', () => {
+          document.querySelectorAll('[data-auth-mode]').forEach((x) => x.classList.toggle('active', x === b));
+          document.getElementById('auth-heading').textContent = b.dataset.authMode === 'login' ? 'Welcome back' : 'Create your account';
+        });
+      });
+      document.querySelectorAll('[data-ob]').forEach((card) => {
+        card.addEventListener('click', () => {
+          document.querySelectorAll('[data-ob]').forEach((c) => c.classList.toggle('selected', c === card));
+        });
+      });
+
+      // Setup modal toggles
+      document.querySelectorAll('[data-smode]').forEach((b) => {
+        b.addEventListener('click', () => {
+          document.querySelectorAll('[data-smode]').forEach((x) => x.classList.toggle('active', x === b));
+        });
+      });
+      document.querySelectorAll('[data-slen]').forEach((b) => {
+        b.addEventListener('click', () => {
+          document.querySelectorAll('[data-slen]').forEach((x) => x.classList.toggle('active', x === b));
+        });
+      });
+      document.getElementById('setup-launch-btn').addEventListener('click', () => {
+        document.getElementById('setup-modal').classList.remove('open');
+        setView('learn');
+      });
+
+      // Backdrop click closes modal
+      document.querySelectorAll('.modal-backdrop').forEach((bd) => {
+        bd.addEventListener('click', (e) => {
+          if (e.target === bd) bd.classList.remove('open');
+        });
+      });
+
+      // Chat Drawer
+      document.getElementById('chat-fab').addEventListener('click', () => {
+        document.getElementById('chat-drawer').classList.toggle('open');
+      });
+      document.getElementById('chat-close-btn').addEventListener('click', () => {
+        document.getElementById('chat-drawer').classList.remove('open');
+      });
+      function appendChat(prompt) {
+        const log = document.getElementById('chat-log');
+        const me = document.createElement('div');
+        me.className = 'chat-msg me';
+        me.textContent = prompt;
+        log.appendChild(me);
+
+        const bot = document.createElement('div');
+        bot.className = 'chat-msg';
+        const reply = prompt.toLowerCase().includes('ram')
+          ? 'Slots A2 and B2 are wired to separate memory channels on most boards, unlocking dual-channel bandwidth.'
+          : prompt.toLowerCase().includes('router')
+            ? 'A switch connects devices inside one local network; a router moves packets between separate networks like your LAN and the internet.'
+            : 'Check the motherboard key notch and socket label (AM5 or LGA 1700) before seating any part.';
+        bot.innerHTML = `<strong>BYTE-01:</strong> ${reply}`;
+        log.appendChild(bot);
+        log.scrollTop = log.scrollHeight;
+      }
+      document.querySelectorAll('.chat-prompt-btn').forEach((b) => {
+        b.addEventListener('click', () => appendChat(b.textContent));
+      });
+      document.getElementById('chat-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('chat-input');
+        if (!input.value.trim()) return;
+        appendChat(input.value.trim());
+        input.value = '';
+      });
+
+      // Initial render
+      renderMissionMap();
+      renderLeague();
+      renderBadges();
+      renderCurriculum();
+      renderQuiz();
+      renderPractice();
+    })();
+  </script>
+</body>
+</html>

@@ -3,6 +3,7 @@ import type {
   NetDeviceConfig,
   NetDeviceId,
   NetFormErrors,
+  NetworkHintStep,
   NetworkLabState,
 } from '../../types/streakbyte';
 
@@ -34,6 +35,7 @@ export function createInitialNetState(): NetworkLabState {
     issues: [],
     message: 'Click PC or Laptop to configure its IP address, then test the connection.',
     errors: {},
+    hintedStep: null,
   };
 }
 
@@ -73,17 +75,22 @@ export function placeDevice(
     };
   }
 
+  const nextState: NetworkLabState = {
+    ...net,
+    placed: { ...net.placed, [dev]: true },
+    selectedDevice: net.selectedDevice === dev ? null : net.selectedDevice,
+    message:
+      dev === 'hub'
+        ? 'Hub placed. The router already has free ports, so the hub is optional.'
+        : `${NET_DEVICE_NAMES[dev]} placed. Click it to set it up.`,
+  };
+
   return {
     placed: true,
-    state: {
-      ...net,
-      placed: { ...net.placed, [dev]: true },
-      selectedDevice: net.selectedDevice === dev ? null : net.selectedDevice,
-      message:
-        dev === 'hub'
-          ? 'Hub placed. The router already has free ports, so the hub is optional.'
-          : `${NET_DEVICE_NAMES[dev]} placed. Click it to set it up.`,
-    },
+    state:
+      currentNetworkHintStep(nextState) !== net.hintedStep
+        ? { ...nextState, hintedStep: null }
+        : nextState,
   };
 }
 
@@ -158,17 +165,105 @@ export function saveDeviceConfig(
     cab: config.cab,
   };
 
+  const nextState: NetworkLabState = {
+    ...net,
+    cfg: { ...net.cfg, [device]: clean },
+    savedDevices: { ...net.savedDevices, [device]: true },
+    openDevice: null,
+    errors: {},
+    message: `${NET_DEVICE_NAMES[device]} saved (${clean.ip}). Press Test connection to verify the network.`,
+  };
+
   return {
     saved: true,
-    state: {
-      ...net,
-      cfg: { ...net.cfg, [device]: clean },
-      savedDevices: { ...net.savedDevices, [device]: true },
-      openDevice: null,
-      errors: {},
-      message: `${NET_DEVICE_NAMES[device]} saved (${clean.ip}). Press Test connection to verify the network.`,
-    },
+    state:
+      currentNetworkHintStep(nextState) !== net.hintedStep
+        ? { ...nextState, hintedStep: null }
+        : nextState,
   };
+}
+
+/** Returns the active network step needing action, or null when both devices are configured. */
+export function currentNetworkHintStep(net: NetworkLabState): NetworkHintStep | null {
+  if (!net.placed.pc) return 'place-pc';
+  if (!net.placed.laptop) return 'place-laptop';
+  const target =
+    net.openDevice ?? (!net.savedDevices.laptop ? 'laptop' : !net.savedDevices.pc ? 'pc' : null);
+  if (target === 'laptop') return 'config-laptop';
+  if (target === 'pc') return 'config-pc';
+  return null;
+}
+
+/** Returns true if a hint was already purchased for the current incomplete step. */
+export function isNetworkHintUsedForCurrentStep(net: NetworkLabState): boolean {
+  const step = currentNetworkHintStep(net);
+  return step !== null && net.hintedStep === step;
+}
+
+/** Returns true when an incomplete step remains and hasn't been hinted yet. */
+export function hasNextNetworkHint(net: NetworkLabState): boolean {
+  const step = currentNetworkHintStep(net);
+  return step !== null && net.hintedStep !== step;
+}
+
+/** Next hint: guides placing devices or configures/previews the next unconfigured device. */
+export function nextNetworkHint(net: NetworkLabState): NetworkLabState {
+  const step = currentNetworkHintStep(net);
+  if (step === 'place-pc') {
+    return {
+      ...net,
+      hintedStep: step,
+      message: 'Hint: Drag the PC onto the PC spot on the left (or select PC in the tray and tap the PC spot).',
+    };
+  }
+  if (step === 'place-laptop') {
+    return {
+      ...net,
+      hintedStep: step,
+      message: 'Hint: Drag the Laptop onto the Laptop spot on the right (or select Laptop in the tray and tap the Laptop spot).',
+    };
+  }
+
+  const target = step === 'config-laptop' ? 'laptop' : step === 'config-pc' ? 'pc' : null;
+  if (!target || !step) {
+    return {
+      ...net,
+      hintedStep: null,
+      message: 'Both PC and Laptop are configured. Press Test connection to verify.',
+    };
+  }
+
+  const suggestedIp =
+    target === 'laptop'
+      ? net.cfg.pc?.ip === '192.168.1.20'
+        ? '192.168.1.21'
+        : '192.168.1.20'
+      : net.cfg.laptop?.ip === '192.168.1.10'
+        ? '192.168.1.11'
+        : '192.168.1.10';
+
+  return {
+    ...net,
+    openDevice: target,
+    errors: {},
+    hintedStep: step,
+    message: `Hint (${NET_DEVICE_NAMES[target]}): Set IP to ${suggestedIp}, Subnet mask ${LAN_MASK}, Gateway ${ROUTER_IP}, and Cable to Ethernet.`,
+  };
+}
+
+/** Returns true when both PC and Laptop are placed and have valid saved configurations. */
+export function isNetworkBuildComplete(net: NetworkLabState): boolean {
+  return Boolean(net.placed.pc && net.placed.laptop && net.cfg.pc && net.cfg.laptop);
+}
+
+/** Lists human-readable steps remaining before the network connection test can pass. */
+export function missingNetworkSteps(net: NetworkLabState): string[] {
+  const missing: string[] = [];
+  if (!net.placed.pc) missing.push('place PC');
+  if (!net.placed.laptop) missing.push('place Laptop');
+  if (net.placed.pc && !net.cfg.pc) missing.push('configure PC');
+  if (net.placed.laptop && !net.cfg.laptop) missing.push('configure Laptop');
+  return missing;
 }
 
 export function scoreNetworkBuild(net: NetworkLabState): { accuracyPct: number } {

@@ -12,6 +12,8 @@ export interface StreakState {
 }
 
 export const MAX_RESTORE_GAP_DAYS = 2;
+export const STREAK_RESTORE_COST_XP = 200;
+export const MAX_STREAK_RESTORES = 3;
 
 export function createInitialStreak(): StreakState {
   return { current: 0, longest: 0, lastActiveDay: null, restoresLeft: 1 };
@@ -36,10 +38,34 @@ export function isBroken(s: StreakState, today: string): boolean {
   return s.lastActiveDay !== null && dayDiff(s.lastActiveDay, today) > 1;
 }
 
+/** True when broken within the 1–2 missed-day restore window (regardless of restores left). */
+export function isWithinRestoreWindow(s: StreakState, today: string): boolean {
+  if (!isBroken(s, today)) return false;
+  return dayDiff(s.lastActiveDay as string, today) - 1 <= MAX_RESTORE_GAP_DAYS;
+}
+
 /** A broken streak can be restored if the gap is small and a restore is left. */
 export function canRestore(s: StreakState, today: string): boolean {
-  if (!isBroken(s, today) || s.restoresLeft <= 0) return false;
-  return dayDiff(s.lastActiveDay as string, today) - 1 <= MAX_RESTORE_GAP_DAYS;
+  return s.restoresLeft > 0 && isWithinRestoreWindow(s, today);
+}
+
+/** True when the player can buy another restore using available XP. */
+export function canBuyRestore(s: StreakState, availableXp: number): boolean {
+  return s.restoresLeft < MAX_STREAK_RESTORES && availableXp >= STREAK_RESTORE_COST_XP;
+}
+
+export function buyRestore(
+  s: StreakState,
+  availableXp: number,
+): { next: StreakState; cost: number; bought: boolean } {
+  if (!canBuyRestore(s, availableXp)) {
+    return { next: s, cost: 0, bought: false };
+  }
+  return {
+    bought: true,
+    cost: STREAK_RESTORE_COST_XP,
+    next: { ...s, restoresLeft: s.restoresLeft + 1 },
+  };
 }
 
 /**

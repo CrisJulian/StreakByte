@@ -106,6 +106,13 @@ export const TRACKS: Record<TrackId, CurriculumTrack> = {
   },
 };
 
+/** Lookup map from lesson key (e.g. "hw-1") to base XP. */
+export const LESSON_XP_BY_KEY: Record<string, number> = Object.fromEntries(
+  (Object.keys(TRACKS) as TrackId[]).flatMap((trackId) =>
+    TRACKS[trackId].lessons.map((lesson, idx) => [`${trackId}-${idx + 1}`, lesson.xp]),
+  ),
+);
+
 /** "Lesson 3: Memory (RAM)" for normal lessons; Final Lessons already say "Final Lesson". */
 export function lessonLabel(lesson: CurriculumLesson, index: number): string {
   return lesson.kind === 'final' ? lesson.title : `Lesson ${index + 1}: ${lesson.title}`;

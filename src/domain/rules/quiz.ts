@@ -85,3 +85,39 @@ export function parseLessonKey(key: string): { trackId: string; number: number }
   const m = /^([a-z]+)-(\d+)$/.exec(key);
   return m ? { trackId: m[1], number: Number(m[2]) } : null;
 }
+
+/** Trailing consecutive correct answers in the current quiz session. */
+export function currentCombo(answers: readonly QuizAnswer[]): number {
+  let streak = 0;
+  for (let i = answers.length - 1; i >= 0; i -= 1) {
+    if (!answers[i].correct) break;
+    streak += 1;
+  }
+  return streak;
+}
+
+/** Longest consecutive correct streak in the current quiz session. */
+export function maxCombo(answers: readonly QuizAnswer[]): number {
+  let best = 0;
+  let run = 0;
+  for (const ans of answers) {
+    if (ans.correct) {
+      run += 1;
+      if (run > best) best = run;
+    } else {
+      run = 0;
+    }
+  }
+  return best;
+}
+
+export function comboTier(streak: number): {
+  label: string;
+  multiplier: number;
+  overclocked: boolean;
+} {
+  if (streak >= 4) return { label: 'OVERCLOCKED', multiplier: 2, overclocked: true };
+  if (streak === 3) return { label: 'Turbo 1.5x', multiplier: 1.5, overclocked: false };
+  if (streak === 2) return { label: 'Combo 1.25x', multiplier: 1.25, overclocked: false };
+  return { label: '', multiplier: 1, overclocked: false };
+}

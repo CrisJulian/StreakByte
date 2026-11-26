@@ -1,12 +1,14 @@
 import type {
   AuthService,
+  DuelService,
   ProgressRepository,
   ReminderScheduler,
   StudyBuddyService,
   SyncQueue,
 } from './application/ports';
-import { localAuth } from './adapters/local/localAuth';
-import { localProgress } from './adapters/local/localProgress';
+import { supabaseAuth } from './adapters/supabase/supabaseAuth';
+import { supabaseDuel } from './adapters/supabase/supabaseDuel';
+import { supabaseProgress } from './adapters/supabase/supabaseProgress';
 import { localReminders } from './adapters/local/localReminders';
 import { geminiStudyBuddy } from './adapters/gemini/geminiStudyBuddy';
 import { localSyncQueue } from './adapters/local/localSyncQueue';
@@ -14,6 +16,7 @@ import { localSyncQueue } from './adapters/local/localSyncQueue';
 export interface Services {
   auth: AuthService;
   progress: ProgressRepository;
+  duel: DuelService;
   studyBuddy: StudyBuddyService;
   reminders: ReminderScheduler;
   syncQueue: SyncQueue;
@@ -24,8 +27,9 @@ export interface Services {
  * adapters here and swap them in; nothing else in the app changes.
  */
 export const services: Services = {
-  auth: localAuth,
-  progress: localProgress,
+  auth: supabaseAuth,
+  progress: supabaseProgress,
+  duel: supabaseDuel,
   studyBuddy: geminiStudyBuddy,
   reminders: localReminders,
   syncQueue: localSyncQueue,
