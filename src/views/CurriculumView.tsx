@@ -90,12 +90,6 @@ export function CurriculumView() {
       <div className="grid grid-cols-[minmax(0,1fr)_330px] max-[1000px]:grid-cols-1 items-stretch">
         <div className="p-6 max-[760px]:p-4 border-r border-line max-[1000px]:border-r-0 max-[1000px]:border-b">
           <div className="mb-4">
-            <label
-              htmlFor="curr-search"
-              className="block text-[10px] font-bold uppercase tracking-[0.07em] text-muted mb-1.5"
-            >
-              Filter lessons, parts, topics
-            </label>
             <div className="relative flex items-center">
               <Icon name="search" className="w-4 h-4 absolute left-3 text-muted pointer-events-none" />
               <input

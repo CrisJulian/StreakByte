@@ -21,8 +21,9 @@ export type SessionLength = '5' | '10';
 export type PcPartId = 'cpu' | 'cooler' | 'ram' | 'm2' | 'gpu' | 'psu';
 export type PcSlotId = 'CPU' | 'COOLER' | 'A1' | 'A2' | 'B1' | 'B2' | 'M2' | 'PCIE' | 'PWR';
 
-export type NetDeviceId = 'pc' | 'laptop' | 'hub';
+export type NetDeviceId = 'router' | 'switch' | 'pc' | 'laptop';
 export type NetConfigurableDeviceId = 'pc' | 'laptop';
+export type NetLinkId = 'wan' | 'uplink' | 'pc' | 'laptop';
 export type CableType = 'eth' | 'fiber' | 'coax';
 
 export type PracticeFilter = 'all' | 'need' | 'hw' | 'net';
@@ -127,32 +128,46 @@ export interface PcBuildState {
   hintedStep: PcPartId | null;
 }
 
-export type NetworkHintStep = 'place-pc' | 'place-laptop' | 'config-laptop' | 'config-pc';
+export type NetworkHintStep =
+  | 'place-router'
+  | 'place-switch'
+  | 'place-pc'
+  | 'place-laptop'
+  | 'wire-wan'
+  | 'wire-uplink'
+  | 'wire-pc'
+  | 'wire-laptop'
+  | 'config-pc'
+  | 'config-laptop';
 
 export interface NetDeviceConfig {
   ip: string;
   mask: string;
   gw: string;
-  cab: CableType;
 }
 
 export interface NetFormErrors {
   ip?: string;
   mask?: string;
   gw?: string;
-  cab?: string;
 }
 
 export interface NetworkLabState {
   selectedDevice: NetDeviceId | null;
+  selectedCable: CableType | null;
   placed: Record<NetDeviceId, boolean>;
+  links: Partial<Record<NetLinkId, CableType>>;
   cfg: Partial<Record<NetConfigurableDeviceId, NetDeviceConfig>>;
   savedDevices: Partial<Record<NetConfigurableDeviceId, boolean>>;
   openDevice: NetConfigurableDeviceId | null;
+  pingPassed: boolean;
+  pingLog: string[];
   bad: number;
   issues: string[];
   message: string;
   errors: NetFormErrors;
+  hintTarget: NetDeviceId | NetLinkId | null;
+  hintTick: number;
   hintedStep: NetworkHintStep | null;
 }
 

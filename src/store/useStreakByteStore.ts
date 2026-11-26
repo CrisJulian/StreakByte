@@ -45,8 +45,11 @@ import {
   missingNetworkSteps,
   nextNetworkHint,
   placeDevice,
+  runPingCheck,
   saveDeviceConfig,
+  selectCable,
   selectDevice,
+  wireLink,
 } from '../domain/rules/network';
 import {
   createInitialPcState,
@@ -131,6 +134,7 @@ import type {
   LeaderboardPeriod,
   NetDeviceConfig,
   NetDeviceId,
+  NetLinkId,
   NetworkLabState,
   PcBuildState,
   PcPartId,
@@ -166,7 +170,7 @@ export const LOCAL_TEST_DUEL_ID = 'local-test-duel';
 
 export const CABLE_COLORS: Record<CableType, string> = {
   eth: '#22d3ee',
-  fiber: '#22d3ee',
+  fiber: '#34d399',
   coax: '#a3add1',
 };
 
@@ -450,10 +454,13 @@ export interface StreakByteStore {
   // Network Build lab
   selectNetworkDevice: (device: NetDeviceId | null) => void;
   placeNetworkDevice: (spot: NetDeviceId, draggedDevice?: NetDeviceId) => boolean;
+  selectNetworkCable: (cable: CableType | null) => void;
+  wireNetworkLink: (linkId: NetLinkId, draggedCable?: CableType) => boolean;
   openNetworkConfig: (device: NetDeviceId) => void;
   closeNetworkConfig: () => void;
   saveNetworkConfig: (config: NetDeviceConfig) => boolean;
   triggerNetworkHint: () => void;
+  runNetworkPing: () => boolean;
   completeNetworkBuild: () => void;
 
   // Quiz
@@ -1527,12 +1534,37 @@ export const useStreakByteStore = create<StreakByteStore>()(
         return placed;
       },
 
+      selectNetworkCable: (cable) =>
+        set((state) => ({ net: selectCable(state.net, cable) })),
+
+      wireNetworkLink: (linkId, draggedCable) => {
+        if (get().labTimedOut) return false;
+        const { state, wired } = wireLink(get().net, linkId, draggedCable);
+        set({
+          net: state,
+          lastMistake: wired ? null : buildLabMistake('net', state.message),
+        });
+        playSfx(wired ? 'snap' : 'error', { enabled: get().profileSettings.soundEffects });
+        return wired;
+      },
+
       openNetworkConfig: (device) => {
-        if (device === 'hub') {
+        if (device === 'router') {
           set((state) => ({
             net: {
               ...state.net,
-              message: 'The hub needs no IP setup. It repeats traffic across ports.',
+              message:
+                'Router gateway is pre-set to 192.168.1.1 (/24). Click Workstation PC or Laptop to configure its IPv4 address.',
+            },
+          }));
+          return;
+        }
+        if (device === 'switch') {
+          set((state) => ({
+            net: {
+              ...state.net,
+              message:
+                '8-Port L2 Switch forwards Ethernet frames between LAN ports automatically — no IP setup needed.',
             },
           }));
           return;
@@ -1586,6 +1618,20 @@ export const useStreakByteStore = create<StreakByteStore>()(
         }
       },
 
+      runNetworkPing: () => {
+        if (get().labTimedOut) return false;
+        const { state, passed } = runPingCheck(get().net);
+        set({
+          net: state,
+          lastMistake: passed ? null : buildLabMistake('net', state.message),
+        });
+        playSfx(passed ? 'ping' : 'error', { enabled: get().profileSettings.soundEffects });
+        if (!passed) {
+          get().showToast('Finish placing, cabling, and configuring IPs before testing.');
+        }
+        return passed;
+      },
+
       completeNetworkBuild: () => {
         const current = get();
         if (current.labTimedOut) return;
@@ -1597,7 +1643,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
             lastMistake: buildLabMistake('net', message),
           });
           playSfx('error', { enabled: current.profileSettings.soundEffects });
-          get().showToast('Configure both PC and Laptop before testing.');
+          get().showToast('Build and configure the full office LAN before finishing.');
           return;
         }
         const today = localDayString();

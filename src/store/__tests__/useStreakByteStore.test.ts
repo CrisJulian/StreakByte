@@ -91,25 +91,46 @@ describe('useStreakByteStore', () => {
     expect(state.completion?.review[0]).toEqual(['Dual-channel RAM', 'Slots A2 and B2 matched']);
   });
 
-  it('validates network device placement and IP/subnet/gateway configuration', () => {
+  it('validates network device placement, cabling, IP/subnet/gateway configuration, and ping test', () => {
     const store = useStreakByteStore.getState();
 
     // Wrong spot placement
-    store.placeNetworkDevice('hub', 'pc');
+    store.placeNetworkDevice('switch', 'pc');
     expect(useStreakByteStore.getState().net.bad).toBe(1);
-    expect(useStreakByteStore.getState().net.message).toBe('PC belongs on the PC spot.');
+    expect(useStreakByteStore.getState().net.message).toContain('Workstation PC belongs on the Workstation PC slot');
 
-    // Correct hub placement
-    store.placeNetworkDevice('hub', 'hub');
-    expect(useStreakByteStore.getState().net.placed.hub).toBe(true);
+    // Place all 4 topology devices
+    expect(store.placeNetworkDevice('router', 'router')).toBe(true);
+    expect(store.placeNetworkDevice('switch', 'switch')).toBe(true);
+    expect(store.placeNetworkDevice('pc', 'pc')).toBe(true);
+    expect(store.placeNetworkDevice('laptop', 'laptop')).toBe(true);
 
-    // Invalid IP, mask, gateway
+    // Wrong cable on WAN vs LAN
+    expect(store.wireNetworkLink('wan', 'eth')).toBe(false);
+    expect(useStreakByteStore.getState().net.message).toContain('Fiber or Coax');
+    expect(store.wireNetworkLink('wan', 'fiber')).toBe(true);
+
+    expect(store.wireNetworkLink('uplink', 'fiber')).toBe(false);
+    expect(store.wireNetworkLink('uplink', 'eth')).toBe(true);
+    expect(store.wireNetworkLink('pc', 'eth')).toBe(true);
+    expect(store.wireNetworkLink('laptop', 'eth')).toBe(true);
+
+    // Save PC config
+    useStreakByteStore.getState().openNetworkConfig('pc');
+    expect(
+      useStreakByteStore.getState().saveNetworkConfig({
+        ip: '192.168.1.10',
+        mask: '255.255.255.0',
+        gw: '192.168.1.1',
+      }),
+    ).toBe(true);
+
+    // Invalid IP, mask, gateway on laptop
     useStreakByteStore.getState().openNetworkConfig('laptop');
     let ok = useStreakByteStore.getState().saveNetworkConfig({
       ip: '192.168.1.1',
       mask: '255.255.0.0',
       gw: '10.0.0.1',
-      cab: 'eth',
     });
     expect(ok).toBe(false);
     expect(useStreakByteStore.getState().net.errors.ip).toContain('router');
@@ -122,21 +143,21 @@ describe('useStreakByteStore', () => {
       ip: '192.168.1.10',
       mask: '255.255.255.0',
       gw: '192.168.1.1',
-      cab: 'eth',
     });
     expect(ok).toBe(false);
     expect(useStreakByteStore.getState().net.errors.ip).toContain('already uses');
 
-    // Valid config
+    // Valid laptop config + ping check
     ok = useStreakByteStore.getState().saveNetworkConfig({
       ip: '192.168.1.20',
       mask: '255.255.255.0',
       gw: '192.168.1.1',
-      cab: 'fiber',
     });
     expect(ok).toBe(true);
     expect(useStreakByteStore.getState().net.openDevice).toBeNull();
     expect(useStreakByteStore.getState().net.cfg.laptop?.ip).toBe('192.168.1.20');
+    expect(useStreakByteStore.getState().runNetworkPing()).toBe(true);
+    expect(useStreakByteStore.getState().net.pingPassed).toBe(true);
   });
 
   it('persists theme choice and ignores empty study buddy messages while replying offline', () => {
@@ -592,23 +613,18 @@ describe('quiz flow in the store', () => {
     expect(useStreakByteStore.getState().xpSpent).toBe(50);
     expect(useStreakByteStore.getState().pc.message).toContain('Mount the CPU cooler');
 
-    // Network hint deducts 25 XP once per step, and stays locked until Laptop is saved
+    // Network hint deducts 25 XP once per step, and stays locked until Router is placed
     useStreakByteStore.getState().triggerNetworkHint();
     expect(useStreakByteStore.getState().xpSpent).toBe(75);
-    expect(useStreakByteStore.getState().net.message).toContain('192.168.1.20');
+    expect(useStreakByteStore.getState().net.message).toContain('Router slot');
 
     useStreakByteStore.getState().triggerNetworkHint();
     expect(useStreakByteStore.getState().xpSpent).toBe(75);
 
-    useStreakByteStore.getState().saveNetworkConfig({
-      ip: '192.168.1.20',
-      mask: '255.255.255.0',
-      gw: '192.168.1.1',
-      cab: 'eth',
-    });
+    useStreakByteStore.getState().placeNetworkDevice('router', 'router');
     useStreakByteStore.getState().triggerNetworkHint();
     expect(useStreakByteStore.getState().xpSpent).toBe(100);
-    expect(useStreakByteStore.getState().net.message).toContain('PC');
+    expect(useStreakByteStore.getState().net.message).toContain('8-Port Switch');
 
     // All steps complete -> no XP charged
     useStreakByteStore.setState((s) => ({
@@ -621,7 +637,13 @@ describe('quiz flow in the store', () => {
         gpu: true,
         psu: true,
       },
-      net: { ...s.net, savedDevices: { pc: true, laptop: true }, openDevice: null },
+      net: {
+        ...s.net,
+        placed: { router: true, switch: true, pc: true, laptop: true },
+        links: { wan: 'fiber', uplink: 'eth', pc: 'eth', laptop: 'eth' },
+        savedDevices: { pc: true, laptop: true },
+        openDevice: null,
+      },
     }));
     useStreakByteStore.getState().triggerPcHint();
     useStreakByteStore.getState().triggerNetworkHint();
@@ -654,11 +676,11 @@ describe('quiz flow in the store', () => {
     expect(useStreakByteStore.getState().view).toBe('lesson');
     expect(useStreakByteStore.getState().pc.message).toContain('1/7 parts installed');
 
-    // Network lab fails if Laptop isn't configured yet
+    // Network lab fails if devices/cables/IPs aren't finished yet
     useStreakByteStore.getState().navigate('lesson/network');
     useStreakByteStore.getState().completeNetworkBuild();
     expect(useStreakByteStore.getState().view).toBe('lesson');
     expect(useStreakByteStore.getState().labBonusXp).toBe(0);
-    expect(useStreakByteStore.getState().net.message).toContain('configure Laptop');
+    expect(useStreakByteStore.getState().net.message).toContain('place Router');
   });
 });

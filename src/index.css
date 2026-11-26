@@ -471,11 +471,21 @@ svg.pcb {
 
 /* Interactive SVG: Network build diagram */
 svg.net {
-  width: 100%;
+  width: auto;
+  max-width: 100%;
+  max-height: calc(100dvh - 210px);
   height: auto;
   display: block;
+  margin-inline: auto;
   stroke: none;
   stroke-width: 0;
+}
+
+@media (max-width: 1100px) {
+  svg.net {
+    width: 100%;
+    max-height: none;
+  }
 }
 
 .net .gridl {
@@ -508,6 +518,52 @@ svg.net {
 .net .spot.over rect {
   stroke: var(--cyan);
   fill: color-mix(in srgb, var(--cyan) 12%, transparent);
+}
+
+.net .spot.hint rect {
+  stroke: #ffffff;
+  stroke-width: 3;
+  animation: sb-pulse 1s ease-in-out 3;
+}
+
+.net .link-slot {
+  cursor: pointer;
+  outline: none;
+}
+
+.net .link-slot .wire-guide {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 3;
+  stroke-dasharray: 6 5;
+  transition: stroke 0.18s;
+}
+
+.net .link-slot .wire-pill {
+  fill: var(--panel);
+  stroke: var(--muted);
+  stroke-width: 1.5;
+  transition: stroke 0.18s, fill 0.18s;
+}
+
+.net .link-slot:hover .wire-guide,
+.net .link-slot:focus-visible .wire-guide,
+.net .link-slot.over .wire-guide {
+  stroke: var(--cyan);
+}
+
+.net .link-slot:hover .wire-pill,
+.net .link-slot:focus-visible .wire-pill,
+.net .link-slot.over .wire-pill {
+  stroke: var(--cyan);
+  fill: color-mix(in srgb, var(--cyan) 14%, var(--panel));
+}
+
+.net .link-slot.hint .wire-guide,
+.net .link-slot.hint .wire-pill {
+  stroke: #ffffff;
+  stroke-width: 3;
+  animation: sb-pulse 1s ease-in-out 3;
 }
 
 .net .spot text {

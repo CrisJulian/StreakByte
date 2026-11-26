@@ -241,7 +241,7 @@ export function DashboardView() {
         >
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
-              MISSION {missionCode} · {activeTrack.heading}
+              {activeTrack.heading}
             </div>
             <h2 className="m-0 mt-1.5 mb-2.5 sb-section-title text-[28px] text-balance">
               {nextLessonTitle}
@@ -296,11 +296,8 @@ export function DashboardView() {
         </section>
 
         {/* Col 2: Mission Schematic */}
-        <button
-          type="button"
-          onClick={() => navigate(`learn/${nextLessonKey}`)}
-          aria-label={`Inspect ${nextLessonTitle} schematic in lesson`}
-          className="relative sb-blueprint-dots border-0 border-r border-line max-[1024px]:border-r-0 max-[1024px]:border-b min-h-[276px] p-4 flex flex-col justify-between text-left cursor-pointer transition-colors hover:bg-panel3/40 group"
+        <div
+          className="relative sb-blueprint-dots border-0 border-r border-line max-[1024px]:border-r-0 max-[1024px]:border-b min-h-[276px] p-4 flex flex-col justify-between text-left"
         >
           <CornerBrackets />
           <div className="w-full flex justify-between items-center gap-2">
@@ -315,15 +312,7 @@ export function DashboardView() {
           <div className="flex-1 w-full grid place-items-center py-3 px-1">
             <MissionSchematic trackId={activeTrackId} />
           </div>
-          <div className="w-full flex justify-between items-center gap-2 text-[9.5px] uppercase tracking-[0.06em] text-muted">
-            <span>
-              {activeTrackId === 'net'
-                ? '4 NODES · GATEWAY & LAN LINKS'
-                : '5 KEY ZONES · SOCKETS, SLOTS & PORTS'}
-            </span>
-            <span className="font-bold group-hover:text-cyan transition-colors">OPEN LESSON ↗</span>
-          </div>
-        </button>
+        </div>
 
         {/* Col 3: Next Reward Dark HUD + XP Level Progress */}
         <div className="grid grid-rows-[1fr_auto]">

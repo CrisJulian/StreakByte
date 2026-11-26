@@ -48,13 +48,9 @@ export function PracticeView() {
             <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
             <span>DRILL &amp; RETENTION</span>
           </div>
-          <h1 className="m-0 mt-1.5 sb-page-title text-[30px]">
+          <h1 className="m-0 mt-1.5 mb-4 sb-page-title text-[30px]">
             Answer it again.
           </h1>
-          <p className="mt-1.5 mb-4 text-muted text-[12px] max-w-[54ch]">
-            Redo lessons and quizzes you have already finished. Items you missed come back first, so
-            they stick.
-          </p>
           <div className="flex gap-2.5 flex-wrap">
             {totalCount === 0 ? (
               <button

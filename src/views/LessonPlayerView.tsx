@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Icon } from '../components/Icon';
 import { LAB_REFERENCES } from '../data/references';
-import { effectiveStreak, localDayString } from '../domain/rules/xp';
+import { deriveNetworkStepFlags } from '../domain/rules/network';
 import { useStreakByteStore } from '../store/useStreakByteStore';
 import { NetworkBuildLab } from './labs/NetworkBuildLab';
 import { PcBuildLab } from './labs/PcBuildLab';
@@ -9,14 +9,13 @@ import { PcBuildLab } from './labs/PcBuildLab';
 export function LessonPlayerView() {
   const activeLab = useStreakByteStore((s) => s.activeLab);
   const pc = useStreakByteStore((s) => s.pc);
-  const streak = useStreakByteStore((s) => s.streak);
+  const net = useStreakByteStore((s) => s.net);
   const lessonSeconds = useStreakByteStore((s) => s.lessonSeconds);
   const labSessionMode = useStreakByteStore((s) => s.labSessionMode);
   const labTimedOut = useStreakByteStore((s) => s.labTimedOut);
   const tickLessonTimer = useStreakByteStore((s) => s.tickLessonTimer);
   const retryTimedLab = useStreakByteStore((s) => s.retryTimedLab);
   const navigate = useStreakByteStore((s) => s.navigate);
-  const streakDays = effectiveStreak(streak, localDayString());
 
   useEffect(() => {
     if (labTimedOut) return undefined;
@@ -26,16 +25,20 @@ export function LessonPlayerView() {
     return () => window.clearInterval(id);
   }, [labTimedOut, tickLessonTimer]);
 
-  const stepDoneFlags = [
-    pc.cpu,
-    pc.cooler,
-    Object.keys(pc.ram).length >= 2,
-    pc.m2,
-    pc.gpu,
-    pc.psu,
-  ];
+  const stepDoneFlags =
+    activeLab === 'net'
+      ? deriveNetworkStepFlags(net)
+      : [
+          pc.cpu,
+          pc.cooler,
+          Object.keys(pc.ram).length >= 2,
+          pc.m2,
+          pc.gpu,
+          pc.psu,
+        ];
+  const totalSteps = stepDoneFlags.length;
   const curIdx = stepDoneFlags.findIndex((done) => !done);
-  const stepLabel = curIdx < 0 ? 'All steps done' : `Step ${curIdx + 1} of 6`;
+  const stepLabel = curIdx < 0 ? 'All steps done' : `Step ${curIdx + 1} of ${totalSteps}`;
   const timerUrgent = labSessionMode === 'timed' && lessonSeconds <= 30;
 
   const formattedTime = `${Math.floor(lessonSeconds / 60)}:${String(lessonSeconds % 60).padStart(
@@ -89,30 +92,22 @@ export function LessonPlayerView() {
           </div>
         </div>
 
-        {activeLab === 'pc' && (
-          <div
-            className="grid grid-cols-6 gap-1 flex-1 min-w-[140px] max-w-[280px]"
-            aria-hidden="true"
-          >
-            {stepDoneFlags.map((done, idx) => (
-              <i
-                key={idx}
-                className={`h-2.5 ${done ? 'bg-green' : idx === curIdx ? 'bg-cyan' : 'bg-panel3'
-                  }`}
-              />
-            ))}
-          </div>
-        )}
+        <div
+          className={`grid ${activeLab === 'net' ? 'grid-cols-5' : 'grid-cols-6'} gap-1 flex-1 min-w-[140px] max-w-[280px]`}
+          aria-hidden="true"
+        >
+          {stepDoneFlags.map((done, idx) => (
+            <i
+              key={idx}
+              className={`h-2.5 ${done ? 'bg-green' : idx === curIdx ? 'bg-cyan' : 'bg-panel3'
+                }`}
+            />
+          ))}
+        </div>
 
         <div className="flex gap-2 items-center flex-wrap">
-          {activeLab === 'pc' && (
-            <span className="inline-flex items-center gap-2 min-h-9 px-3 py-1 bg-cyan text-cyan-ink font-bold text-[10.5px] uppercase tracking-[0.06em]">
-              {stepLabel}
-            </span>
-          )}
-          <span className="inline-flex items-center gap-1.5 min-h-9 px-3 py-1 border border-line bg-panel font-bold text-[10.5px] uppercase tracking-[0.05em]">
-            <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
-            {streakDays}-day streak
+          <span className="inline-flex items-center gap-2 min-h-9 px-3 py-1 bg-cyan text-cyan-ink font-bold text-[10.5px] uppercase tracking-[0.06em]">
+            {stepLabel}
           </span>
           <span
             className={`inline-flex items-center gap-1.5 min-h-9 px-3 py-1 border bg-panel font-bold text-[10.5px] uppercase tracking-[0.05em] ${
