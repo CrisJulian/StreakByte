@@ -193,13 +193,13 @@ export function DashboardView() {
       <div className="max-w-[1320px] mx-auto px-6 py-7 max-[760px]:px-4 max-[760px]:py-5 grid gap-7">
         {/* Tier 1: Operate-mode Greeting Header */}
         <header className="sb-enter flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3.5 min-w-0">
+          <div className="flex items-center gap-4 min-w-0">
             <WelcomeMascot />
             <div className="min-w-0">
-              <h1 className="m-0 font-disp text-[30px] max-[760px]:text-[22px] leading-[1.1] tracking-[-0.025em] text-ink">
+              <h1 className="m-0 font-disp text-[38px] max-[760px]:text-[26px] leading-[1.1] tracking-[-0.025em] text-ink">
                 Welcome back, <span className="text-cyan">{firstName}</span>
               </h1>
-              <p className="m-0 mt-1 text-[14px] text-muted">{heroSubtitle}</p>
+              <p className="m-0 mt-1.5 text-[16px] max-[760px]:text-[14.5px] text-muted">{heroSubtitle}</p>
             </div>
           </div>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-line bg-panel text-[12.5px] text-muted">

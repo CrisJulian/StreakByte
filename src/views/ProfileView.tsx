@@ -16,9 +16,19 @@ function heatBg(level: (typeof HEAT_LEVELS)[number]): string {
   return 'var(--panel3)';
 }
 
+function maskEmail(email: string): string {
+  const trimmed = email.trim();
+  if (!trimmed) return '';
+  const atIndex = trimmed.indexOf('@');
+  if (atIndex <= 0) return `${trimmed[0]}${'*'.repeat(Math.max(1, trimmed.length - 1))}`;
+  const local = trimmed.slice(0, atIndex);
+  const domain = trimmed.slice(atIndex);
+  if (local.length <= 2) return `${'*'.repeat(local.length)}${domain}`;
+  const visible = local.length === 3 ? 1 : 2;
+  return `${local.slice(0, visible)}${'*'.repeat(local.length - visible)}${domain}`;
+}
+
 export function ProfileView() {
-  const theme = useStreakByteStore((s) => s.theme);
-  const setTheme = useStreakByteStore((s) => s.setTheme);
   const settings = useStreakByteStore((s) => s.profileSettings);
   const updateProfileSettings = useStreakByteStore((s) => s.updateProfileSettings);
   const setSelectedTracks = useStreakByteStore((s) => s.setSelectedTracks);
@@ -75,11 +85,7 @@ export function ProfileView() {
           </span>
         )}
         <div>
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
-            <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
-            <span>OPERATOR PROFILE</span>
-          </div>
-          <h1 className="m-0 mt-1 sb-page-title text-[32px]">
+          <h1 className="m-0 sb-page-title text-[32px]">
             {fullName}
           </h1>
           <p className="mt-1 mb-3 text-muted text-xs">
@@ -99,9 +105,6 @@ export function ProfileView() {
               {formatXp(level.currentLevelXp)} / {formatXp(level.nextLevelXp)} XP
             </small>
           </div>
-          <p className="mt-1.5 mb-0 text-muted text-[11px]">
-            {formatXp(level.xpToNext)} XP to Level {level.level + 1}
-          </p>
         </div>
 
         <button
@@ -249,64 +252,15 @@ export function ProfileView() {
               htmlFor="s-e"
               className="block mt-3.5 mb-1 font-bold text-[10px] uppercase tracking-[0.07em] text-muted"
             >
-              School email
+              Email
             </label>
             <input
               id="s-e"
-              type="email"
-              autoComplete="email"
-              value={settings.email}
-              onChange={(e) => updateProfileSettings({ email: e.target.value })}
-              className="w-full min-h-10 px-3 border border-line bg-bg text-ink text-xs font-mono focus-visible:outline-none focus-visible:border-ink"
+              type="text"
+              readOnly
+              value={maskEmail(settings.email)}
+              className="w-full min-h-10 px-3 border border-line bg-bg text-muted text-xs font-mono focus-visible:outline-none"
             />
-
-            <label
-              htmlFor="s-gemini"
-              className="block mt-3.5 mb-1 font-bold text-[10px] uppercase tracking-[0.07em] text-muted"
-            >
-              Gemini API key <span className="font-normal">(optional)</span>
-            </label>
-            <input
-              id="s-gemini"
-              type="password"
-              placeholder="Leave blank for offline responder"
-              autoComplete="off"
-              value={settings.geminiApiKey ?? ''}
-              onChange={(e) => updateProfileSettings({ geminiApiKey: e.target.value })}
-              className="w-full min-h-10 px-3 border border-line bg-bg text-ink text-xs font-mono focus-visible:outline-none focus-visible:border-ink"
-            />
-            <small className="block mt-1 text-muted text-[10.5px]">
-              Powers live Study Buddy responses via Google Gemini. If empty or offline, built-in
-              curriculum answers are used.
-            </small>
-
-            <span id="theme-l" className="block mt-4 mb-1.5 text-muted text-[10px] font-bold uppercase tracking-[0.07em]">
-              Appearance
-            </span>
-            <div role="group" aria-labelledby="theme-l" className="grid grid-cols-2 border border-ink bg-panel">
-              <button
-                type="button"
-                aria-pressed={theme === 'dark'}
-                onClick={() => setTheme('dark')}
-                className={`min-h-10 px-4 border-0 font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer transition-colors ${theme === 'dark'
-                    ? 'bg-cyan text-cyan-ink'
-                    : 'bg-panel text-ink hover:bg-panel2'
-                  }`}
-              >
-                Dark
-              </button>
-              <button
-                type="button"
-                aria-pressed={theme === 'light'}
-                onClick={() => setTheme('light')}
-                className={`min-h-10 px-4 border-0 border-l border-ink font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer transition-colors ${theme === 'light'
-                    ? 'bg-cyan text-cyan-ink'
-                    : 'bg-panel text-ink hover:bg-panel2'
-                  }`}
-              >
-                Light
-              </button>
-            </div>
 
             <span id="tracks-l" className="block mt-4 mb-1.5 text-muted text-[10px] font-bold uppercase tracking-[0.07em]">
               Curriculum tracks
@@ -364,18 +318,6 @@ export function ProfileView() {
             </div>
 
             <div className="flex justify-between items-center gap-3.5 py-3 mt-4 border-t border-line">
-              <span>
-                <b className="block text-xs uppercase tracking-[0.04em]">Daily reminder</b>
-                <small className="text-muted text-[11px]">Nudge me before my streak ends</small>
-              </span>
-              <ToggleSwitch
-                checked={settings.dailyReminder}
-                label="Daily reminder"
-                onToggle={() => updateProfileSettings({ dailyReminder: !settings.dailyReminder })}
-              />
-            </div>
-
-            <div className="flex justify-between items-center gap-3.5 py-3 border-t border-line">
               <span>
                 <b className="block text-xs uppercase tracking-[0.04em]">Sound effects</b>
               </span>

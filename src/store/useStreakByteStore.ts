@@ -709,6 +709,8 @@ export const useStreakByteStore = create<StreakByteStore>()(
           nextBonus,
           current.xpSpent,
         );
+        const nextStreak = recordActivity(current.streak, today);
+        const streakChanged = nextStreak !== current.streak;
         const levelUp = maybeLevelUp(prevXp, nextXp, current.profileSettings.soundEffects);
         if (!levelUp) {
           playSfx('combo', { enabled: current.profileSettings.soundEffects, combo: 4 });
@@ -717,8 +719,17 @@ export const useStreakByteStore = create<StreakByteStore>()(
         set({
           dailyActivity: next,
           labBonusXp: nextBonus,
+          streak: nextStreak,
           ...(levelUp ? { levelUpEvent: levelUp } : {}),
         });
+        if (streakChanged) {
+          void persistOrQueue(
+            get,
+            set,
+            { type: 'save-streak', payload: nextStreak },
+            () => services.progress.saveStreak(nextStreak),
+          );
+        }
         void persistOrQueue(
           get,
           set,
@@ -1015,13 +1026,25 @@ export const useStreakByteStore = create<StreakByteStore>()(
           if (room.id !== LOCAL_TEST_DUEL_ID) {
             const playerScore = room.hostId === authId ? room.hostScore : room.guestScore;
             if (playerScore !== null || room.winnerId === authId) {
-              const prevDaily = ensureDailyActivity(get().dailyActivity, localDayString());
+              const today = localDayString();
+              const prevDaily = ensureDailyActivity(get().dailyActivity, today);
+              const prevStreak = get().streak;
+              const nextStreak = recordActivity(prevStreak, today);
               set({
                 dailyActivity: {
                   ...prevDaily,
                   arenaDuelsFinished: prevDaily.arenaDuelsFinished + 1,
                 },
+                streak: nextStreak,
               });
+              if (nextStreak !== prevStreak) {
+                void persistOrQueue(
+                  get,
+                  set,
+                  { type: 'save-streak', payload: nextStreak },
+                  () => services.progress.saveStreak(nextStreak),
+                );
+              }
             }
             void get().loadUserData();
           }
@@ -1922,9 +1945,20 @@ export const useStreakByteStore = create<StreakByteStore>()(
 
         const today = localDayString();
         const prevDaily = ensureDailyActivity(get().dailyActivity, today);
+        const prevStreak = get().streak;
+        const nextStreak = recordActivity(prevStreak, today);
         set({
           dailyActivity: { ...prevDaily, studyBuddyMessages: prevDaily.studyBuddyMessages + 1 },
+          streak: nextStreak,
         });
+        if (nextStreak !== prevStreak) {
+          void persistOrQueue(
+            get,
+            set,
+            { type: 'save-streak', payload: nextStreak },
+            () => services.progress.saveStreak(nextStreak),
+          );
+        }
 
         const appendBot = (reply: string) =>
           set((state) => ({

@@ -80,11 +80,7 @@ export function AchievementsView() {
     <div className="w-full bg-panel">
       <div className="p-6 max-[760px]:p-4 border-b border-line flex justify-between items-end gap-4 flex-wrap">
         <div>
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
-            <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
-            <span>BADGES · TROPHY WALL</span>
-          </div>
-          <h1 className="m-0 mt-1.5 sb-page-title text-[32px]">
+          <h1 className="m-0 sb-page-title text-[32px]">
             Achievements
           </h1>
           <p className="mt-1.5 mb-0 text-muted text-[12px]">
@@ -136,8 +132,8 @@ export function AchievementsView() {
                         <i
                           key={idx}
                           className={`block h-2 ${idx < Math.round(((nextLocked.progressPct ?? 0) / 100) * 10)
-                              ? 'bg-cyan'
-                              : 'bg-panel3'
+                            ? 'bg-cyan'
+                            : 'bg-panel3'
                             }`}
                         />
                       ))}
@@ -181,8 +177,8 @@ export function AchievementsView() {
               >
                 <div
                   className={`grid place-items-center w-11 h-11 mb-1 ${ach.unlocked
-                      ? 'bg-cyan text-cyan-ink'
-                      : 'border border-line bg-panel text-muted'
+                    ? 'bg-cyan text-cyan-ink'
+                    : 'border border-line bg-panel text-muted'
                     }`}
                 >
                   <Icon name={ach.icon} className="w-5 h-5" />
@@ -203,8 +199,8 @@ export function AchievementsView() {
                         <i
                           key={idx}
                           className={`block h-2 ${idx < Math.round(((ach.progressPct ?? 0) / 100) * 5)
-                              ? 'bg-cyan'
-                              : 'bg-panel3'
+                            ? 'bg-cyan'
+                            : 'bg-panel3'
                             }`}
                         />
                       ))}

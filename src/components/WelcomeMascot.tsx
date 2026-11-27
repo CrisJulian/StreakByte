@@ -207,7 +207,7 @@ export function WelcomeMascot() {
     <div
       role="img"
       aria-label="Your study buddy waving welcome"
-      className="relative w-[68px] h-[68px] max-[760px]:w-[52px] max-[760px]:h-[52px] flex-none flex items-center justify-center"
+      className="relative w-[88px] h-[88px] max-[760px]:w-[64px] max-[760px]:h-[64px] flex-none flex items-center justify-center"
     >
       <video
         ref={videoRef}

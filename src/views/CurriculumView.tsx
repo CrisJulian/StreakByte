@@ -35,11 +35,7 @@ export function CurriculumView() {
     <div className="w-full bg-panel">
       <div className="p-6 max-[760px]:p-4 border-b border-line flex justify-between items-end gap-4 flex-wrap">
         <div>
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
-            <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
-            <span>MISSION DIRECTORY</span>
-          </div>
-          <h1 className="m-0 mt-1.5 sb-page-title text-[32px]">
+          <h1 className="m-0 sb-page-title text-[32px]">
             {activeTrack.heading}
           </h1>
           <p className="mt-1.5 mb-0 text-muted text-[12px]">

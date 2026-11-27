@@ -242,17 +242,24 @@ describe('useStreakByteStore', () => {
     expect(useStreakByteStore.getState().levelUpEvent).toBeNull();
   });
 
-  it('tracks daily quest completion and awards XP once per claim', () => {
+  it('tracks daily quest completion, awards XP once per claim, and activates today’s streak', () => {
+    expect(useStreakByteStore.getState().streak.current).toBe(0);
     useStreakByteStore.getState().claimDailyQuest('daily-buddy');
     expect(useStreakByteStore.getState().labBonusXp).toBe(0);
+    expect(useStreakByteStore.getState().streak.current).toBe(0);
 
     useStreakByteStore.getState().sendChatMessage('Explain the RAM key notch');
+    expect(useStreakByteStore.getState().streak.current).toBe(1);
+    expect(useStreakByteStore.getState().streak.lastActiveDay).toBeTruthy();
+
     useStreakByteStore.getState().claimDailyQuest('daily-buddy');
     expect(useStreakByteStore.getState().labBonusXp).toBe(25);
+    expect(useStreakByteStore.getState().streak.current).toBe(1);
 
     // Double-claim is ignored
     useStreakByteStore.getState().claimDailyQuest('daily-buddy');
     expect(useStreakByteStore.getState().labBonusXp).toBe(25);
+    expect(useStreakByteStore.getState().streak.current).toBe(1);
   });
 
   it('syncs avatarUrl and profileSettings on setAuthUser and loadAuthUser', async () => {
@@ -479,9 +486,11 @@ describe('quiz flow in the store', () => {
       await useStreakByteStore.getState().submitDuelResult(2, 9000);
       expect(useStreakByteStore.getState().activeDuel?.winnerId).toBe('u-1');
       expect(useStreakByteStore.getState().dailyActivity.arenaDuelsFinished).toBe(1);
+      expect(useStreakByteStore.getState().streak.current).toBe(1);
 
       useStreakByteStore.getState().claimDailyQuest('daily-arena');
       expect(useStreakByteStore.getState().labBonusXp).toBe(50);
+      expect(useStreakByteStore.getState().streak.current).toBe(1);
     } finally {
       createSpy.mockRestore();
       submitSpy.mockRestore();

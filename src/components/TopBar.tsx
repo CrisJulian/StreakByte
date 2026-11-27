@@ -27,7 +27,6 @@ export function TopBar() {
   const theme = useStreakByteStore((s) => s.theme);
   const navigate = useStreakByteStore((s) => s.navigate);
   const toggleTheme = useStreakByteStore((s) => s.toggleTheme);
-  const showToast = useStreakByteStore((s) => s.showToast);
   const completions = useStreakByteStore((s) => s.completions);
   const streak = useStreakByteStore((s) => s.streak);
   const labBonusXp = useStreakByteStore((s) => s.labBonusXp);
@@ -265,15 +264,6 @@ export function TopBar() {
           className="max-[760px]:hidden grid place-items-center w-9 h-9 flex-none border border-line bg-panel2 text-ink cursor-pointer transition-colors hover:border-ink"
         >
           <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4" />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => showToast('No new notifications.')}
-          aria-label="Notifications"
-          className="max-[760px]:hidden grid place-items-center w-9 h-9 flex-none border border-line bg-panel2 text-ink cursor-pointer transition-colors hover:border-ink"
-        >
-          <Icon name="bell" className="w-4 h-4" />
         </button>
 
         <a
