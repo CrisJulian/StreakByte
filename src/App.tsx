@@ -117,7 +117,7 @@ export function App() {
         className={
           !showAppShell
             ? 'w-full min-h-screen bg-panel2 px-4 py-6 flex items-center justify-center'
-            : 'w-full min-h-[calc(100dvh-56px)] bg-panel pb-12 max-[760px]:pb-20'
+            : `w-full min-h-[calc(100dvh-56px)] ${view === 'dashboard' ? 'bg-bg' : 'bg-panel'} pb-12 max-[760px]:pb-20`
         }
       >
         {needsAuthScreen ? (

@@ -537,44 +537,6 @@ export function DashboardView() {
               );
             })}
           </div>
-
-          <aside className="mt-4 pt-4 border-t border-line flex items-center justify-between gap-4 flex-wrap max-[600px]:flex-col max-[600px]:items-stretch">
-            <div className="min-w-0 flex-1 grid gap-2">
-              <div className="text-[13px] text-muted">
-                Complete all {dailyQuests.length} daily goals ({completedQuestsCount} of {dailyQuests.length}).
-              </div>
-              <div
-                className="grid gap-1.5 max-w-[240px] max-[600px]:max-w-none w-full"
-                style={{ gridTemplateColumns: `repeat(${dailyQuests.length}, minmax(0, 1fr))` }}
-                aria-hidden="true"
-              >
-                {dailyQuests.map((q) => (
-                  <i key={q.id} className={`block h-2 ${q.completed ? 'bg-cyan' : 'bg-panel3'}`} />
-                ))}
-              </div>
-            </div>
-            <div className="flex items-center gap-2.5 flex-wrap max-[600px]:grid max-[600px]:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setArenaTab('duel');
-                  navigate('arena');
-                }}
-                className="sb-cut-sm inline-flex items-center justify-center gap-1.5 min-h-9 px-3.5 border border-cyan bg-cyan text-cyan-ink font-semibold text-[12.5px] cursor-pointer hover:brightness-110 transition-colors"
-              >
-                <Icon name="bolt" className="w-3.5 h-3.5" />
-                Enter 1v1 Arena
-              </button>
-              <button
-                type="button"
-                onClick={() => setChatOpen(true)}
-                className="sb-cut-sm inline-flex items-center justify-center gap-1.5 min-h-9 px-3.5 border border-line bg-panel text-ink font-semibold text-[12.5px] cursor-pointer hover:border-ink hover:bg-panel2 transition-colors"
-              >
-                <Icon name="send" className="w-3.5 h-3.5" />
-                Ask BYTE-01
-              </button>
-            </div>
-          </aside>
         </section>
       </div>
     </div>
