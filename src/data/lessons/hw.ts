@@ -7,464 +7,541 @@ import { img } from './helpers';
  * Pictures: see public/lessons/hw/ and LESSON_TODO.md.
  */
 
-const COMMONS = 'https://commons.wikimedia.org/wiki/';
+const PDF_CREDIT = 'Source: StreakByte Hardware Basics reference guide (hardware.pdf)';
+const ASSET_CREDIT = 'Source: StreakByte Hardware Basics lesson asset';
+const pdfImg = (file: string, alt: string, caption: string) =>
+  img(file, alt, caption, { available: true, credit: PDF_CREDIT });
 
 // Pictures that are reused on more than one page.
-const m2Slot = img(
+const m2Slot = pdfImg(
   'hw2-m2-slot.jpg',
-  'Close-up of an M.2 slot on a motherboard with its screw post.',
-  'An M.2 slot: a small edge-connector slot with a screw post at the far end.',
-  { sourcePage: 'https://commons.wikimedia.org/wiki/Category:M.2' },
+  'Close-up of an M.2 slot on a motherboard.',
+  'An M.2 slot on a motherboard.',
 );
-const ramStick = img(
+const dimmSlots = pdfImg(
+  'hw2-dimm-slots.jpg',
+  'Desktop DIMM slots with RAM sticks and locking clips visible.',
+  'DIMM slots on a desktop board with clips visible.',
+);
+const ramStick = pdfImg(
   'hw3-ram-stick.jpg',
-  'A DDR4 memory stick: a narrow board with chips and a row of gold contacts.',
-  'A RAM stick (DDR4).',
-  { sourcePage: `${COMMONS}File:RAM_Module_(SDRAM-DDR4).jpg` },
+  'Desktop RAM sticks with memory chips and gold contacts.',
+  'Desktop RAM sticks (DIMMs).',
 );
-const m2Ssd = img(
+const m2Ssd = pdfImg(
   'hw4-m2-ssd.jpg',
-  'An NVMe M.2 SSD: a short stick with memory chips.',
-  'An NVMe M.2 SSD.',
-  {
-    sourcePage:
-      'https://commons.wikimedia.org/wiki/File:Samsung_980_PRO_PCIe_4.0_NVMe_SSD_1TB-top_PNr%C2%B00915.jpg',
-  },
+  'An NVMe M.2 2280 SSD: a short stick with memory chips.',
+  'An NVMe M.2 2280 SSD.',
 );
-const plug24 = img(
+const plug24 = pdfImg(
   'hw5-24pin.jpg',
-  'A wide two-row 24-pin ATX power plug.',
-  'The 24-pin ATX power plug.',
-  { sourcePage: `${COMMONS}File:24-pin_ATX_power_plug_from_a_Seasonic_PSU_20131105.jpg` },
+  'A wide two-row 24-pin (20+4) ATX power connector.',
+  'The 24-pin (20+4) ATX power connector.',
 );
-const thermalPaste = img(
+const thermalPaste = pdfImg(
   'hw1-thermal-paste.jpg',
-  'A tube of thermal paste.',
-  'Thermal paste.',
-  { sourcePage: `${COMMONS}File:2023_Thermal_Grizzly_Kryonaut.jpg` },
+  'A syringe of thermal paste.',
+  'A syringe of thermal paste.',
 );
-const cpuCooler = img(
+const cpuCooler = pdfImg(
   'hw1-cpu-cooler.jpg',
-  'A tower CPU cooler: a block of thin metal fins with a fan.',
-  'A tower CPU cooler.',
-  {
-    sourcePage:
-      'https://commons.wikimedia.org/wiki/File:Alpenf%C3%B6hn_Nordwand_%E2%80%93_CPU_tower_cooler-front_oblique_PNr%C2%B00303.jpg',
-  },
+  'A tower air CPU cooler with metal fins and fans.',
+  'A tower air CPU cooler.',
 );
-const cpu = img(
+const cpu = pdfImg(
   'hw1-cpu.jpg',
-  'The top of an Intel Core i7-12700K processor: a small square chip.',
-  'A CPU (Intel Core i7-12700K, top view).',
-  { sourcePage: `${COMMONS}File:Intel_CPU_Core_i7_12700K_Alder_Lake_top.jpg` },
+  'A desktop CPU seated in its motherboard socket.',
+  'A desktop CPU in its socket.',
 );
 
 export const HW_LESSONS: Record<string, LessonContent> = {
   'hw-1': {
     key: 'hw-1',
-    goal: 'Name the main parts inside a desktop PC and say what each one does.',
+    goal: 'Name the main parts inside a desktop PC, explain what each one does, and check physical compatibility.',
     definitions: [
       {
         term: 'PC case',
-        text: 'The box that holds and protects the PC’s parts and helps air flow through them.',
+        text: 'Also called the chassis, it is the box that holds and protects the parts of a PC while controlling airflow, cable routing, and how many drives, fans, and radiators can fit.',
       },
       {
         term: 'Motherboard',
-        text: 'The main circuit board. The CPU, memory, storage and expansion cards plug into it, and its chipset passes messages between the CPU and the other devices.',
+        text: 'The main circuit board of the PC. The CPU, memory, storage, and expansion cards plug into it, and its chipset passes messages between the CPU and the other devices.',
       },
       {
         term: 'CPU (processor)',
-        text: 'The “brain” of the computer. It runs the instructions of programs and does calculations.',
+        text: 'The “brain” of the computer. It runs program instructions and performs calculations using cores, threads, clock speed (GHz), and fast built-in cache.',
       },
       {
         term: 'CPU cooler',
-        text: 'A part that pulls heat away from the CPU. An air cooler uses a metal heatsink with fans. A liquid (AIO) cooler uses a pump and radiator.',
+        text: 'Pulls heat away from the CPU so it stays at a safe temperature instead of slowing itself down. Air coolers use a metal heatsink and fans; AIO liquid coolers use a pump block, tubes, and a radiator (120 to 420 mm).',
       },
       {
         term: 'Thermal paste',
-        text: 'A paste placed between the CPU and the cooler. It fills tiny gaps so heat can pass across more easily.',
+        text: 'A thermally conductive paste placed between the CPU and cooler to fill microscopic air gaps so heat passes across more easily.',
       },
     ],
     parts: [
       {
         name: 'Case',
-        does: 'Holds the parts together, protects them from dust and damage, and shapes airflow and cable routing.',
-        looksLike: 'A tower box with side panels. A mid-tower is the most common size and fits ATX boards.',
+        does: 'Protects components, manages airflow, and sets physical limits for motherboard form factor, GPU length (some cards exceed 32 cm / 13 in), cooler height, radiator size (up to 420 mm), and PSU size (ATX vs. SFX/SFX-L).',
+        looksLike: 'A tower box ranging from SFF (8–12 in, Mini-ITX/Micro-ATX) and Mini tower to Mid tower (18–20 in, ATX/Micro-ATX/Mini-ITX, best for beginners) and Full tower (20 in+, up to E-ATX), with front I/O, drive bays, dust filters, cable space behind the tray, and a PSU shroud.',
         images: [
-          img(
+          pdfImg(
             'hw1-case.jpg',
             'A computer case with the side panel open and parts inside.',
             'A PC case with parts inside.',
-            { sourcePage: `${COMMONS}File:ATX_computer_case.jpg` },
+          ),
+          pdfImg(
+            'hw1-case-sizes.jpg',
+            'Comparison of PC case sizes from small form factor to full tower.',
+            'PC case form factors compared by size.',
           ),
         ],
       },
       {
         name: 'Motherboard',
-        does: 'Connects every other part so they can work together.',
-        looksLike: 'A flat board covered in slots, sockets and connectors.',
+        does: 'Connects every other part so they can work together and determines how many memory slots, expansion slots, and ports the PC can have.',
+        looksLike: 'A flat board covered in slots, sockets, and connectors. Standard sizes are E-ATX (up to 345 × 330 mm, 7+ slots), ATX (305 × 244 mm, up to 7 slots), Micro-ATX (244 × 244 mm, up to 4 slots), and Mini-ITX (170 × 170 mm, 1 slot).',
         images: [
-          img(
+          pdfImg(
             'hw1-motherboard.jpg',
-            'A top-down view of a modern ATX motherboard.',
-            'A motherboard, seen from above.',
-            {
-              todo: 'NO FREE IMAGE FOUND yet. Look for a clear, top-down photo of a modern ATX board. Lead: https://commons.wikimedia.org/wiki/Category:ASUS_motherboards (category page; check each file’s license).',
-            },
+            'A modern ATX motherboard.',
+            'A modern ATX motherboard.',
+          ),
+          pdfImg(
+            'hw1-motherboard-sizes.jpg',
+            'Comparison of ATX, Micro-ATX, and Mini-ITX motherboard sizes.',
+            'Motherboard form factors: ATX, Micro-ATX, and Mini-ITX.',
           ),
         ],
       },
       {
         name: 'CPU',
-        does: 'Runs program instructions.',
+        does: 'Runs program instructions. Cores handle parallel tasks, threads keep cores busy, cache keeps frequent data nearby, and some CPUs include integrated graphics so a monitor works without a separate graphics card.',
         looksLike:
-          'A small square chip with metal contacts on one side. The LGA 1700 example photo shows a chip about 45 × 37.5 mm.',
+          'A small square chip made by Intel or AMD with metal contacts on one side that must match the motherboard socket (some include a boxed cooler, others do not).',
         images: [cpu],
       },
       {
         name: 'CPU cooler',
-        does: 'Removes heat so the CPU stays at a safe temperature.',
+        does: 'Removes heat so the CPU runs at full speed without thermal throttling. Air coolers are simpler, cheaper, and have no liquid to leak; AIO liquid coolers cool hot CPUs cleanly but cost more and have a pump that ages.',
         looksLike:
-          'A block of thin metal fins with a fan, or a pump cap with tubes running to a radiator.',
-        images: [cpuCooler],
+          'A block of thin metal fins with one or more fans (air), or a pump block with tubes running to a case-mounted radiator (AIO).',
+        images: [
+          cpuCooler,
+          pdfImg(
+            'hw1-aio-cooler.jpg',
+            'An all-in-one (AIO) liquid CPU cooler with pump block, tubes, and radiator fans.',
+            'An AIO liquid CPU cooler.',
+          ),
+        ],
       },
       {
         name: 'Thermal paste',
-        does: 'Improves heat transfer from CPU to cooler.',
-        looksLike: 'A grey or white paste sold in a syringe or tube.',
-        images: [thermalPaste],
+        does: 'Replaces trapped air in microscopic gaps between the CPU and cooler so heat transfers efficiently.',
+        looksLike: 'A grey or white non-conductive paste sold in a syringe or tube (some coolers ship with paste pre-applied).',
+        images: [
+          thermalPaste,
+          pdfImg(
+            'hw1-thermal-paste-clean.jpg',
+            'Cleaning old thermal paste off a cooler base with a cloth.',
+            'Wiping off old thermal paste before applying new paste.',
+          ),
+        ],
+      },
+    ],
+    notes: [
+      {
+        title: 'Case & motherboard form factors',
+        text: 'The compatibility rule is directional: a smaller board fits in a larger case (for example Micro-ATX in an ATX mid tower), never the reverse. Mini-ITX boards often cost more than Micro-ATX despite having fewer slots. Always check mesh vs. solid front airflow and GPU length limits separately from board size.',
+      },
+      {
+        title: 'Air cooler vs. AIO liquid cooler',
+        text: 'Clock speed (GHz) is only a fair comparison between similar CPUs, because newer architectures do more work per cycle. Match cooler capacity to the CPU, and confirm tower cooler height (and RAM clearance) or radiator mount size against the case spec sheet.',
+      },
+      {
+        title: 'Thermal paste best practices',
+        text: 'A pea-sized or rice-grain-sized dot is enough—excess paste creates an extra barrier and raises temperatures. Clean old paste off completely with isopropyl alcohol and a lint-free cloth first, never add extra paste on top of pre-applied paste, and stick to non-conductive paste (liquid metal can short-circuit parts).',
       },
     ],
     keyPoints: [
-      'The case holds everything; the motherboard connects everything.',
-      'The CPU does the thinking and makes heat.',
-      'A cooler moves that heat away from the CPU.',
-      'Thermal paste fills tiny gaps between the CPU and the cooler.',
-      'Buy a case that supports your motherboard size.',
+      'The case holds and protects everything while setting size and airflow limits; a mid tower is best for most first builds.',
+      'The motherboard connects every part; a smaller board fits in a larger case, never the reverse.',
+      'The CPU runs instructions and makes heat; check socket match, integrated graphics, and whether a cooler is included.',
+      'A CPU cooler prevents thermal throttling; check air cooler height or AIO radiator mount fit.',
+      'Use a small pea-sized dot of non-conductive thermal paste to fill microscopic gaps.',
     ],
     commonMistakes: [
-      'Using too much thermal paste. Noctua warns that too much lowers cooling performance.',
-      'Buying a case that cannot fit the motherboard size. Cases list which board sizes they support.',
-      'Choosing a cooler without checking what the CPU needs. Stronger CPUs need stronger cooling.',
+      'Using too much thermal paste or adding more on top of pre-applied paste, which hurts cooling performance.',
+      'Buying a case that supports the motherboard size but is too short for the graphics card or too narrow for the cooler.',
+      'Comparing CPUs by GHz alone or assuming every CPU comes with a cooler and integrated graphics.',
     ],
     references: [
-      { title: 'What Is a PC Case? Sizes, Layouts, and Beginner Basics (MSI)', url: 'https://www.msi.com/blog/what-is-a-pc-case', note: 'Document read a search excerpt only. Also at https://uk.msi.com/blog/what-is-a-pc-case' },
-      { title: 'PC Cases 101: Sizes and Layouts (Corsair)', url: 'https://www.corsair.com/us/en/explorer/diy-builder/cases/pc-cases-101-sizes-and-layouts/', note: 'Search excerpt only.' },
+      { title: 'What Is a PC Case? Sizes, Layouts, and Beginner Basics (MSI)', url: 'https://www.msi.com/blog/what-is-a-pc-case' },
+      { title: 'PC Cases 101: Sizes and Layouts (Corsair)', url: 'https://www.corsair.com/us/en/explorer/diy-builder/cases/pc-cases-101-sizes-and-layouts/' },
+      { title: 'Computer Case Sizes Explained (Micro Center)', url: 'https://www.microcenter.com/site/mc-news/article/computer-case-sizes-explained.aspx' },
+      { title: 'PC Case Sizes Explained (TechRadar)', url: 'https://www.techradar.com/computing/computing-components/pc-case-sizes-explained-all-form-factors-available-in-year' },
       { title: 'Gaming Motherboard Buying Guide (Intel)', url: 'https://www.intel.com/content/www/us/en/gaming/resources/how-to-choose-a-motherboard.html' },
-      { title: 'What Is RAM vs. Processor? (Intel)', url: 'https://www.intel.com/content/www/us/en/learn/what-is-ram-vs-processor.html', note: 'Search excerpt only.' },
-      { title: 'Air Cooler vs AIO Cooler (Corsair)', url: 'https://www.corsair.com/us/en/explorer/diy-builder/cpu-coolers/air-cooler-vs-aio-cooler-which-should-you-buy/', note: 'Search excerpt only.' },
-      { title: 'What CPU Cooler Should I Get? (Corsair)', url: 'https://www.corsair.com/uk/en/explorer/diy-builder/cpu-coolers/what-cpu-cooler-should-i-get/', note: 'Search excerpt only.' },
-      { title: 'What is Thermal Paste? (Corsair)', url: 'https://www.corsair.com/us/en/explorer/glossary/what-is-thermal-paste/', note: 'Search excerpt only.' },
-      { title: 'How should I apply the NT-H1 or NT-H2 thermal paste (Noctua)', url: 'https://www.noctua.at/en/support/faqs/how-should-i-apply-the-nt-h1-or-nt-h2-thermal-paste-on-the-cpu-and-how-can-i-remove-it', note: 'Search excerpt only.' },
-      { title: 'Noctua NH-U12A manual (Noctua)', url: 'https://noctua.at/pub/media/blfa_files/manual/noctua_nh_u12a_manual_en_web_4.pdf', note: 'Search excerpt only.' },
+      { title: 'What Is RAM vs. Processor? (Intel)', url: 'https://www.intel.com/content/www/us/en/learn/what-is-ram-vs-processor.html' },
+      { title: 'Air Cooler vs AIO Cooler (Corsair)', url: 'https://www.corsair.com/us/en/explorer/diy-builder/cpu-coolers/air-cooler-vs-aio-cooler-which-should-you-buy/' },
+      { title: 'What CPU Cooler Should I Get? (Corsair)', url: 'https://www.corsair.com/uk/en/explorer/diy-builder/cpu-coolers/what-cpu-cooler-should-i-get/' },
+      { title: 'What is Thermal Paste? (Corsair)', url: 'https://www.corsair.com/us/en/explorer/glossary/what-is-thermal-paste/' },
+      { title: 'How should I apply NT-H1 or NT-H2 thermal paste? (Noctua)', url: 'https://www.noctua.at/en/support/faqs/how-should-i-apply-the-nt-h1-or-nt-h2-thermal-paste-on-the-cpu-and-how-can-i-remove-it' },
     ],
   },
 
   'hw-2': {
     key: 'hw-2',
-    goal: 'Find and explain the main sockets, slots and connectors on a motherboard.',
+    goal: 'Find and explain the main sockets, slots, power connectors, headers, and rear I/O ports on a motherboard.',
     definitions: [
       {
         term: 'CPU socket',
-        text: 'The place where the CPU sits on the board. Socket names such as LGA 1700 come from the number of contacts, and you must check that your CPU matches the socket. AMD’s AM5 and Intel’s LGA 1700 are examples.',
-        verify: 'Add an AMD or Intel page that states a CPU fits only its own socket type.',
+        text: 'Where the CPU sits on the board. A CPU fits only the socket it was made for (such as AMD AM5 for DDR5, AMD AM4 for DDR4, or Intel LGA 1700 for 12th–14th Gen). Always check the board’s supported CPU list.',
+      },
+      {
+        term: 'LGA vs. PGA',
+        text: 'In LGA (Land Grid Array), the fragile pins sit inside the socket and the CPU has flat contacts. In PGA (Pin Grid Array, such as AM4), the pins are on the CPU itself.',
       },
       {
         term: 'Chipset',
-        text: 'A chip that works with specific CPU generations and links the CPU to extra PCIe lanes, storage, USB and other devices.',
+        text: 'A chip that works with specific CPU generations and determines how many USB ports, SATA ports, PCIe lanes, and storage slots the board offers, plus features like overclocking. Two boards with the same socket can have different chipsets.',
       },
       {
         term: 'DIMM slot',
-        text: 'A slot for a memory stick. Full-size ATX boards usually have four, Mini-ITX boards usually two.',
+        text: 'A slot for a memory stick (RAM). Full-size ATX boards usually have four and Mini-ITX boards usually two. A board supports either DDR4 or DDR5, never both.',
       },
       {
         term: 'PCIe x16 slot',
-        text: 'Usually the longest slot, most often used for a graphics card.',
+        text: 'Usually the longest PCIe slot, most often used for a graphics card. PCIe comes in x1, x4, x8, and x16 lane widths and generations (3.0, 4.0, 5.0); newer cards work in older slots at the older speed.',
       },
       {
         term: 'M.2 slot',
-        text: 'A small slot for devices such as NVMe SSDs and Wi-Fi cards that plug straight into the board without cables.',
+        text: 'A small slot for NVMe SSDs and Wi-Fi cards that plug straight into the board without cables. Usually has a screw post at the far end and sometimes a heatshield.',
       },
       {
         term: 'SATA ports',
-        text: 'Connectors for older-style 2.5-inch and 3.5-inch drives, running up to 6 Gbit/s in SATA 3.',
+        text: 'Small L-shaped connectors for 2.5-inch and 3.5-inch drives, running at up to 6 Gbit/s in SATA 3.',
       },
       {
-        term: '24-pin power connector',
-        text: 'The main connector where a cable from the power supply plugs into the board.',
+        term: '24-pin & CPU power connectors',
+        text: 'The 24-pin ATX connector brings main power to the board, while the 4-pin or 8-pin CPU power connector near the top-left gives the CPU extra power (the PC will not start without it).',
       },
       {
         term: 'VRM',
-        text: 'Voltage regulator module. High-end boards improve it for overclocking, and it makes heat that needs cooling.',
-        verify: 'Add a source that defines what the VRM does.',
+        text: 'Voltage regulator module: transistors, chokes (coils), and capacitors around the CPU socket that lower and steady PSU power into the small, stable voltage the CPU needs. VRMs warm up under load and often carry heatsinks.',
+      },
+      {
+        term: 'Headers & BIOS / UEFI',
+        text: 'Small edge headers connect case fans (CPU_FAN), front power/reset buttons, USB, RGB, and front audio. The BIOS (UEFI) is the built-in setup firmware (Delete or F2 at startup) used to check parts, set boot order, and enable RAM speed profiles.',
       },
       {
         term: 'Rear I/O panel',
-        text: 'The group of ports at the back (USB, video, audio, network) covered by a metal shield.',
+        text: 'The ports at the back of the board (USB Type-A/C, video outputs for integrated graphics, audio jacks, Ethernet, and Wi-Fi antennas) covered by a metal shield.',
       },
       {
         term: 'CMOS battery',
-        text: 'A coin-shaped battery that keeps BIOS settings when the PC is off.',
+        text: 'A silver coin-shaped battery in a round holder that keeps BIOS settings and the system clock running when the PC is off.',
       },
     ],
     parts: [
       {
         name: 'CPU socket',
-        does: 'Holds the CPU; only a matching CPU fits (example: AM5 for Ryzen 7000, LGA 1700 for Intel Alder and Raptor Lake).',
-        looksLike: 'A square frame, with pins either in the socket or on the CPU.',
+        does: 'Holds the CPU; only a matching CPU fits (example: AM5 for current AMD DDR5, AM4 for older AMD DDR4, LGA 1700 for Intel 12th–14th Gen).',
+        looksLike: 'A square frame, with pins either inside the socket (LGA) or on the CPU (PGA).',
         images: [
-          img('hw2-socket-am5.jpg', 'An open AM5 CPU socket.', 'An AM5 socket, open.', { sourcePage: `${COMMONS}File:AM5_Socket_Open.jpg` }),
-          img('hw2-socket-lga1700.jpg', 'An LGA 1700 CPU socket.', 'An LGA 1700 socket.', { sourcePage: `${COMMONS}File:2023_Podstawka_LGA_1700.jpg` }),
+          pdfImg('hw2-socket-am5.jpg', 'An AMD AM5 CPU socket.', 'An AM5 socket (AMD LGA).'),
+          pdfImg('hw2-socket-am4.jpg', 'An AMD AM4 CPU socket.', 'An AM4 socket (AMD PGA).'),
+          pdfImg('hw2-socket-lga1700.jpg', 'An Intel LGA 1700 CPU socket.', 'An LGA 1700 socket (Intel LGA).'),
         ],
       },
       {
         name: 'DIMM slots',
         does: 'Hold the RAM sticks.',
         looksLike: 'Long thin slots next to the CPU with a clip at one or both ends.',
-        images: [
-          img('hw2-dimm-slots.jpg', 'Desktop DIMM slots with the clips visible.', 'DIMM slots on a desktop board.', {
-            todo: 'NO FREE IMAGE FOUND yet. Look for a desktop board photo with the clips visible. Do not use the DDR4 SO-DIMM slot photo on Commons: it is a laptop slot.',
-          }),
-        ],
+        images: [dimmSlots],
       },
       {
         name: 'PCIe x16 slot',
-        does: 'Holds a graphics card.',
-        looksLike: 'The longest slot, often with a release latch.',
+        does: 'Holds a graphics card. Smaller cards (x1, x4) also fit in longer x16 slots, so check the manual for how each slot is wired.',
+        looksLike: 'The longest expansion slot, often with a release latch.',
         images: [
-          img('hw2-pcie-x16.jpg', 'A PCIe x16 slot with its release latch.', 'A PCIe x16 slot.', {
-            todo: 'NO FREE IMAGE FOUND yet. Look for a modern board close-up. Older PCI photos on Commons do not show PCIe x16 clearly.',
-          }),
+          pdfImg('hw2-pcie-x16.jpg', 'PCIe x16 expansion slots on a motherboard.', 'PCIe x16 slots on a motherboard.'),
         ],
       },
       {
         name: 'M.2 slot',
-        does: 'Holds an M.2 SSD.',
+        does: 'Holds an M.2 SSD or Wi-Fi card with no cables.',
         looksLike: 'A small edge-connector slot with a screw post at the far end.',
         images: [m2Slot],
       },
       {
         name: 'SATA ports',
-        does: 'Connect SATA drives with cables.',
-        looksLike: 'Small L-shaped connectors in a row.',
-        images: [img('hw2-sata-ports.jpg', 'A row of small L-shaped SATA ports.', 'SATA ports.')],
-      },
-      {
-        name: '24-pin power connector',
-        does: 'Brings main power from the PSU.',
-        looksLike: 'The largest plug-in block on the board, near the edge.',
+        does: 'Connect 2.5-inch and 3.5-inch SATA drives with cables.',
+        looksLike: 'Small L-shaped connectors in a row along the board edge.',
         images: [
-          img('hw2-24pin-board.jpg', 'The 24-pin power connector on a motherboard.', 'The 24-pin power connector on a board.', {
-            sourcePage: `${COMMONS}File:ATX_Power_connectors_24pin_8pin_4pin_Motherboard.jpg`,
-            todo: 'Lead only: verify the license (author Tobias Maier). It is a server board, not a consumer board.',
-          }),
+          pdfImg('hw2-sata-ports.jpg', 'A row of SATA ports along the edge of a motherboard.', 'SATA ports on a motherboard.'),
         ],
       },
       {
+        name: '24-pin power connector',
+        does: 'Brings main power from the PSU to the motherboard (paired with the 4-pin or 8-pin CPU power plug near the top-left).',
+        looksLike: 'The largest plug-in block on the board, near the edge.',
+        images: [plug24],
+      },
+      {
         name: 'Chipset, VRM and rear I/O panel',
-        does: 'See the definitions above.',
+        does: 'Chipset manages I/O tiers and lanes; VRM converts PSU power into steady CPU voltage; rear I/O connects external peripherals.',
         looksLike:
-          'Chipset: a chip under a heatsink. VRM: a block of small coils and heatsinks around the CPU socket. Rear I/O: a metal plate of ports.',
+          'Chipset: a chip under a heatsink. VRM: transistors, coils, and capacitors around the CPU socket. Rear I/O: a metal plate of ports.',
         images: [
-          img('hw2-chipset.jpg', 'A chipset under a heatsink on a motherboard.', 'The chipset.'),
-          img('hw2-vrm.jpg', 'Coils and heatsinks around a CPU socket (the VRM).', 'The VRM.'),
-          img('hw2-rear-io.jpg', 'The metal rear I/O plate with USB, video, audio and network ports.', 'The rear I/O panel.'),
+          pdfImg('hw2-chipset.jpg', 'A motherboard chipset chip.', 'The chipset.'),
+          pdfImg('hw2-vrm.jpg', 'Voltage regulator components including coil and capacitors.', 'Voltage regulator module (VRM) components.'),
+          pdfImg('hw2-rear-io.jpg', 'The metal rear I/O plate with USB, video, audio and network ports.', 'The rear I/O panel.'),
         ],
       },
       {
         name: 'CMOS battery',
-        does: 'Keeps BIOS settings.',
+        does: 'Keeps BIOS settings and the system clock when the PC is switched off.',
         looksLike: 'A silver coin cell in a round holder.',
         images: [
-          img('hw2-cmos-battery.jpg', 'A silver coin cell battery in its round holder on a motherboard.', 'A CMOS battery in its holder.', {
-            sourcePage: `${COMMONS}File:Asus_P5PL2_-_Newsun_CR2032-0428.jpg`,
-          }),
+          pdfImg('hw2-cmos-battery.jpg', 'A silver coin cell battery in its round holder on a motherboard.', 'A CMOS battery in its holder.'),
         ],
       },
     ],
+    notes: [
+      {
+        title: 'LGA vs. PGA pin safety',
+        text: 'With LGA (AM5, LGA 1700), never touch inside the socket and lower the CPU straight down. With PGA (AM4), hold the CPU by its edges so you do not bend its pins. Never force a CPU into place.',
+      },
+      {
+        title: 'Headers & BIOS / UEFI',
+        text: 'Small edge headers look similar, so keep the motherboard manual open when plugging in CPU_FAN, front-panel power/reset pins, USB, RGB, and audio. On first boot, press Delete or F2 to open UEFI, confirm parts are detected, and check if a BIOS update is needed for a newer CPU.',
+      },
+      {
+        title: 'Monitor port: motherboard vs. graphics card',
+        text: 'The video ports (HDMI / DisplayPort) on the rear I/O panel belong to integrated CPU graphics. When you install a separate graphics card, plug your monitor into the graphics card—not the motherboard—or you will get a blank screen.',
+      },
+    ],
     keyPoints: [
-      'A CPU only fits a socket made for it (AM5, LGA 1700 and so on).',
-      'RAM goes in DIMM slots; a graphics card goes in the PCIe x16 slot.',
-      'An M.2 SSD plugs into an M.2 slot with no cable.',
-      'The 24-pin connector brings main power from the PSU.',
-      'The CMOS battery keeps BIOS settings when the PC is off.',
+      'A CPU only fits its matching socket (AM5, AM4, LGA 1700), while the chipset decides ports, lanes, and tuning tiers.',
+      'RAM goes in DIMM slots (DDR4 or DDR5 only); graphics cards go in the PCIe x16 slot.',
+      'Both the 24-pin ATX connector and the top-left 4/8-pin CPU power cable must be plugged in.',
+      'The VRM regulates CPU voltage; the CMOS battery preserves BIOS settings and the clock.',
+      'When a dedicated graphics card is installed, plug the monitor into the card rather than the rear I/O panel.',
     ],
     commonMistakes: [
-      'Buying a CPU without checking the board’s socket and chipset support.',
-      'Putting a card in the wrong slot because a smaller card also fits an x16 slot.',
-      'Forgetting that M.2 cards need no cables, then hunting for one.',
+      'Buying a CPU without checking both the socket and chipset/BIOS support list.',
+      'Forgetting the 4-pin or 8-pin CPU power cable near the top-left corner, leaving the PC unable to start.',
+      'Plugging the monitor into the motherboard rear I/O port instead of the dedicated graphics card.',
     ],
     references: [
       { title: 'Gaming Motherboard Buying Guide (Intel)', url: 'https://www.intel.com/content/www/us/en/gaming/resources/how-to-choose-a-motherboard.html' },
-      { title: 'What is a CMOS Battery and How do you Replace It? (Corsair)', url: 'https://www.corsair.com/us/en/explorer/gamer/gaming-pcs/what-is-a-cmos-battery-and-how-do-you-replace-it/', note: 'Search excerpt only.' },
-      { title: 'Category: Socket 1700 (Wikimedia Commons, for socket naming only)', url: 'https://commons.wikimedia.org/wiki/Category:Socket_1700' },
-      { title: 'Category: Socket AM5 (Wikimedia Commons, for socket naming only)', url: 'https://commons.wikimedia.org/wiki/Category:Socket_AM5' },
+      { title: 'What is a CMOS Battery and How do you Replace It? (Corsair)', url: 'https://www.corsair.com/us/en/explorer/gamer/gaming-pcs/what-is-a-cmos-battery-and-how-do-you-replace-it/' },
+      { title: 'How to Install CPU on Motherboard (ASUS)', url: 'https://zentalk.asus.com/t5/faq/motherboard-how-to-install-cpu-on-motherboard/ta-p/408641' },
+      { title: 'LGA vs PGA: Is One CPU Socket Type Better? (Corsair)', url: 'https://www.corsair.com/jp/zh/explorer/diy-builder/blogs/lga-vs-pga-is-one-cpu-socket-type-better-than-the-other/' },
+      { title: 'What Are VRMs on a Motherboard? (Corsair)', url: 'https://www.corsair.com/zh/en/explorer/glossary/what-are-vrms-on-a-motherboard/' },
+      { title: 'What Is a VRM? (Tom’s Hardware)', url: 'https://www.tomshardware.com/reviews/vrm-voltage-regulator-module-definition,5771.html' },
     ],
   },
 
   'hw-3': {
     key: 'hw-3',
-    goal: 'Explain what RAM does, tell DDR4 from DDR5, and install a stick correctly.',
+    goal: 'Explain what RAM does, tell DDR4 from DDR5, choose the right capacity, and install sticks correctly.',
     definitions: [
       {
         term: 'RAM',
-        text: 'Short-term working memory. The CPU takes program instructions from it. Its contents are lost when the PC powers down.',
+        text: 'Random access memory: short-term working memory where active programs and data sit so the CPU can reach them quickly. Unlike storage (a filing cabinet), RAM is the desk—and its contents are lost when the PC powers down.',
       },
       {
         term: 'DDR4 and DDR5',
-        text: 'Two generations of memory. They use different pin layouts and the key notch sits in a different place, so they are not interchangeable.',
+        text: 'Two Double Data Rate generations with different pin layouts and key notch positions, so they are not interchangeable. DDR4 runs at 1.2 V (~2,666–3,600 MT/s) with board power control; DDR5 runs at 1.1 V (4,800+ MT/s) with on-stick power management and warmer operation.',
       },
       {
         term: 'Dual-channel',
-        text: 'Using matching sticks together so the CPU can use two memory channels at once.',
+        text: 'Using matched sticks (bought as a single kit such as 2 × 16 GB) in separate channels so the CPU can move data across two memory channels at once.',
+      },
+      {
+        term: 'Speed & timings',
+        text: 'Speed (MT/s or MHz, e.g. DDR5-6000) sets how much data moves per second, while timings (e.g. 36-36-36-76, led by CAS latency) set response delay—lower timings mean faster response at the same speed.',
+      },
+      {
+        term: 'XMP and EXPO',
+        text: 'Rated speed profiles stored on memory kits (XMP for Intel, EXPO for AMD). Without enabling them in the BIOS, RAM runs at a slower default speed.',
       },
     ],
     parts: [
       {
         name: 'RAM stick',
-        does: 'Holds data the CPU is working on.',
-        looksLike: 'A narrow green or black board with chips and a row of gold contacts.',
+        does: 'Holds active data and instructions the CPU is working on.',
+        looksLike: 'A narrow board (desktop DIMM) with memory chips, optional heat spreaders (especially on DDR5), and gold contacts.',
         images: [ramStick],
       },
       {
         name: 'Key notch',
-        does: 'Makes sure only the right memory type fits. On DDR5 the notch sits farther left than on DDR4 when the sticks are side by side.',
+        does: 'Makes sure only the right memory type fits and faces the right way. DDR4 and DDR5 notches sit in different positions.',
         looksLike: 'A small cut in the gold contact edge.',
         images: [
-          img('hw3-key-notch.jpg', 'Close-up of the gold contact edge of a RAM stick with the key notch in view.', 'The key notch on a RAM stick.', {
-            todo: 'NO FREE IMAGE FOUND for a desktop DDR4/DDR5 side-by-side. Look for a close-up of the contact edge with the notch in view.',
-          }),
+          pdfImg(
+            'hw3-key-notch.jpg',
+            'DDR4 RAM sticks showing the key notch along the gold contact edge.',
+            'DDR4 RAM sticks showing the key notch on the gold contact edge.',
+          ),
         ],
       },
       {
         name: 'DIMM slot with clips',
         does: 'Holds the stick. The clips at each end lock it in place.',
         looksLike: 'A long slot with a ridge that matches the notch and plastic clips at the ends.',
-        images: [
-          img('hw3-dimm-slot.jpg', 'A DIMM slot with its ridge and plastic clips at both ends.', 'A DIMM slot with clips.', {
-            todo: 'NO FREE IMAGE FOUND (same search as Lesson 2: a desktop board photo with the clips visible).',
-          }),
-        ],
+        images: [dimmSlots],
       },
     ],
     steps: [
-      { text: 'Find the slots near the CPU and check the numbers in the manual.' },
-      { text: 'Push the clips outward.' },
-      { text: 'Line up the notch with the key in the slot.' },
-      { text: 'Press straight down on both ends until the clips snap shut with a click.' },
+      { text: 'Find the memory slots near the CPU and check the slot numbers in the motherboard manual.' },
+      { text: 'Push the clips at the ends of the slot outward.' },
+      { text: 'Line up the notch on the stick with the ridge in the slot.' },
+      { text: 'Press straight down on both ends with firm, even pressure until the clips snap shut with a click.' },
+      { text: 'Check that both clips are closed and the stick sits straight and level.' },
     ],
     notes: [
       {
+        title: 'How much RAM is needed?',
+        text: '8 GB is for basic browsing/office work and often too little today; 16 GB suits everyday use and most gaming; 32 GB fits heavy multitasking and video editing; 64 GB+ is for 3D work and virtual machines. Capacity matters more than speed on a budget: 16 GB of DDR4 beats 8 GB of DDR5.',
+      },
+      {
+        title: 'Enable XMP or EXPO in BIOS',
+        text: 'RAM kits ship at a safe default speed until you turn on XMP (Intel) or EXPO (AMD) during your first BIOS visit.',
+      },
+      {
         title: 'Check your board’s manual',
-        text: 'Sources disagree on slot order. One Corsair guide lists the fill order as A1, B1, A2, B2, while another says two sticks usually go in slot two (A2) and slot four (B2). Both say to check the motherboard manual. This app teaches A2 and B2.',
+        text: 'Most four-slot boards (A1, A2, B1, B2) use slots A2 and B2 (the second and fourth) for two sticks, but boards vary—always confirm in the manual and avoid mixing brands or speeds.',
+      },
+      {
+        title: 'If the PC does not start',
+        text: 'Re-seat the sticks and listen for clicks on both sides, try one stick at a time to isolate a faulty module, verify the slot order, and be patient on first boot while the system trains memory.',
       },
     ],
     keyPoints: [
-      'RAM is fast, short-term memory and is emptied when power is off.',
-      'DDR4 and DDR5 notches are in different places; never force a stick in.',
-      'Two matching sticks in the right slots give dual-channel.',
-      'Many boards want A2 and B2 first for two sticks. Always check the manual.',
-      'Press until the clips click on both sides.',
+      'RAM is fast, short-term working memory and clears when power is off.',
+      'DDR4 and DDR5 notches differ and cannot be mixed; the motherboard sets which type fits.',
+      'Buy a matched kit in A2 and B2 (check your manual) for dual-channel bandwidth.',
+      'Press both ends evenly until both clips click shut, then enable XMP or EXPO in BIOS.',
+      'Capacity usually matters more than speed when choosing between 16 GB DDR4 and 8 GB DDR5.',
     ],
     commonMistakes: [
-      'Forcing a DDR5 stick into a DDR4 slot (or the reverse). It can break the stick or the slot.',
-      'Putting both sticks in the same channel, which leaves performance unused.',
-      'Pressing only one end so one clip stays open.',
+      'Forcing a DDR5 stick into a DDR4 slot (or the reverse), which can break the stick or slot.',
+      'Putting two sticks next to each other on the same channel or mixing mismatched speeds.',
+      'Pressing only one end so a clip stays half-open—the #1 reason a new build fails to post.',
     ],
     references: [
-      { title: 'What Is RAM vs. Processor? (Intel)', url: 'https://www.intel.com/content/www/us/en/learn/what-is-ram-vs-processor.html', note: 'Search excerpt only.' },
-      { title: 'What is a CMOS Battery…? (Corsair; mentions RAM loses its contents when the PC powers down)', url: 'https://www.corsair.com/us/en/explorer/gamer/gaming-pcs/what-is-a-cmos-battery-and-how-do-you-replace-it/', note: 'Search excerpt only.' },
+      { title: 'What Is RAM vs. Processor? (Intel)', url: 'https://www.intel.com/content/www/us/en/learn/what-is-ram-vs-processor.html' },
+      { title: 'What is a CMOS Battery…? (Corsair)', url: 'https://www.corsair.com/us/en/explorer/gamer/gaming-pcs/what-is-a-cmos-battery-and-how-do-you-replace-it/' },
       { title: 'Is DDR5 Backwards Compatible? (Corsair)', url: 'https://www.corsair.com/explorer/diy-builder/memory/is-ddr5-backwards-compatible/' },
-      { title: 'Gaming Motherboard Buying Guide (Intel; matching pairs enable dual-channel)', url: 'https://www.intel.com/content/www/us/en/gaming/resources/how-to-choose-a-motherboard.html' },
-      { title: 'Which RAM slots should I use? (Corsair)', url: 'https://www.corsair.com/explorer/diy-builder/memory/which-ram-slots-should-i-use/', note: 'Search excerpt only.' },
+      { title: 'Gaming Motherboard Buying Guide (Intel)', url: 'https://www.intel.com/content/www/us/en/gaming/resources/how-to-choose-a-motherboard.html' },
+      { title: 'Which RAM slots should I use? (Corsair)', url: 'https://www.corsair.com/uk/en/explorer/diy-builder/memory/which-ram-slots-should-i-use/' },
       { title: 'How to Upgrade & Install RAM in your PC (Corsair)', url: 'https://www.corsair.com/explorer/diy-builder/memory/how-to-upgrade-ram-in-your-pc/' },
+      { title: 'DDR5 vs DDR4: Is It Time to Upgrade Your RAM? (Tom’s Hardware)', url: 'https://www.tomshardware.com/features/ddr5-vs-ddr4-is-it-time-to-upgrade-your-ram' },
+      { title: 'DDR4 vs DDR5: Should You Upgrade? (MakeUseOf)', url: 'https://www.makeuseof.com/ddr4-vs-ddr5-should-you-upgrade/' },
+      { title: 'Is DDR5 Better Than DDR4? (Corsair)', url: 'https://www.corsair.com/ww/hu/explorer/diy-builder/memory/is-ddr5-better-than-ddr4/' },
     ],
   },
 
   'hw-4': {
     key: 'hw-4',
-    goal: 'Tell HDDs, SATA SSDs and NVMe M.2 SSDs apart and know where each connects.',
+    goal: 'Tell HDDs, SATA SSDs, and NVMe M.2 SSDs apart, choose the right setup, and install each type properly.',
     definitions: [
       {
+        term: 'Non-volatile storage',
+        text: 'Permanent storage for files, apps, and the operating system—unlike RAM, it keeps everything saved when power is turned off.',
+      },
+      {
         term: 'HDD',
-        text: 'A hard disk drive. It stores data magnetically on fast-spinning platters, and heads on a moving arm read and write the tracks.',
+        text: 'A hard disk drive that stores data magnetically on spinning platters with a moving read-write arm. Cheapest per gigabyte for bulk storage, but slowest and sensitive to bumps.',
       },
       {
         term: 'SATA SSD',
-        text: 'A solid-state drive that uses the SATA connection, the same kind of link older drives use.',
+        text: 'A solid-state drive using flash memory chips with no moving parts, connected via SATA data and power cables. Silent, durable, and far faster than an HDD, capped around 6 Gbit/s by SATA.',
       },
       {
         term: 'NVMe M.2 SSD',
-        text: 'An SSD that talks over PCIe using the NVMe protocol and plugs into an M.2 slot. M.2 is only a shape; an M.2 drive can be SATA or NVMe.',
-      },
-      {
-        term: 'Non-volatile storage',
-        text: 'Storage that keeps data when the power is off, unlike RAM.',
-        verify: 'The trusted pages opened say RAM loses data, but none state this about SSDs and HDDs directly.',
+        text: 'An SSD that talks over PCIe using the NVMe protocol and plugs straight into an M.2 slot with no cables. M.2 is only a shape (sized by width × length in mm, e.g. 2230, 2242, 2260, 2280, 22110), so an M.2 drive can be SATA or NVMe.',
       },
     ],
     parts: [
       {
         name: 'HDD',
-        does: 'Cheap, high-capacity storage with moving parts. It is slower because the head has to move to the right track on spinning platters.',
-        looksLike: 'A metal box. Inside, one or more shiny discs and an arm.',
-        verify: 'Add a maker page that states the HDD-versus-SSD speed difference.',
+        does: 'Lowest-cost bulk storage for videos and backups. Slower because a mechanical head must move across spinning platters.',
+        looksLike: 'A 3.5-inch (or 2.5-inch) metal box containing shiny magnetic platters and a moving head arm.',
         images: [
-          img('hw4-hdd.jpg', 'An open 3.5-inch hard drive showing the platters and the head arm.', 'An open 3.5-inch HDD showing platters and heads.', {
-            sourcePage: `${COMMONS}File:3.5_inch_hard_disk_drive,_side_view.jpg`,
-          }),
+          pdfImg('hw4-hdd-closed.jpg', 'A closed 3.5-inch hard disk drive.', 'A 3.5-inch hard disk drive (HDD).'),
+          pdfImg('hw4-hdd.jpg', 'An open 3.5-inch hard drive showing the platters and the head arm.', 'An open 3.5-inch HDD showing platters and heads.'),
         ],
       },
       {
         name: 'SATA SSD',
-        does: 'Flash storage with no moving parts, connected by cable.',
-        looksLike: 'A thin 2.5-inch case.',
+        does: 'Quiet, shock-resistant flash storage that is a major upgrade over an HDD when no M.2 slot is free, connected with separate SATA data and power cables.',
+        looksLike: 'A thin 2.5-inch case with L-shaped SATA data and power connectors.',
         images: [
-          img('hw4-sata-ssd.jpg', 'A thin 2.5-inch SATA SSD in its case.', 'A 2.5-inch SATA SSD.', {
-            sourcePage:
-              'https://commons.wikimedia.org/wiki/File:WDC_WDS200T2B0A-00SM50_2000,3_GB_SATA_Vorderseite_20211008_SSD024corr.png',
-            todo: 'Document says CC BY 4.0 (copyright statement in page metadata; VERIFY). Credit if confirmed: "Scan: PantheraLeo1359531, CC BY 4.0, Wikimedia Commons".',
-          }),
+          pdfImg('hw4-sata-ssd.jpg', 'A thin 2.5-inch SATA SSD in its case.', 'A 2.5-inch SATA SSD.'),
         ],
       },
       {
         name: 'M.2 SSD',
-        does: 'NVMe drives are much faster than SATA SSDs. Samsung says current PCIe 3.0 x4 NVMe drives run six to seven times faster.',
-        looksLike: 'A short stick about 22 mm wide; the common 2280 size is 80 mm long.',
+        does: 'Fastest everyday storage for the OS, games, and apps. PCIe 3.0 x4 NVMe drives run 6–7× faster than SATA SSDs, and PCIe 4.0/5.0 drives are faster still on boards that support them.',
+        looksLike: 'A short stick about 22 mm wide; the common desktop 2280 size is 80 mm long.',
         images: [m2Ssd],
       },
       {
         name: 'M.2 slot',
-        does: 'Holds the M.2 SSD with no cable.',
-        looksLike: 'A small slot on the board.',
-        images: [{ ...m2Slot, file: 'hw4-m2-slot.jpg' }],
+        does: 'Holds the M.2 SSD directly on the motherboard with no cables.',
+        looksLike: 'A small keyed edge slot with a standoff screw post (or latch) and sometimes a heatshield.',
+        images: [m2Slot],
       },
+    ],
+    steps: [
+      { text: 'Find the M.2 slot in the motherboard manual and remove its heatshield if it has one.' },
+      { text: 'Check that the standoff post sits at the right length position for your drive (usually 2280).' },
+      { text: 'Insert the M.2 SSD into the keyed slot at an angle (never force it), then gently lay it flat onto the standoff.' },
+      { text: 'Secure it with the tiny M.2 screw or board latch without overtightening.' },
+      { text: 'Put the heatshield back if the slot had one and the SSD does not already carry its own heatsink.' },
     ],
     notes: [
       {
-        title: 'Installing an M.2 SSD',
-        text: 'Samsung says to find the right slot, slide the drive in and click it into place. The app teaches that a small screw secures it. Both can be true: the click seats the drive and the screw holds it.',
+        title: 'Comparing HDD, SATA SSD, and NVMe M.2 SSD',
+        text: 'One maker notes entry SSDs are roughly 10× faster than spinning HDDs, and PCIe 3.0 x4 NVMe drives run 6–7× faster than SATA SSDs. Cost per gigabyte rises alongside speed from HDD to SATA SSD to NVMe.',
+      },
+      {
+        title: 'Choosing a storage setup & backups',
+        text: 'Simple build: one NVMe SSD for everything. Large library: an NVMe SSD for the OS and games plus an HDD for bulk files. Budget: a SATA SSD if no M.2 slot is available. Always keep backups on another drive or in the cloud, because any drive can fail.',
+      },
+      {
+        title: 'How to install a SATA drive',
+        text: 'Mount the 2.5-inch or 3.5-inch drive in a case bay or bracket to prevent vibration, then plug an L-shaped SATA data cable to the motherboard and an L-shaped SATA power cable from the PSU. Both are required.',
       },
     ],
     keyPoints: [
-      'HDD: spinning platters and a moving head, so it is the slowest type.',
-      'SATA SSD: no moving parts, same SATA link as older drives.',
-      'NVMe M.2 SSD: PCIe link, far faster than SATA.',
-      'M.2 is a shape, not a speed. Check whether the drive is SATA or NVMe.',
-      'RAM forgets when power is off; storage keeps files.',
+      'Storage keeps files permanently when power is off; RAM forgets at power-off.',
+      'HDD: spinning platters and moving arm—slowest, but cheapest per GB for bulk files.',
+      'SATA SSD: flash memory with no moving parts, limited to ~6 Gbit/s and using data + power cables.',
+      'NVMe M.2 SSD: plugs into an M.2 slot over PCIe with no cables and runs far faster than SATA.',
+      'M.2 is a shape (typically 2280), not a speed—confirm NVMe support, length fit, and keep backups.',
     ],
     commonMistakes: [
-      'Assuming every M.2 drive is fast. M.2 can be SATA or NVMe.',
-      'Buying an M.2 drive without checking that the board’s slot supports it.',
-      'Treating RAM and storage as the same thing.',
+      'Assuming every M.2 drive is NVMe, or forgetting to verify length (such as 2280) and PCIe generation support.',
+      'Installing a SATA drive with only a data cable or only a power cable—both are needed for it to appear.',
+      'Treating RAM and storage as interchangeable, or skipping backups of important files.',
     ],
     references: [
-      { title: 'Hard Drives and SSDs (Seagate)', url: 'https://www.seagate.com/innovation/hard-drives-and-ssds/', note: 'Search excerpt only.' },
-      { title: 'HDD vs. SSD: How Do They Store Data? (Seagate)', url: 'https://www.seagate.com/blog/how-do-hdds-and-ssds-store-data/', note: 'Search excerpt only.' },
+      { title: 'Hard Drives and SSDs (Seagate)', url: 'https://www.seagate.com/innovation/hard-drives-and-ssds/' },
+      { title: 'HDD vs. SSD: How Do They Store Data? (Seagate)', url: 'https://www.seagate.com/blog/how-do-hdds-and-ssds-store-data/' },
+      { title: 'SSD vs HDD (SanDisk)', url: 'https://shop.sandisk.com/solutions/ssd-vs-hdd' },
+      { title: 'SSD vs HDD Differences (Kingston)', url: 'https://kingston.com/en/blog/personal-storage/ssd-vs-hdd-differences' },
+      { title: 'NVMe vs SATA SSDs (SanDisk)', url: 'https://www.sandisk.com/topics/nvme-vs-sata-ssds' },
       { title: 'What is NVMe SSD technology? (Samsung Semiconductor Insights)', url: 'https://insights.samsung.com/2024/01/26/what-is-nvme-ssd-technology' },
-      { title: 'NVMe vs SATA SSDs (SanDisk)', url: 'https://www.sandisk.com/topics/nvme-vs-sata-ssds', note: 'Search excerpt only.' },
+      { title: 'SSD vs HDD Tested (Tom’s Hardware)', url: 'https://www.tomshardware.com/uk/features/ssd-vs-hdd-hard-drive-difference' },
+      { title: 'HDD vs SSD: Which Storage Solution Is Best? (ITPro)', url: 'https://www.itpro.com/uk/hardware/360050/hdd-vs-ssd-which-storage-solution-is-best-for-you' },
+      { title: 'How to Install a Corsair M.2 SSD (Corsair)', url: 'https://www.corsair.com/uk/bp/explorer/diy-builder/storage/how-to-install-a-corsair-m2-solid-state-drive/' },
+      { title: 'M.2 SSD Quick Start Guide (Corsair)', url: 'https://corsair.com/explorer/diy-builder/storage/m2-ssd' },
       { title: 'Gaming Motherboard Buying Guide (Intel)', url: 'https://www.intel.com/content/www/us/en/gaming/resources/how-to-choose-a-motherboard.html' },
-      { title: 'What is a CMOS Battery…? (Corsair; RAM loses data at power-off)', url: 'https://www.corsair.com/us/en/explorer/gamer/gaming-pcs/what-is-a-cmos-battery-and-how-do-you-replace-it/', note: 'Search excerpt only.' },
     ],
   },
 
@@ -491,10 +568,12 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         does: 'Powers the whole PC. Most builds use the ATX size; small cases may use SFX or SFX-L.',
         looksLike: 'A metal box with a fan, a power-cord socket and a bundle of cables.',
         images: [
-          img('hw5-psu.jpg', 'An ATX power supply: a metal box with a fan, a power-cord socket and cables.', 'An ATX power supply unit.', {
-            sourcePage: `${COMMONS}File:ATX_Computer_power_supply_unit.jpg`,
-            todo: 'Document says CC BY-SA 4.0 (page metadata; VERIFY). Credit if confirmed: "Photo: Dmitry Makeev, CC BY-SA 4.0, Wikimedia Commons".',
-          }),
+          img(
+            'hw5-psu.jpg',
+            'A black ATX power supply unit showing its cooling fan, power switch, and AC power socket.',
+            'An ATX power supply unit.',
+            { available: true, credit: ASSET_CREDIT },
+          ),
         ],
       },
       {
@@ -509,9 +588,11 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         looksLike: 'Bundles of colored wires ending in plugs of different shapes.',
         verify: 'Corsair’s article does not list these cables; the source is a Commons photo description.',
         images: [
-          img('hw5-other-cables.jpg', 'PSU cables ending in CPU, PCIe, SATA and Molex plugs.', 'PSU cables: CPU, PCIe, SATA and Molex.', {
-            sourcePage: `${COMMONS}File:PC-Netzteilanschluesse_ATX2_numbered_IMGP2167_smial_wp.jpg`,
-          }),
+          pdfImg(
+            'hw5-other-cables.jpg',
+            'PSU power cables with CPU and PCIe connectors.',
+            'PSU power cables (CPU and PCIe connectors).',
+          ),
         ],
       },
     ],
@@ -571,9 +652,12 @@ export const HW_LESSONS: Record<string, LessonContent> = {
         name: 'Graphics card',
         does: 'Goes in the PCIe x16 slot.',
         images: [
-          img('hw6-graphics-card.jpg', 'A graphics card.', 'A graphics card.', {
-            todo: 'The document does not name a graphics-card picture. Find one (CC0, public domain, CC BY or CC BY-SA) and add its credit line.',
-          }),
+          img(
+            'hw6-graphics-card.jpg',
+            'A triple-fan graphics card showing its PCIe x16 edge connector and rear display outputs.',
+            'A triple-fan graphics card.',
+            { available: true, credit: ASSET_CREDIT },
+          ),
         ],
       },
       {

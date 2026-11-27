@@ -11,19 +11,6 @@ import type { TrackId } from '../types/streakbyte';
 const h2Class = 'm-0 mb-3 font-head text-[20px] font-bold tracking-[-0.015em]';
 const sectionClass = 'mt-8';
 
-/** Shows a small "check this" tag, but only in development builds. */
-function VerifyTag({ note }: { note?: string }) {
-  if (!note || !import.meta.env.DEV) return null;
-  return (
-    <span
-      className="ml-2 inline-block px-2 py-0.5 text-[10px] font-bold uppercase text-amber border border-amber"
-      title={note}
-    >
-      Needs checking: {note}
-    </span>
-  );
-}
-
 function LessonFigure({ image, trackId }: { image: LessonImage; trackId: TrackId }) {
   const src = `${import.meta.env.BASE_URL}lessons/${trackId}/${image.file}`;
 
@@ -60,11 +47,6 @@ function LessonFigure({ image, trackId }: { image: LessonImage; trackId: TrackId
       <figcaption className="text-[11.5px] text-muted">
         {image.caption}
         <span className="block text-[10.5px]">Photo credit: added when the picture is published.</span>
-        {import.meta.env.DEV ? (
-          <span className="block text-[10.5px] text-amber">
-            TODO ({image.file}): {image.todo}
-          </span>
-        ) : null}
       </figcaption>
     </figure>
   );
@@ -119,7 +101,7 @@ export function LearnView() {
         </div>
       </header>
 
-      <section aria-labelledby="learn-definitions" className="max-w-[1060px] mx-auto px-6 pt-7 max-[760px]:px-4">
+      <section aria-labelledby="learn-definitions" className="px-[10%] pt-7 max-[760px]:px-4">
         <h2 id="learn-definitions" className={h2Class}>
           Definitions
         </h2>
@@ -133,10 +115,7 @@ export function LearnView() {
                 className={`p-4 border-b border-line ${idx % 2 === 0 ? 'min-[761px]:border-r' : ''
                   }`}
               >
-                <dt className="font-head font-bold text-[15px]">
-                  {d.term}
-                  <VerifyTag note={d.verify} />
-                </dt>
+                <dt className="font-head font-bold text-[15px]">{d.term}</dt>
                 <dd className="m-0 mt-1.5 text-muted text-[12px]">{d.text}</dd>
               </div>
             ))}
@@ -144,17 +123,14 @@ export function LearnView() {
         )}
       </section>
 
-      <section aria-labelledby="learn-parts" className={`${sectionClass} max-w-[1060px] mx-auto px-6 max-[760px]:px-4`}>
+      <section aria-labelledby="learn-parts" className={`${sectionClass} px-[10%] max-[760px]:px-4`}>
         <h2 id="learn-parts" className={h2Class}>
           Necessary parts
         </h2>
         <ul className="grid gap-4 m-0 p-0 list-none">
           {content.parts.map((part) => (
             <li key={part.name} className="p-5 border border-line bg-panel">
-              <h3 className="m-0 font-head text-[16px] font-bold">
-                {part.name}
-                <VerifyTag note={part.verify} />
-              </h3>
+              <h3 className="m-0 font-head text-[16px] font-bold">{part.name}</h3>
               {part.does && (
                 <p className="mt-2 mb-0 text-[12.5px]">
                   <b>Does:</b> {part.does}
@@ -178,7 +154,7 @@ export function LearnView() {
       </section>
 
       {content.steps && content.steps.length > 0 && (
-        <section aria-labelledby="learn-steps" className={`${sectionClass} max-w-[1060px] mx-auto px-6 max-[760px]:px-4`}>
+        <section aria-labelledby="learn-steps" className={`${sectionClass} px-[10%] max-[760px]:px-4`}>
           <h2 id="learn-steps" className={h2Class}>
             {isFinal ? 'Build steps' : 'How to install'}
           </h2>
@@ -186,7 +162,6 @@ export function LearnView() {
             {content.steps.map((step) => (
               <li key={step.text} className="text-[12.5px]">
                 {step.text}
-                <VerifyTag note={step.verify} />
               </li>
             ))}
           </ol>
@@ -194,7 +169,7 @@ export function LearnView() {
       )}
 
       {content.notes && content.notes.length > 0 && (
-        <section aria-labelledby="learn-notes" className={`${sectionClass} max-w-[1060px] mx-auto px-6 max-[760px]:px-4`}>
+        <section aria-labelledby="learn-notes" className={`${sectionClass} px-[10%] max-[760px]:px-4`}>
           <h2 id="learn-notes" className={h2Class}>
             Good to know
           </h2>
@@ -209,7 +184,7 @@ export function LearnView() {
         </section>
       )}
 
-      <div className="max-w-[1060px] mx-auto px-6 max-[760px]:px-4 mt-8">
+      <div className="px-[10%] max-[760px]:px-4 mt-8">
         <div className="grid grid-cols-2 max-[760px]:grid-cols-1 border border-line">
           <section aria-labelledby="learn-key-points" className="p-5 border-r border-line max-[760px]:border-r-0 max-[760px]:border-b">
             <h2 id="learn-key-points" className={h2Class}>
@@ -236,7 +211,7 @@ export function LearnView() {
       </div>
 
       {isFinal ? (
-        <section aria-labelledby="learn-lab" className={`${sectionClass} max-w-[1060px] mx-auto px-6 max-[760px]:px-4`}>
+        <section aria-labelledby="learn-lab" className={`${sectionClass} px-[10%] max-[760px]:px-4`}>
           <div className="p-6 border border-[var(--dark-card)] bg-[var(--dark-card)] text-white flex items-center justify-between gap-4 flex-wrap">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-white/60">
@@ -263,7 +238,7 @@ export function LearnView() {
       ) : (
         <section
           aria-labelledby="learn-quiz"
-          className="mt-8 max-w-[1060px] mx-auto px-6 max-[760px]:px-4"
+          className="mt-8 px-[10%] max-[760px]:px-4"
         >
           <div className="p-6 border border-[var(--dark-card)] bg-[var(--dark-card)] text-white flex items-center justify-between gap-4 flex-wrap">
             <div>
@@ -285,7 +260,7 @@ export function LearnView() {
         </section>
       )}
 
-      <section aria-labelledby="learn-references" className="mt-8 max-w-[1060px] mx-auto px-6 pb-8 max-[760px]:px-4">
+      <section aria-labelledby="learn-references" className="mt-8 px-[10%] pb-8 max-[760px]:px-4">
         <div className="pt-5 border-t border-line">
           <h2
             id="learn-references"
@@ -304,9 +279,6 @@ export function LearnView() {
                 >
                   {ref.title}
                 </a>
-                {import.meta.env.DEV && ref.note ? (
-                  <span className="ml-2 text-[11px] text-amber">Needs checking: {ref.note}</span>
-                ) : null}
               </li>
             ))}
           </ol>
