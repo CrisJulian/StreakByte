@@ -1297,8 +1297,9 @@ export const useStreakByteStore = create<StreakByteStore>()(
             get().navigate('curriculum');
             return;
           }
-          // Hash sync can fire twice for one navigation; never restart a quiz in progress.
-          if (get().quiz?.lessonKey !== key) {
+          // Opening a quiz draws a new set. Hash sync can fire twice for one navigation,
+          // so never restart the quiz that is already on screen.
+          if (get().view !== 'quiz' || get().quiz?.lessonKey !== key) {
             set((state) => ({
               view: 'quiz',
               quiz: startQuiz(key, bank),

@@ -4,6 +4,7 @@ import { lessonLabel, TRACKS } from '../data/curriculum';
 import { LESSON_CONTENT } from '../data/lessons';
 import type { LessonImage } from '../data/lessons/types';
 import { DEFAULT_PASS_MARK } from '../domain/rules/lessonProgress';
+import { QUIZ_LENGTH } from '../domain/rules/quiz';
 import { parseLessonKey } from '../domain/rules/quiz';
 import { useStreakByteStore } from '../store/useStreakByteStore';
 import type { TrackId } from '../types/streakbyte';
@@ -246,7 +247,8 @@ export function LearnView() {
                 Quiz
               </h2>
               <p className="m-0 mt-1 text-white/70 text-[12px]">
-                4 questions, 4 choices each. Get {DEFAULT_PASS_MARK} of 4 right to complete this lesson.
+                {QUIZ_LENGTH} random questions, 4 choices each. Get {DEFAULT_PASS_MARK} of {QUIZ_LENGTH} right to
+                complete this lesson.
               </p>
             </div>
             <button

@@ -5,8 +5,8 @@ import type {
   LessonKind,
 } from '../entities/progress';
 
-/** Default pass mark: 3 correct answers out of 4. */
-export const DEFAULT_PASS_MARK = 3;
+/** Default pass mark: 12 correct answers out of 15 (80%). */
+export const DEFAULT_PASS_MARK = 12;
 
 /** "hw", 0 -> "hw-1". */
 export function lessonKeyFor(trackId: string, index: number): string {
@@ -23,6 +23,14 @@ export function isLessonComplete(completions: readonly LessonCompletion[], lesso
   return completions.some((c) => c.lessonKey === lessonKey);
 }
 
+/** True when `next` is a higher percentage than `prev`. Attempts can have different question counts. */
+export function isBetterScore(
+  next: Pick<LessonCompletion, 'correct' | 'total'>,
+  prev: Pick<LessonCompletion, 'correct' | 'total'>,
+): boolean {
+  return next.correct * prev.total > prev.correct * next.total;
+}
+
 /**
  * Adds a completion. Safe to call twice for the same lesson: the list never gets a duplicate,
  * and the best score is kept (the first completion date is kept too).
@@ -33,7 +41,7 @@ export function recordCompletion(
 ): LessonCompletion[] {
   const existing = completions.find((c) => c.lessonKey === next.lessonKey);
   if (!existing) return [...completions, next];
-  if (next.correct <= existing.correct) return [...completions];
+  if (!isBetterScore(next, existing)) return [...completions];
   return completions.map((c) =>
     c.lessonKey === next.lessonKey ? { ...c, correct: next.correct, total: next.total } : c,
   );

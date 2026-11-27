@@ -1,3 +1,4 @@
+import { DEFAULT_PASS_MARK } from './lessonProgress';
 import type { CompletionSummary, NetworkLabState, PcBuildState } from '../../types/streakbyte';
 import { scoreNetworkBuild } from './network';
 import { installedPcPartsCount, scorePcBuild, TOTAL_PC_PARTS } from './pcBuild';
@@ -74,7 +75,7 @@ export interface QuizSummaryInput {
 
 function passNote(input: QuizSummaryInput): string {
   if (input.passed === undefined) return '';
-  const mark = input.passMark ?? 3;
+  const mark = input.passMark ?? DEFAULT_PASS_MARK;
   return input.passed
     ? ' Lesson complete!'
     : ` You need ${mark} correct to complete this lesson. Review the topics below and try again.`;

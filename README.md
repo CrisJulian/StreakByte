@@ -56,7 +56,7 @@ VITE_GEMINI_MODEL=gemini-3.5-flash-lite
 ## Lessons, progress, and locks
 
 - Lesson text lives in typed `src/data/lessons/hw.ts` and `net.ts` (not JSX components). The Learn page is `src/views/LearnView.tsx` (route `#learn/<track>-<n>`, e.g. `#learn/hw-3`). Order on every page: Learn, then Quiz, then References.
-- A lesson is complete when its quiz is passed (3 of 4, see `src/domain/rules/lessonProgress.ts`). Completion is saved through `ProgressRepository.saveLessonCompletion` (`supabaseProgress` + `localProgress`) and queued in `SyncQueue` as `complete-lesson`.
+- A lesson is complete when its quiz is passed (12 of 15, see `src/domain/rules/lessonProgress.ts`; each attempt draws 15 random questions from the lesson's pool in `src/data/quizBank.ts`). Completion is saved through `ProgressRepository.saveLessonCompletion` (`supabaseProgress` + `localProgress`) and queued in `SyncQueue` as `complete-lesson`.
 - `done` / `current` / `locked` flags are never stored; `deriveTrackProgress` computes them from completions. Each Final Lesson stays locked until every lesson before it is complete.
 - Pictures go in `public/lessons/hw|net/`. The PWA precaches them (`jpg`, `jpeg`, `webp` are in the workbox glob). See `LESSON_TODO.md` for missing assets.
 

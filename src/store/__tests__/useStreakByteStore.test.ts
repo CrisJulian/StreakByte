@@ -293,12 +293,26 @@ describe('quiz flow in the store', () => {
     useStreakByteStore.getState().syncFromHash('#quiz/hw-3');
     const first = useStreakByteStore.getState().quiz;
     expect(useStreakByteStore.getState().view).toBe('quiz');
-    expect(first?.questions.length).toBe(4);
+    expect(first?.questions.length).toBe(15);
+    expect(new Set(first?.questions.map((q) => q.id)).size).toBe(15);
+    expect(first?.questions.every((q) => q.id.startsWith('hw-3-'))).toBe(true);
     expect(first?.questions.every((q) => q.choices.length === 4)).toBe(true);
 
     useStreakByteStore.getState().selectQuizChoice(1);
     useStreakByteStore.getState().syncFromHash('#quiz/hw-3');
     expect(useStreakByteStore.getState().quiz?.selected).toBe(1);
+  });
+
+  it('draws a new set after leaving the quiz and opening it again', () => {
+    useStreakByteStore.getState().navigate('quiz/hw-3');
+    const first = useStreakByteStore.getState().quiz;
+    useStreakByteStore.getState().selectQuizChoice(1);
+    useStreakByteStore.getState().navigate('curriculum');
+    useStreakByteStore.getState().navigate('quiz/hw-3');
+    const second = useStreakByteStore.getState().quiz;
+    expect(second).not.toBe(first);
+    expect(second?.selected).toBeNull();
+    expect(second?.index).toBe(0);
   });
 
   it('falls back to the curriculum for an unknown lesson key', () => {
@@ -310,7 +324,7 @@ describe('quiz flow in the store', () => {
   it('finishes with a real score, saves missed topics, and goes to Lesson Complete', () => {
     useStreakByteStore.getState().syncFromHash('#quiz/hw-3');
 
-    for (let i = 0; i < 4; i += 1) {
+    for (let i = 0; i < 15; i += 1) {
       const quiz = useStreakByteStore.getState().quiz!;
       const q = quiz.questions[quiz.index];
       // answer the first question correctly, the rest wrong
@@ -323,10 +337,10 @@ describe('quiz flow in the store', () => {
     const state = useStreakByteStore.getState();
     expect(state.view).toBe('complete');
     expect(state.quiz).toBeNull();
-    expect(state.completion?.partsValue).toBe('1 / 4');
-    expect(state.completion?.accuracy).toBe('25%');
-    expect(state.completion?.xp).toBe('+30'); // 120 XP lesson * 1/4
-    expect(state.completion?.review.length).toBe(3);
+    expect(state.completion?.partsValue).toBe('1 / 15');
+    expect(state.completion?.accuracy).toBe('7%');
+    expect(state.completion?.xp).toBe('+8'); // 120 XP lesson * 1/15
+    expect(state.completion?.review.length).toBe(14);
     expect(state.completion?.next[0]).toBe('Lesson 4: Storage');
   });
 
@@ -518,7 +532,7 @@ describe('quiz flow in the store', () => {
   it('sets completion.nextRoute to the actual next unlocked lesson after finishing a quiz', () => {
     const finishQuiz = (key: string) => {
       useStreakByteStore.getState().syncFromHash(`#quiz/${key}`);
-      for (let i = 0; i < 4; i += 1) {
+      for (let i = 0; i < 15; i += 1) {
         const q = useStreakByteStore.getState().quiz;
         if (!q) break;
         const currentQ = q.questions[q.index];

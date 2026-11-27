@@ -2,6 +2,19 @@ import type { QuizAnswer, QuizQuestion, QuizSession } from '../entities/quiz';
 
 export type Rng = () => number;
 
+/** Questions asked in one attempt. */
+export const QUIZ_LENGTH = 15;
+
+/** Up to `count` different questions from the bank, in random order (Fisher–Yates on a copy). */
+export function pickQuestions(bank: readonly QuizQuestion[], count: number, rng: Rng = Math.random): QuizQuestion[] {
+  const pool = [...bank];
+  for (let i = pool.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, count);
+}
+
 /** Fisher–Yates over the four choices; correctIndex follows the correct answer. */
 export function shuffleChoices(q: QuizQuestion, rng: Rng = Math.random): QuizQuestion {
   const order = [0, 1, 2, 3];
@@ -14,10 +27,11 @@ export function shuffleChoices(q: QuizQuestion, rng: Rng = Math.random): QuizQue
   return { ...q, choices, correctIndex };
 }
 
+/** A new attempt: a random draw from the lesson's bank, with shuffled choices. */
 export function startQuiz(lessonKey: string, bank: QuizQuestion[], rng: Rng = Math.random): QuizSession {
   return {
     lessonKey,
-    questions: bank.map((q) => shuffleChoices(q, rng)),
+    questions: pickQuestions(bank, QUIZ_LENGTH, rng).map((q) => shuffleChoices(q, rng)),
     index: 0,
     selected: null,
     submitted: false,

@@ -172,7 +172,7 @@ In development builds (`npm run dev`) these show an amber "Needs checking" tag o
 
 ## Other things to know
 - Picture advice from the hardware document: do not use the labeled "MSI KT3 Ultra ver 1.0" board as the main motherboard picture. It is an old board with an AGP slot and no M.2 or PCIe x16 slot.
-- The pass mark is 3 of 4. Your documents do not state one, so this is the default you asked for. Change it in `src/domain/rules/lessonProgress.ts` (DEFAULT_PASS_MARK).
+- The pass mark is 12 of 15 (80%). Your documents do not state one. Change it in `src/domain/rules/lessonProgress.ts` (DEFAULT_PASS_MARK).
 - The Dashboard "Start lesson" card and the Practice/Leaderboard shortcuts still open the PC lab directly. An existing test (App.test.tsx) requires that, so they bypass the Final Lesson lock. Tell me if you want me to change that test and route them through the curriculum instead.
 - The labs themselves (Build a PC, Build a network) do not mark a Final Lesson complete. The Final Lesson counts as complete when its quiz is passed.
 - Hardware document: the Lesson 5 backup pin diagram (hw5-24pin-diagram.png, public domain, George Shuklin) was not used because it is a PNG backup, not a main picture.
