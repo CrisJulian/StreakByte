@@ -35,11 +35,7 @@ export function CurriculumView() {
     <div className="w-full bg-panel">
       <div className="p-6 max-[760px]:p-4 border-b border-line flex justify-between items-end gap-4 flex-wrap">
         <div>
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
-            <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
-            <span>MISSION DIRECTORY</span>
-          </div>
-          <h1 className="m-0 mt-1.5 sb-page-title text-[32px]">
+          <h1 className="m-0 sb-page-title text-[32px]">
             {activeTrack.heading}
           </h1>
           <p className="mt-1.5 mb-0 text-muted text-[12px]">
@@ -90,12 +86,6 @@ export function CurriculumView() {
       <div className="grid grid-cols-[minmax(0,1fr)_330px] max-[1000px]:grid-cols-1 items-stretch">
         <div className="p-6 max-[760px]:p-4 border-r border-line max-[1000px]:border-r-0 max-[1000px]:border-b">
           <div className="mb-4">
-            <label
-              htmlFor="curr-search"
-              className="block text-[10px] font-bold uppercase tracking-[0.07em] text-muted mb-1.5"
-            >
-              Filter lessons, parts, topics
-            </label>
             <div className="relative flex items-center">
               <Icon name="search" className="w-4 h-4 absolute left-3 text-muted pointer-events-none" />
               <input

@@ -21,12 +21,12 @@ const HW: LessonKind[] = ['learn', 'learn', 'learn', 'learn', 'learn', 'final'];
 const NET: LessonKind[] = ['learn', 'learn', 'learn', 'learn', 'final'];
 
 describe('quiz pass mark', () => {
-  it('defaults to 3 of 4', () => {
-    expect(DEFAULT_PASS_MARK).toBe(3);
-    expect(isQuizPassed(3, 4)).toBe(true);
-    expect(isQuizPassed(4, 4)).toBe(true);
-    expect(isQuizPassed(2, 4)).toBe(false);
-    expect(isQuizPassed(0, 4)).toBe(false);
+  it('defaults to 12 of 15', () => {
+    expect(DEFAULT_PASS_MARK).toBe(12);
+    expect(isQuizPassed(12, 15)).toBe(true);
+    expect(isQuizPassed(15, 15)).toBe(true);
+    expect(isQuizPassed(11, 15)).toBe(false);
+    expect(isQuizPassed(0, 15)).toBe(false);
   });
 
   it('never passes an empty quiz and never needs more than the question count', () => {
@@ -37,6 +37,12 @@ describe('quiz pass mark', () => {
 });
 
 describe('recordCompletion', () => {
+  it('compares percentages, so a longer quiz cannot lower an old perfect score', () => {
+    const old = done('hw-1', 4);
+    const longer = { ...done('hw-1', 12), total: 15 };
+    expect(recordCompletion([old], longer)[0]).toMatchObject({ correct: 4, total: 4 });
+  });
+
   it('adds a lesson once and is idempotent', () => {
     const once = recordCompletion([], done('hw-1', 3));
     const twice = recordCompletion(once, done('hw-1', 3));
@@ -90,6 +96,12 @@ describe('deriveTrackProgress', () => {
     expect(p.lessons.map((l) => l.status)).toEqual(['done', 'done', 'done', 'done', 'done', 'cur']);
     expect(p.lessons[5].lockMessage).toBeUndefined();
     expect(isLessonUnlocked('hw', HW, completions, 5)).toBe(true);
+  });
+
+  it('leaves Final Lessons open when unlockFinal is enabled', () => {
+    const p = deriveTrackProgress('hw', HW, [], { unlockFinal: true });
+    expect(p.lessons.map((l) => l.status)).toEqual(['cur', 'open', 'open', 'open', 'open', 'open']);
+    expect(p.lessons[5].lockMessage).toBeUndefined();
   });
 
   it('counts done lessons for any order of completion', () => {

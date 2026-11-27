@@ -8,11 +8,15 @@ import {
   maxCombo,
   nextQuestion,
   parseLessonKey,
+  pickRandom,
   quizXp,
   scoreQuiz,
   selectChoice,
   shuffleChoices,
+  shuffleItems,
   startQuiz,
+  pickQuestions,
+  QUIZ_LENGTH,
   submitAnswer,
 } from '../quiz';
 
@@ -89,5 +93,61 @@ describe('quiz rules', () => {
     expect(comboTier(2)).toEqual({ label: 'Combo 1.25x', multiplier: 1.25, overclocked: false });
     expect(comboTier(3)).toEqual({ label: 'Turbo 1.5x', multiplier: 1.5, overclocked: false });
     expect(comboTier(4)).toEqual({ label: 'OVERCLOCKED', multiplier: 2, overclocked: true });
+  });
+});
+
+describe('pickQuestions', () => {
+  const pool = Array.from({ length: 25 }, (_, i) => ({
+    id: `x-${i}`,
+    topic: 't',
+    prompt: `p${i}`,
+    choices: ['a', 'b', 'c', 'd'] as [string, string, string, string],
+    correctIndex: 0 as const,
+    explanation: 'e',
+  }));
+
+  it('draws 15 different questions and leaves the bank untouched', () => {
+    const before = pool.map((q) => q.id);
+    for (const r of [0, 0.37, 0.999999]) {
+      const picked = pickQuestions(pool, QUIZ_LENGTH, () => r);
+      expect(picked).toHaveLength(15);
+      expect(new Set(picked.map((q) => q.id)).size).toBe(15);
+    }
+    expect(pool.map((q) => q.id)).toEqual(before);
+  });
+
+  it('can draw any question and varies between attempts', () => {
+    const seen = new Set<string>();
+    const draws = new Set<string>();
+    for (let n = 0; n < 200; n += 1) {
+      const ids = pickQuestions(pool, QUIZ_LENGTH).map((q) => q.id);
+      ids.forEach((id) => seen.add(id));
+      draws.add(ids.join());
+    }
+    expect(seen.size).toBe(pool.length);
+    expect(draws.size).toBeGreaterThan(1);
+  });
+
+  it('returns the whole bank when it is smaller than a quiz', () => {
+    expect(pickQuestions(pool.slice(0, 4), QUIZ_LENGTH)).toHaveLength(4);
+  });
+});
+
+describe('shuffleItems and pickRandom', () => {
+  it('shuffles without mutating and stays deterministic for a seeded RNG', () => {
+    const original = [1, 2, 3, 4, 5, 6];
+    const makeRng = () => {
+      let x = 42;
+      return () => ((x = (x * 9301 + 49297) % 233280) / 233280);
+    };
+    const first = shuffleItems(original, makeRng());
+    const second = shuffleItems(original, makeRng());
+    expect(first).toEqual(second);
+    expect([...first].sort((a, b) => a - b)).toEqual(original);
+    expect(original).toEqual([1, 2, 3, 4, 5, 6]);
+
+    const picked = pickRandom(original, 3, makeRng());
+    expect(picked).toHaveLength(3);
+    expect(new Set(picked).size).toBe(3);
   });
 });

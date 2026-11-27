@@ -1,8 +1,26 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ALL_QUIZ_QUESTIONS } from '../src/data/quizBank';
 
 async function enterAsGuest(page: Page) {
   await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
-  await page.getByRole('button', { name: /Continue as Guest/i }).click();
+  await expect(page.getByRole('button', { name: /Continue as Guest/i })).toHaveCount(0);
+  await page.evaluate(() => {
+    window.localStorage.setItem(
+      'streakbyte-session',
+      JSON.stringify({
+        state: {
+          isGuest: true,
+          authUser: {
+            id: 'local-guest',
+            email: 'guest@streakbyte.local',
+            displayName: 'Guest Learner',
+          },
+        },
+        version: 0,
+      }),
+    );
+  });
+  await page.reload();
   await expect(page.getByRole('heading', { name: 'Welcome back, Guest' })).toBeVisible();
 }
 
@@ -33,20 +51,15 @@ test('learn to quiz completion persists across reload', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Inside the PC/i, level: 1 })).toBeVisible();
   await page.getByRole('button', { name: 'Take the quiz' }).click();
 
-  const answers = [
-    'CPU',
-    'Remove heat so the CPU stays at a safe temperature',
-    'Motherboard',
-    'To fill tiny gaps so heat can pass across more easily',
-  ];
-
-  for (let i = 0; i < answers.length; i += 1) {
-    await page.getByText(answers[i], { exact: true }).click();
+  for (let i = 0; i < 15; i += 1) {
+    // Questions are random, so look up the correct answer for the prompt on screen.
+    const prompt = (await page.locator('#quiz-prompt').innerText()).trim();
+    const question = ALL_QUIZ_QUESTIONS.find((q) => q.id.startsWith('hw-1-') && q.prompt === prompt);
+    expect(question, `unknown prompt: ${prompt}`).toBeDefined();
+    await page.getByText(question!.choices[question!.correctIndex], { exact: true }).click();
     await page.getByRole('button', { name: 'Check answer' }).click();
     await expect(page.getByText('Correct!')).toBeVisible();
-    await page
-      .getByRole('button', { name: i === answers.length - 1 ? 'See results' : 'Next question' })
-      .click();
+    await page.getByRole('button', { name: i === 14 ? 'See results' : 'Next question' }).click();
   }
 
   await expect(page.getByText('100%')).toBeVisible();

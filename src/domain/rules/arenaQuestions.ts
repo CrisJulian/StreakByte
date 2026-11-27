@@ -1,5 +1,8 @@
 import type { QuizQuestion } from '../entities/quiz';
 import type { DuelTrack } from './duel';
+import { pickRandom, shuffleChoices, shuffleItems, type Rng } from './quiz';
+
+export { shuffleChoices } from './quiz';
 
 export interface ArenaScenario extends QuizQuestion {
   track: 'hw' | 'net';
@@ -42,36 +45,11 @@ function randInt(rng: () => number, min: number, maxInclusive: number): number {
   return min + (Math.floor(rng() * span) % span);
 }
 
-function pickOne<T>(rng: () => number, items: readonly T[]): T {
+function pickOne<T>(rng: Rng, items: readonly T[]): T {
   return items[Math.floor(rng() * items.length) % items.length];
 }
 
-function shuffleArray<T>(items: readonly T[], rng: () => number): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(rng() * (i + 1)) % (i + 1);
-    const tmp = copy[i];
-    copy[i] = copy[j];
-    copy[j] = tmp;
-  }
-  return copy;
-}
-
-export function shuffleChoices(question: QuizQuestion, rng: () => number): QuizQuestion {
-  const indexed = question.choices.map((text, idx) => ({
-    text,
-    isCorrect: idx === question.correctIndex,
-  }));
-  const mixed = shuffleArray(indexed, rng);
-  const newCorrectIdx = mixed.findIndex((entry) => entry.isCorrect);
-  return {
-    ...question,
-    choices: [mixed[0].text, mixed[1].text, mixed[2].text, mixed[3].text],
-    correctIndex: (newCorrectIdx >= 0 ? newCorrectIdx : 0) as QuizQuestion['correctIndex'],
-  };
-}
-
-function makeSeed(rng: () => number): number {
+function makeSeed(rng: Rng): number {
   return randInt(rng, 10_000, 99_999);
 }
 
@@ -263,39 +241,98 @@ function generateQuestionByKey(key: string, seed: number): QuizQuestion | undefi
   return undefined;
 }
 
+function pushSeededTokens<T>(
+  tokens: string[],
+  items: readonly T[],
+  amount: number,
+  prefix: 'gen' | 'arena' | 'quiz',
+  getId: (item: T) => string,
+  rng: Rng,
+  usedIds?: Set<string>,
+): void {
+  for (const item of pickRandom(items, amount, rng)) {
+    const id = getId(item);
+    usedIds?.add(id);
+    tokens.push(`${prefix}:${id}:${makeSeed(rng)}`);
+  }
+}
+
 export function generateArenaDuelTokens(
   track: DuelTrack,
   scenarioPool: readonly Pick<ArenaScenario, 'id' | 'track'>[],
   count: number = 8,
-  rng: () => number = Math.random,
+  rng: Rng = Math.random,
+  quizIds: readonly string[] = [],
 ): string[] {
-  const hwScenarios = shuffleArray(
-    scenarioPool.filter((s) => s.track === 'hw'),
-    rng,
-  );
-  const netScenarios = shuffleArray(
-    scenarioPool.filter((s) => s.track === 'net'),
-    rng,
-  );
-  const hwGens = shuffleArray(ARENA_GENERATOR_KEYS.hw, rng);
-  const netGens = shuffleArray(ARENA_GENERATOR_KEYS.net, rng);
+  const hwScenarios = scenarioPool.filter((s) => s.track === 'hw');
+  const netScenarios = scenarioPool.filter((s) => s.track === 'net');
+  const hwQuizIds = quizIds.filter((id) => id.startsWith('hw-'));
+  const netQuizIds = quizIds.filter((id) => id.startsWith('net-'));
 
   const tokens: string[] = [];
+  const usedScenarioIds = new Set<string>();
+  const usedQuizIds = new Set<string>();
 
-  if (track === 'hw') {
-    for (const g of hwGens.slice(0, 4)) tokens.push(`gen:${g}:${makeSeed(rng)}`);
-    for (const s of hwScenarios.slice(0, 4)) tokens.push(`arena:${s.id}:${makeSeed(rng)}`);
-  } else if (track === 'net') {
-    for (const g of netGens.slice(0, 4)) tokens.push(`gen:${g}:${makeSeed(rng)}`);
-    for (const s of netScenarios.slice(0, 4)) tokens.push(`arena:${s.id}:${makeSeed(rng)}`);
-  } else {
-    for (const g of hwGens.slice(0, 2)) tokens.push(`gen:${g}:${makeSeed(rng)}`);
-    for (const g of netGens.slice(0, 2)) tokens.push(`gen:${g}:${makeSeed(rng)}`);
-    for (const s of hwScenarios.slice(0, 2)) tokens.push(`arena:${s.id}:${makeSeed(rng)}`);
-    for (const s of netScenarios.slice(0, 2)) tokens.push(`arena:${s.id}:${makeSeed(rng)}`);
+  if (quizIds.length === 0) {
+    if (track === 'hw') {
+      pushSeededTokens(tokens, ARENA_GENERATOR_KEYS.hw, 4, 'gen', (g) => g, rng);
+      pushSeededTokens(tokens, hwScenarios, 4, 'arena', (s) => s.id, rng, usedScenarioIds);
+    } else if (track === 'net') {
+      pushSeededTokens(tokens, ARENA_GENERATOR_KEYS.net, 4, 'gen', (g) => g, rng);
+      pushSeededTokens(tokens, netScenarios, 4, 'arena', (s) => s.id, rng, usedScenarioIds);
+    } else {
+      pushSeededTokens(tokens, ARENA_GENERATOR_KEYS.hw, 2, 'gen', (g) => g, rng);
+      pushSeededTokens(tokens, ARENA_GENERATOR_KEYS.net, 2, 'gen', (g) => g, rng);
+      pushSeededTokens(tokens, hwScenarios, 2, 'arena', (s) => s.id, rng, usedScenarioIds);
+      pushSeededTokens(tokens, netScenarios, 2, 'arena', (s) => s.id, rng, usedScenarioIds);
+    }
+    return shuffleItems(tokens, rng).slice(0, count);
   }
 
-  return shuffleArray(tokens, rng).slice(0, count);
+  const quizSlots = Math.max(0, count - 4);
+  if (track === 'hw') {
+    pushSeededTokens(tokens, ARENA_GENERATOR_KEYS.hw, 2, 'gen', (g) => g, rng);
+    pushSeededTokens(tokens, hwScenarios, 2, 'arena', (s) => s.id, rng, usedScenarioIds);
+    pushSeededTokens(tokens, hwQuizIds, quizSlots, 'quiz', (id) => id, rng, usedQuizIds);
+  } else if (track === 'net') {
+    pushSeededTokens(tokens, ARENA_GENERATOR_KEYS.net, 2, 'gen', (g) => g, rng);
+    pushSeededTokens(tokens, netScenarios, 2, 'arena', (s) => s.id, rng, usedScenarioIds);
+    pushSeededTokens(tokens, netQuizIds, quizSlots, 'quiz', (id) => id, rng, usedQuizIds);
+  } else {
+    pushSeededTokens(tokens, ARENA_GENERATOR_KEYS.hw, 1, 'gen', (g) => g, rng);
+    pushSeededTokens(tokens, ARENA_GENERATOR_KEYS.net, 1, 'gen', (g) => g, rng);
+    pushSeededTokens(tokens, hwScenarios, 1, 'arena', (s) => s.id, rng, usedScenarioIds);
+    pushSeededTokens(tokens, netScenarios, 1, 'arena', (s) => s.id, rng, usedScenarioIds);
+    const hwQuizCount = Math.ceil(quizSlots / 2);
+    const netQuizCount = Math.floor(quizSlots / 2);
+    pushSeededTokens(tokens, hwQuizIds, hwQuizCount, 'quiz', (id) => id, rng, usedQuizIds);
+    pushSeededTokens(tokens, netQuizIds, netQuizCount, 'quiz', (id) => id, rng, usedQuizIds);
+  }
+
+  if (tokens.length < count) {
+    const trackQuizzes = track === 'hw' ? hwQuizIds : track === 'net' ? netQuizIds : quizIds;
+    const trackScenarios = track === 'hw' ? hwScenarios : track === 'net' ? netScenarios : scenarioPool;
+    const spareQuiz = trackQuizzes
+      .filter((id) => !usedQuizIds.has(id))
+      .map((id) => `quiz:${id}:${makeSeed(rng)}`);
+    const spareScenarios = trackScenarios
+      .filter((s) => !usedScenarioIds.has(s.id))
+      .map((s) => `arena:${s.id}:${makeSeed(rng)}`);
+    tokens.push(...pickRandom([...spareQuiz, ...spareScenarios], count - tokens.length, rng));
+  }
+
+  return shuffleItems(tokens, rng).slice(0, count);
+}
+
+function resolveSeededQuestion(
+  question: QuizQuestion | undefined,
+  seedRaw: string | undefined,
+  kind: ArenaQuestionKind,
+): ArenaResolvedQuestion | undefined {
+  if (!question) return undefined;
+  const seed = Number(seedRaw);
+  const shuffled = Number.isFinite(seed) ? shuffleChoices(question, mulberry32(seed)) : question;
+  return { ...shuffled, kind };
 }
 
 export function resolveArenaQuestion(
@@ -313,11 +350,12 @@ export function resolveArenaQuestion(
 
   if (token.startsWith('arena:')) {
     const [, scenarioId, seedRaw] = token.split(':');
-    const scenario = scenarioId ? scenarioById[scenarioId] : undefined;
-    if (!scenario) return undefined;
-    const seed = Number(seedRaw);
-    const shuffled = Number.isFinite(seed) ? shuffleChoices(scenario, mulberry32(seed)) : scenario;
-    return { ...shuffled, kind: 'scenario' };
+    return resolveSeededQuestion(scenarioId ? scenarioById[scenarioId] : undefined, seedRaw, 'scenario');
+  }
+
+  if (token.startsWith('quiz:')) {
+    const [, quizId, seedRaw] = token.split(':');
+    return resolveSeededQuestion(quizId ? fallbackById?.(quizId) : undefined, seedRaw, 'quiz');
   }
 
   const fallback = fallbackById?.(token);

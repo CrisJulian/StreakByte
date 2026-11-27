@@ -1,3 +1,5 @@
+import { DEFAULT_PASS_MARK } from './lessonProgress';
+import { QUIZ_LENGTH } from './quiz';
 export interface DailyActivityState {
   day: string;
   quizzesPassed: number;
@@ -64,7 +66,7 @@ export function deriveDailyQuests(activity: DailyActivityState): DailyQuest[] {
     {
       id: 'daily-quiz',
       title: 'Pass 1 lesson quiz',
-      description: 'Score at least 3/4 on any lesson quiz today.',
+      description: `Score at least ${DEFAULT_PASS_MARK}/${QUIZ_LENGTH} on any lesson quiz today.`,
       xpReward: 40,
       progress: quizProgress,
       target: 1,

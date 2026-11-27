@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../App';
@@ -16,13 +16,14 @@ describe('App integration', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    // Login screen appears first when not logged in
+    // Login screen appears first when not logged in (no public Guest Dev Mode button)
     expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeInTheDocument();
-    const guestBtn = screen.getByRole('button', { name: /Continue as Guest/i });
-    expect(guestBtn).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Continue as Guest/i })).not.toBeInTheDocument();
 
-    // Enter app via guest mode
-    await user.click(guestBtn);
+    // Enter app via local guest store action for offline integration test
+    act(() => {
+      useStreakByteStore.getState().loginAsGuest();
+    });
 
     // Initial Dashboard (streak card hidden until top-bar pill is clicked)
     expect(screen.getByRole('heading', { name: 'Welcome back, Guest' })).toBeInTheDocument();
@@ -77,14 +78,16 @@ describe('App integration', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Start lesson' }));
     expect(screen.getByRole('heading', { name: 'Build a PC' })).toBeInTheDocument();
 
-    // Open Study Buddy chat and tap a starter prompt
+    // Study Buddy AI is hidden during hands-on lab exams
+    expect(screen.queryByRole('button', { name: 'Open study buddy chat' })).not.toBeInTheDocument();
+
+    // Navigate back to Dashboard, open Study Buddy chat, tap a starter prompt, and claim Daily Quest
+    await user.click(within(nav).getByRole('link', { name: 'Dashboard' }));
     await user.click(screen.getByRole('button', { name: 'Open study buddy chat' }));
     const chatDialog = screen.getByRole('dialog', { name: 'Study buddy chat' });
     await user.click(within(chatDialog).getByRole('button', { name: 'Explain the RAM key notch' }));
     expect(within(chatDialog).getByText(/off-centre on the gold pins/i)).toBeInTheDocument();
 
-    // Navigate back to Dashboard and claim the Daily Quest reward earned from chatting with BYTE
-    await user.click(within(nav).getByRole('link', { name: 'Dashboard' }));
     const quests = screen.getByRole('region', { name: 'Daily quests' });
     await user.click(within(quests).getByRole('button', { name: 'Claim +25 XP' }));
     expect(within(quests).getByText('Claimed')).toBeInTheDocument();

@@ -3,7 +3,7 @@ import type { LessonCompletion } from '../../domain/entities/progress';
 import { generateJoinCode, isValidJoinCode, normalizeJoinCode } from '../../domain/rules/classroom';
 import { createInitialArenaStats } from '../../domain/rules/duel';
 import type { ArenaStats } from '../../domain/rules/duel';
-import { recordCompletion } from '../../domain/rules/lessonProgress';
+import { isBetterScore, recordCompletion } from '../../domain/rules/lessonProgress';
 import type { StreakState } from '../../domain/rules/streak';
 import type { TrackId } from '../../types/streakbyte';
 import { localProgress, saveLocalXpSpent } from '../local/localProgress';
@@ -273,12 +273,15 @@ export const supabaseProgress: ProgressRepository = {
 
     const { data: existing } = await supabase
       .from('lesson_completions')
-      .select('correct')
+      .select('correct, total')
       .eq('user_id', userId)
       .eq('lesson_key', completion.lessonKey)
       .maybeSingle();
 
-    if (existing && Number(existing.correct) >= completion.correct) {
+    if (
+      existing &&
+      !isBetterScore(completion, { correct: Number(existing.correct), total: Number(existing.total) })
+    ) {
       return;
     }
 

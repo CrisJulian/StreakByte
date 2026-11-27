@@ -91,25 +91,46 @@ describe('useStreakByteStore', () => {
     expect(state.completion?.review[0]).toEqual(['Dual-channel RAM', 'Slots A2 and B2 matched']);
   });
 
-  it('validates network device placement and IP/subnet/gateway configuration', () => {
+  it('validates network device placement, cabling, IP/subnet/gateway configuration, and ping test', () => {
     const store = useStreakByteStore.getState();
 
     // Wrong spot placement
-    store.placeNetworkDevice('hub', 'pc');
+    store.placeNetworkDevice('switch', 'pc');
     expect(useStreakByteStore.getState().net.bad).toBe(1);
-    expect(useStreakByteStore.getState().net.message).toBe('PC belongs on the PC spot.');
+    expect(useStreakByteStore.getState().net.message).toContain('Workstation PC belongs on the Workstation PC slot');
 
-    // Correct hub placement
-    store.placeNetworkDevice('hub', 'hub');
-    expect(useStreakByteStore.getState().net.placed.hub).toBe(true);
+    // Place all 4 topology devices
+    expect(store.placeNetworkDevice('router', 'router')).toBe(true);
+    expect(store.placeNetworkDevice('switch', 'switch')).toBe(true);
+    expect(store.placeNetworkDevice('pc', 'pc')).toBe(true);
+    expect(store.placeNetworkDevice('laptop', 'laptop')).toBe(true);
 
-    // Invalid IP, mask, gateway
+    // Wrong cable on WAN vs LAN
+    expect(store.wireNetworkLink('wan', 'eth')).toBe(false);
+    expect(useStreakByteStore.getState().net.message).toContain('Fiber or Coax');
+    expect(store.wireNetworkLink('wan', 'fiber')).toBe(true);
+
+    expect(store.wireNetworkLink('uplink', 'fiber')).toBe(false);
+    expect(store.wireNetworkLink('uplink', 'eth')).toBe(true);
+    expect(store.wireNetworkLink('pc', 'eth')).toBe(true);
+    expect(store.wireNetworkLink('laptop', 'eth')).toBe(true);
+
+    // Save PC config
+    useStreakByteStore.getState().openNetworkConfig('pc');
+    expect(
+      useStreakByteStore.getState().saveNetworkConfig({
+        ip: '192.168.1.10',
+        mask: '255.255.255.0',
+        gw: '192.168.1.1',
+      }),
+    ).toBe(true);
+
+    // Invalid IP, mask, gateway on laptop
     useStreakByteStore.getState().openNetworkConfig('laptop');
     let ok = useStreakByteStore.getState().saveNetworkConfig({
       ip: '192.168.1.1',
       mask: '255.255.0.0',
       gw: '10.0.0.1',
-      cab: 'eth',
     });
     expect(ok).toBe(false);
     expect(useStreakByteStore.getState().net.errors.ip).toContain('router');
@@ -122,21 +143,21 @@ describe('useStreakByteStore', () => {
       ip: '192.168.1.10',
       mask: '255.255.255.0',
       gw: '192.168.1.1',
-      cab: 'eth',
     });
     expect(ok).toBe(false);
     expect(useStreakByteStore.getState().net.errors.ip).toContain('already uses');
 
-    // Valid config
+    // Valid laptop config + ping check
     ok = useStreakByteStore.getState().saveNetworkConfig({
       ip: '192.168.1.20',
       mask: '255.255.255.0',
       gw: '192.168.1.1',
-      cab: 'fiber',
     });
     expect(ok).toBe(true);
     expect(useStreakByteStore.getState().net.openDevice).toBeNull();
     expect(useStreakByteStore.getState().net.cfg.laptop?.ip).toBe('192.168.1.20');
+    expect(useStreakByteStore.getState().runNetworkPing()).toBe(true);
+    expect(useStreakByteStore.getState().net.pingPassed).toBe(true);
   });
 
   it('persists theme choice and ignores empty study buddy messages while replying offline', () => {
@@ -221,17 +242,24 @@ describe('useStreakByteStore', () => {
     expect(useStreakByteStore.getState().levelUpEvent).toBeNull();
   });
 
-  it('tracks daily quest completion and awards XP once per claim', () => {
+  it('tracks daily quest completion, awards XP once per claim, and activates today’s streak', () => {
+    expect(useStreakByteStore.getState().streak.current).toBe(0);
     useStreakByteStore.getState().claimDailyQuest('daily-buddy');
     expect(useStreakByteStore.getState().labBonusXp).toBe(0);
+    expect(useStreakByteStore.getState().streak.current).toBe(0);
 
     useStreakByteStore.getState().sendChatMessage('Explain the RAM key notch');
+    expect(useStreakByteStore.getState().streak.current).toBe(1);
+    expect(useStreakByteStore.getState().streak.lastActiveDay).toBeTruthy();
+
     useStreakByteStore.getState().claimDailyQuest('daily-buddy');
     expect(useStreakByteStore.getState().labBonusXp).toBe(25);
+    expect(useStreakByteStore.getState().streak.current).toBe(1);
 
     // Double-claim is ignored
     useStreakByteStore.getState().claimDailyQuest('daily-buddy');
     expect(useStreakByteStore.getState().labBonusXp).toBe(25);
+    expect(useStreakByteStore.getState().streak.current).toBe(1);
   });
 
   it('syncs avatarUrl and profileSettings on setAuthUser and loadAuthUser', async () => {
@@ -272,12 +300,26 @@ describe('quiz flow in the store', () => {
     useStreakByteStore.getState().syncFromHash('#quiz/hw-3');
     const first = useStreakByteStore.getState().quiz;
     expect(useStreakByteStore.getState().view).toBe('quiz');
-    expect(first?.questions.length).toBe(4);
+    expect(first?.questions.length).toBe(15);
+    expect(new Set(first?.questions.map((q) => q.id)).size).toBe(15);
+    expect(first?.questions.every((q) => q.id.startsWith('hw-3-'))).toBe(true);
     expect(first?.questions.every((q) => q.choices.length === 4)).toBe(true);
 
     useStreakByteStore.getState().selectQuizChoice(1);
     useStreakByteStore.getState().syncFromHash('#quiz/hw-3');
     expect(useStreakByteStore.getState().quiz?.selected).toBe(1);
+  });
+
+  it('draws a new set after leaving the quiz and opening it again', () => {
+    useStreakByteStore.getState().navigate('quiz/hw-3');
+    const first = useStreakByteStore.getState().quiz;
+    useStreakByteStore.getState().selectQuizChoice(1);
+    useStreakByteStore.getState().navigate('curriculum');
+    useStreakByteStore.getState().navigate('quiz/hw-3');
+    const second = useStreakByteStore.getState().quiz;
+    expect(second).not.toBe(first);
+    expect(second?.selected).toBeNull();
+    expect(second?.index).toBe(0);
   });
 
   it('falls back to the curriculum for an unknown lesson key', () => {
@@ -289,7 +331,7 @@ describe('quiz flow in the store', () => {
   it('finishes with a real score, saves missed topics, and goes to Lesson Complete', () => {
     useStreakByteStore.getState().syncFromHash('#quiz/hw-3');
 
-    for (let i = 0; i < 4; i += 1) {
+    for (let i = 0; i < 15; i += 1) {
       const quiz = useStreakByteStore.getState().quiz!;
       const q = quiz.questions[quiz.index];
       // answer the first question correctly, the rest wrong
@@ -302,10 +344,10 @@ describe('quiz flow in the store', () => {
     const state = useStreakByteStore.getState();
     expect(state.view).toBe('complete');
     expect(state.quiz).toBeNull();
-    expect(state.completion?.partsValue).toBe('1 / 4');
-    expect(state.completion?.accuracy).toBe('25%');
-    expect(state.completion?.xp).toBe('+30'); // 120 XP lesson * 1/4
-    expect(state.completion?.review.length).toBe(3);
+    expect(state.completion?.partsValue).toBe('1 / 15');
+    expect(state.completion?.accuracy).toBe('7%');
+    expect(state.completion?.xp).toBe('+8'); // 120 XP lesson * 1/15
+    expect(state.completion?.review.length).toBe(14);
     expect(state.completion?.next[0]).toBe('Lesson 4: Storage');
   });
 
@@ -437,14 +479,18 @@ describe('quiz flow in the store', () => {
         .getState()
         .createDuelRoom({ track: 'hw', wagerXp: 0, classroomId: null });
       expect(ok).toBe(true);
+      expect(createSpy.mock.calls[0][0].questionIds).toHaveLength(8);
+      expect(createSpy.mock.calls[0][0].questionIds.some((id) => id.startsWith('quiz:hw-'))).toBe(true);
       expect(useStreakByteStore.getState().activeDuel?.code).toBe('DUEL99');
 
       await useStreakByteStore.getState().submitDuelResult(2, 9000);
       expect(useStreakByteStore.getState().activeDuel?.winnerId).toBe('u-1');
       expect(useStreakByteStore.getState().dailyActivity.arenaDuelsFinished).toBe(1);
+      expect(useStreakByteStore.getState().streak.current).toBe(1);
 
       useStreakByteStore.getState().claimDailyQuest('daily-arena');
       expect(useStreakByteStore.getState().labBonusXp).toBe(50);
+      expect(useStreakByteStore.getState().streak.current).toBe(1);
     } finally {
       createSpy.mockRestore();
       submitSpy.mockRestore();
@@ -460,6 +506,8 @@ describe('quiz flow in the store', () => {
       expect(duel?.status).toBe('active');
       expect(duel?.questionIds).toHaveLength(8);
       expect(duel?.questionIds.some((id) => id.startsWith('gen:'))).toBe(true);
+      expect(duel?.questionIds.some((id) => id.startsWith('arena:'))).toBe(true);
+      expect(duel?.questionIds.some((id) => id.startsWith('quiz:'))).toBe(true);
 
       await useStreakByteStore.getState().submitDuelResult(7, 12000);
       expect(useStreakByteStore.getState().activeDuel?.status).toBe('finished');
@@ -497,7 +545,7 @@ describe('quiz flow in the store', () => {
   it('sets completion.nextRoute to the actual next unlocked lesson after finishing a quiz', () => {
     const finishQuiz = (key: string) => {
       useStreakByteStore.getState().syncFromHash(`#quiz/${key}`);
-      for (let i = 0; i < 4; i += 1) {
+      for (let i = 0; i < 15; i += 1) {
         const q = useStreakByteStore.getState().quiz;
         if (!q) break;
         const currentQ = q.questions[q.index];
@@ -592,23 +640,18 @@ describe('quiz flow in the store', () => {
     expect(useStreakByteStore.getState().xpSpent).toBe(50);
     expect(useStreakByteStore.getState().pc.message).toContain('Mount the CPU cooler');
 
-    // Network hint deducts 25 XP once per step, and stays locked until Laptop is saved
+    // Network hint deducts 25 XP once per step, and stays locked until Router is placed
     useStreakByteStore.getState().triggerNetworkHint();
     expect(useStreakByteStore.getState().xpSpent).toBe(75);
-    expect(useStreakByteStore.getState().net.message).toContain('192.168.1.20');
+    expect(useStreakByteStore.getState().net.message).toContain('Router slot');
 
     useStreakByteStore.getState().triggerNetworkHint();
     expect(useStreakByteStore.getState().xpSpent).toBe(75);
 
-    useStreakByteStore.getState().saveNetworkConfig({
-      ip: '192.168.1.20',
-      mask: '255.255.255.0',
-      gw: '192.168.1.1',
-      cab: 'eth',
-    });
+    useStreakByteStore.getState().placeNetworkDevice('router', 'router');
     useStreakByteStore.getState().triggerNetworkHint();
     expect(useStreakByteStore.getState().xpSpent).toBe(100);
-    expect(useStreakByteStore.getState().net.message).toContain('PC');
+    expect(useStreakByteStore.getState().net.message).toContain('8-Port Switch');
 
     // All steps complete -> no XP charged
     useStreakByteStore.setState((s) => ({
@@ -621,7 +664,13 @@ describe('quiz flow in the store', () => {
         gpu: true,
         psu: true,
       },
-      net: { ...s.net, savedDevices: { pc: true, laptop: true }, openDevice: null },
+      net: {
+        ...s.net,
+        placed: { router: true, switch: true, pc: true, laptop: true },
+        links: { wan: 'fiber', uplink: 'eth', pc: 'eth', laptop: 'eth' },
+        savedDevices: { pc: true, laptop: true },
+        openDevice: null,
+      },
     }));
     useStreakByteStore.getState().triggerPcHint();
     useStreakByteStore.getState().triggerNetworkHint();
@@ -654,11 +703,64 @@ describe('quiz flow in the store', () => {
     expect(useStreakByteStore.getState().view).toBe('lesson');
     expect(useStreakByteStore.getState().pc.message).toContain('1/7 parts installed');
 
-    // Network lab fails if Laptop isn't configured yet
+    // Network lab fails if devices/cables/IPs aren't finished yet
     useStreakByteStore.getState().navigate('lesson/network');
     useStreakByteStore.getState().completeNetworkBuild();
     expect(useStreakByteStore.getState().view).toBe('lesson');
     expect(useStreakByteStore.getState().labBonusXp).toBe(0);
-    expect(useStreakByteStore.getState().net.message).toContain('configure Laptop');
+    expect(useStreakByteStore.getState().net.message).toContain('place Router');
+  });
+
+  it('disables and closes Study Buddy during quizzes, hands-on lab exams, and active 1v1 Arena fights', () => {
+    const replySpy = vi.spyOn(services.studyBuddy, 'reply');
+
+    // 1. Active 1v1 Arena duel locks & auto-closes chat
+    useStreakByteStore.getState().setChatOpen(true);
+    expect(useStreakByteStore.getState().chat.open).toBe(true);
+    useStreakByteStore.getState().startBotTestDuel('hw');
+    expect(useStreakByteStore.getState().chat.open).toBe(false);
+
+    useStreakByteStore.getState().setChatOpen(true);
+    expect(useStreakByteStore.getState().chat.open).toBe(false);
+    expect(useStreakByteStore.getState().toastMessage).toContain('1v1 Arena fight');
+    useStreakByteStore.getState().sendChatMessage('What slot does RAM go in?');
+    expect(replySpy).not.toHaveBeenCalled();
+    expect(useStreakByteStore.getState().dailyActivity.studyBuddyMessages).toBe(0);
+
+    // Finish duel -> Study Buddy unlocks again
+    useStreakByteStore.setState((s) => ({
+      activeDuel: s.activeDuel ? { ...s.activeDuel, status: 'finished' } : null,
+    }));
+
+    // 2. Curriculum quiz auto-closes & blocks Study Buddy
+    useStreakByteStore.getState().setChatOpen(true);
+    expect(useStreakByteStore.getState().chat.open).toBe(true);
+    useStreakByteStore.getState().navigate('quiz/hw-3');
+    expect(useStreakByteStore.getState().chat.open).toBe(false);
+    useStreakByteStore.getState().setChatOpen(true);
+    expect(useStreakByteStore.getState().chat.open).toBe(false);
+    expect(useStreakByteStore.getState().toastMessage).toContain('quizzes');
+    useStreakByteStore.getState().sendChatMessage('Which slot?');
+    expect(replySpy).not.toHaveBeenCalled();
+
+    // 3. Hands-on lab exam (PC / Network) auto-closes & blocks Study Buddy
+    useStreakByteStore.getState().navigate('dashboard');
+    useStreakByteStore.getState().setChatOpen(true);
+    expect(useStreakByteStore.getState().chat.open).toBe(true);
+    useStreakByteStore.getState().navigate('lesson/pc');
+    expect(useStreakByteStore.getState().chat.open).toBe(false);
+    useStreakByteStore.getState().setChatOpen(true);
+    expect(useStreakByteStore.getState().chat.open).toBe(false);
+    expect(useStreakByteStore.getState().toastMessage).toContain('lab exams');
+    useStreakByteStore.getState().sendChatMessage('Help me build');
+    expect(replySpy).not.toHaveBeenCalled();
+
+    // 4. Allowed on non-exam screens (e.g. dashboard / learn)
+    useStreakByteStore.getState().navigate('dashboard');
+    useStreakByteStore.getState().setChatOpen(true);
+    expect(useStreakByteStore.getState().chat.open).toBe(true);
+    useStreakByteStore.getState().sendChatMessage('Explain the RAM key notch');
+    expect(replySpy).toHaveBeenCalledTimes(1);
+    replySpy.mockRestore();
   });
 });

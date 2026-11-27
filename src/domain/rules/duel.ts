@@ -1,3 +1,5 @@
+import { pickRandom, type Rng } from './quiz';
+
 export type DuelTrack = 'hw' | 'net' | 'mixed';
 export type DuelWager = 0 | 100 | 200;
 export type DuelWagerMode = 'xp' | 'streak';
@@ -73,7 +75,7 @@ export function pickDuelQuestionIds(
   allQuestionIds: readonly string[],
   track: DuelTrack,
   count: number = DUEL_QUESTION_COUNT,
-  rng: () => number = Math.random,
+  rng: Rng = Math.random,
 ): string[] {
   const filtered = allQuestionIds.filter((id) => {
     if (track === 'hw') return id.startsWith('hw-');
@@ -81,15 +83,7 @@ export function pickDuelQuestionIds(
     return true;
   });
 
-  const pool = [...filtered];
-  for (let i = pool.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(rng() * (i + 1)) % (i + 1);
-    const tmp = pool[i];
-    pool[i] = pool[j];
-    pool[j] = tmp;
-  }
-
-  return pool.slice(0, Math.min(count, pool.length));
+  return pickRandom(filtered, count, rng);
 }
 
 export function determineDuelWinner(

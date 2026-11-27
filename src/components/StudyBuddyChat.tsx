@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { STARTER_PROMPTS } from '../data/studyBuddy';
-import { useStreakByteStore } from '../store/useStreakByteStore';
+import { getStudyBuddyLockReason, useStreakByteStore } from '../store/useStreakByteStore';
 import { Icon } from './Icon';
 
 export function StudyBuddyChat() {
   const chat = useStreakByteStore((s) => s.chat);
   const lastMistake = useStreakByteStore((s) => s.lastMistake);
+  const isLocked = useStreakByteStore((s) => Boolean(getStudyBuddyLockReason(s)));
   const setChatOpen = useStreakByteStore((s) => s.setChatOpen);
   const sendChatMessage = useStreakByteStore((s) => s.sendChatMessage);
   const [draft, setDraft] = useState('');
@@ -40,6 +41,8 @@ export function StudyBuddyChat() {
     sendChatMessage(draft);
     setDraft('');
   };
+
+  if (isLocked) return null;
 
   return (
     <>

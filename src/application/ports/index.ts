@@ -76,6 +76,7 @@ export interface StudyBuddyContext {
   history?: StudyBuddyMessage[];
   currentLesson?: string;
   recentMistake?: string;
+  inActiveQuiz?: boolean;
   apiKey?: string;
 }
 

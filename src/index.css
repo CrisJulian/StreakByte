@@ -20,9 +20,9 @@
   --color-you: var(--you);
   --color-dark-card: var(--dark-card);
   --color-dark-line: var(--dark-line);
-  --font-disp: "Archivo Black", Impact, "Arial Black", sans-serif;
-  --font-head: "Space Grotesk", system-ui, sans-serif;
-  --font-sans: "JetBrains Mono", ui-monospace, monospace;
+  --font-disp: "Outfit", system-ui, sans-serif;
+  --font-head: "Outfit", system-ui, sans-serif;
+  --font-sans: "DM Sans", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
@@ -53,9 +53,9 @@
   --dimm-bg: #18214a;
   --dimm-stroke: #3a4690;
   --dimm-chip: #0b1020;
-  --disp: "Archivo Black", Impact, "Arial Black", sans-serif;
-  --head: "Space Grotesk", system-ui, sans-serif;
-  --sans: "JetBrains Mono", ui-monospace, monospace;
+  --disp: "Outfit", system-ui, sans-serif;
+  --head: "Outfit", system-ui, sans-serif;
+  --sans: "DM Sans", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, monospace;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   scrollbar-color: var(--line) transparent;
@@ -111,7 +111,7 @@
     min-height: 100dvh;
     background: var(--bg);
     color: var(--text);
-    font: 400 13px/1.45 var(--mono);
+    font: 400 14px/1.5 var(--sans);
     -webkit-font-smoothing: antialiased;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -158,8 +158,13 @@
   font-variant-numeric: tabular-nums;
 }
 
+.font-disp {
+  font-weight: 800;
+}
+
 .sb-page-title {
   font-family: var(--font-disp);
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: -0.03em;
   line-height: 1.02;
@@ -167,6 +172,7 @@
 
 .sb-section-title {
   font-family: var(--font-disp);
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: -0.02em;
   line-height: 1.08;
@@ -178,15 +184,6 @@
 
 .sb-cut-sm {
   clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
-}
-
-.sb-hero-mega {
-  font-family: var(--disp);
-  font-size: clamp(1.8rem, 6.2vw, 6.8rem);
-  line-height: 0.9;
-  letter-spacing: -0.04em;
-  text-transform: uppercase;
-  white-space: nowrap;
 }
 
 .sb-blueprint-dots {
@@ -471,11 +468,21 @@ svg.pcb {
 
 /* Interactive SVG: Network build diagram */
 svg.net {
-  width: 100%;
+  width: auto;
+  max-width: 100%;
+  max-height: calc(100dvh - 210px);
   height: auto;
   display: block;
+  margin-inline: auto;
   stroke: none;
   stroke-width: 0;
+}
+
+@media (max-width: 1100px) {
+  svg.net {
+    width: 100%;
+    max-height: none;
+  }
 }
 
 .net .gridl {
@@ -508,6 +515,52 @@ svg.net {
 .net .spot.over rect {
   stroke: var(--cyan);
   fill: color-mix(in srgb, var(--cyan) 12%, transparent);
+}
+
+.net .spot.hint rect {
+  stroke: #ffffff;
+  stroke-width: 3;
+  animation: sb-pulse 1s ease-in-out 3;
+}
+
+.net .link-slot {
+  cursor: pointer;
+  outline: none;
+}
+
+.net .link-slot .wire-guide {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 3;
+  stroke-dasharray: 6 5;
+  transition: stroke 0.18s;
+}
+
+.net .link-slot .wire-pill {
+  fill: var(--panel);
+  stroke: var(--muted);
+  stroke-width: 1.5;
+  transition: stroke 0.18s, fill 0.18s;
+}
+
+.net .link-slot:hover .wire-guide,
+.net .link-slot:focus-visible .wire-guide,
+.net .link-slot.over .wire-guide {
+  stroke: var(--cyan);
+}
+
+.net .link-slot:hover .wire-pill,
+.net .link-slot:focus-visible .wire-pill,
+.net .link-slot.over .wire-pill {
+  stroke: var(--cyan);
+  fill: color-mix(in srgb, var(--cyan) 14%, var(--panel));
+}
+
+.net .link-slot.hint .wire-guide,
+.net .link-slot.hint .wire-pill {
+  stroke: #ffffff;
+  stroke-width: 3;
+  animation: sb-pulse 1s ease-in-out 3;
 }
 
 .net .spot text {

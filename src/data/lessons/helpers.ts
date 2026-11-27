@@ -5,20 +5,21 @@ const CHECK_TODO =
 const FIND_TODO =
   'NO FREE IMAGE FOUND yet. Find a clear picture (CC0, public domain, CC BY or CC BY-SA), save it under this file name and add its credit line.';
 
-/** Builds a picture entry. Nothing is "available" until a person adds the file and checks the license. */
+/** Builds a picture entry. Nothing is "available" until the file exists and has a credit line. */
 export function img(
   file: string,
   alt: string,
   caption: string,
-  opts: { credit?: string | null; sourcePage?: string; todo?: string } = {},
+  opts: { available?: boolean; credit?: string | null; sourcePage?: string; todo?: string } = {},
 ): LessonImage {
+  const available = opts.available ?? false;
   return {
     file,
-    available: false,
+    available,
     alt,
     caption,
     credit: opts.credit ?? null,
     sourcePage: opts.sourcePage,
-    todo: opts.todo ?? (opts.sourcePage ? CHECK_TODO : FIND_TODO),
+    todo: available ? undefined : opts.todo ?? (opts.sourcePage ? CHECK_TODO : FIND_TODO),
   };
 }

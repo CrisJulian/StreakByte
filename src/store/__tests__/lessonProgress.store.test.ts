@@ -60,22 +60,22 @@ describe('quiz results and lesson completion', () => {
     store().resetAll();
   });
 
-  it('passing at 3 of 4 completes the lesson and saves it offline', async () => {
+  it('passing at 12 of 15 completes the lesson and saves it offline', async () => {
     store().syncFromHash('#quiz/hw-1');
-    finishQuiz(1);
+    finishQuiz(3);
     expect(store().completions.map((c) => c.lessonKey)).toEqual(['hw-1']);
-    expect(store().completions[0].correct).toBe(3);
+    expect(store().completions[0].correct).toBe(12);
     expect(store().completion?.subtitle).toContain('Lesson complete!');
 
     const saved = await localProgress.loadLessonCompletions();
     expect(saved.map((c) => c.lessonKey)).toEqual(['hw-1']);
   });
 
-  it('2 of 4 does not complete the lesson', async () => {
+  it('11 of 15 does not complete the lesson', async () => {
     store().syncFromHash('#quiz/hw-1');
-    finishQuiz(2);
+    finishQuiz(4);
     expect(store().completions).toHaveLength(0);
-    expect(store().completion?.subtitle).toContain('You need 3 correct');
+    expect(store().completion?.subtitle).toContain('You need 12 correct');
     expect(await localProgress.loadLessonCompletions()).toHaveLength(0);
   });
 

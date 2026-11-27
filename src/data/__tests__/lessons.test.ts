@@ -46,8 +46,8 @@ describe('lesson content', () => {
     expect((LESSON_CONTENT['net-5'].steps ?? []).length).toBeGreaterThan(0);
   });
 
-  it('every lesson has a quiz with four questions', () => {
-    for (const key of allKeys) expect((QUIZ_BANK[key] ?? []).length).toBe(4);
+  it('every lesson has a pool larger than one 15-question attempt', () => {
+    for (const key of allKeys) expect((QUIZ_BANK[key] ?? []).length).toBeGreaterThanOrEqual(25);
   });
 });
 

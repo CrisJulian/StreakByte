@@ -11,7 +11,6 @@ import {
   calculateStreakSpeedBonusMs,
   canAffordWager,
   canEnterStreakWager,
-  DUEL_QUESTION_COUNT,
   DUEL_WAGER_OPTIONS,
   formatDuelTime,
   FULL_BYTE_BONUS_XP,
@@ -368,11 +367,7 @@ export function ArenaView() {
     <div className="w-full bg-panel">
       <div className="p-6 max-[760px]:p-4 border-b border-line flex justify-between items-end gap-4 flex-wrap">
         <div>
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
-            <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
-            <span>COMBAT &amp; RETENTION</span>
-          </div>
-          <h1 className="m-0 mt-1.5 sb-page-title text-[32px]">
+          <h1 className="m-0 sb-page-title text-[32px]">
             Arena
           </h1>
           <p className="mt-1.5 mb-0 text-muted text-[12px]">
@@ -443,7 +438,7 @@ export function ArenaView() {
               Win Streak Shields
             </small>
             <b className="num font-disp text-2xl text-ink mt-1 block">
-              {arenaStats.streakShields} / {MAX_STREAK_SHIELDS} 🛡️
+              {arenaStats.streakShields} / {MAX_STREAK_SHIELDS}
             </b>
           </div>
           <div className="p-4 border-r border-line">
@@ -500,11 +495,6 @@ export function ArenaView() {
           >
             <div>
               <h2 className="m-0 font-head text-lg font-bold">Create an 8-Bit 1v1 Duel</h2>
-              <p className="mt-1 mb-0 text-xs text-muted">
-                {DUEL_QUESTION_COUNT} questions (1 Byte). Higher score wins; fastest clock breaks
-                ties. Chain 3+ right answers for -0.5s clock speed, snap a 2+ win streak for a
-                Bounty + Streak Shield, or score 8/8 for +{FULL_BYTE_BONUS_XP} Full Byte XP!
-              </p>
             </div>
 
             <div>

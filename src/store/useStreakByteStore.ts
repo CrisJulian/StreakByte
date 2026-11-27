@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import { playSfx } from '../audio/soundEffects';
-import { QUIZ_BANK } from '../data/quizBank';
+import { ALL_QUIZ_QUESTIONS, QUIZ_BANK } from '../data/quizBank';
 import { ARENA_SCENARIOS } from '../data/arenaScenarios';
 import { getTrackProgress, isLessonKeyLocked, LESSON_XP_BY_KEY, lessonLabel, TRACKS } from '../data/curriculum';
 import { LESSON_CONTENT } from '../data/lessons';
@@ -45,8 +45,11 @@ import {
   missingNetworkSteps,
   nextNetworkHint,
   placeDevice,
+  runPingCheck,
   saveDeviceConfig,
+  selectCable,
   selectDevice,
+  wireLink,
 } from '../domain/rules/network';
 import {
   createInitialPcState,
@@ -96,6 +99,23 @@ const ACTIVE_DUEL_LOCK_MSG = 'Finish or forfeit your active 1v1 duel first.';
 const isLockedInActiveDuel = (state: { activeDuel: DuelRoom | null }) =>
   state.activeDuel?.status === 'active';
 
+/** Returns a user-facing lock reason when Study Buddy is disabled (quiz, lab exam, or active 1v1 fight). */
+export function getStudyBuddyLockReason(state: {
+  view: ViewId;
+  activeDuel: DuelRoom | null;
+}): string | null {
+  if (state.activeDuel?.status === 'active') {
+    return 'Study Buddy is disabled during a 1v1 Arena fight.';
+  }
+  if (state.view === 'quiz') {
+    return 'Study Buddy is disabled during quizzes.';
+  }
+  if (state.view === 'lesson') {
+    return 'Study Buddy is disabled during hands-on lab exams.';
+  }
+  return null;
+}
+
 function resolveLabNextMission(
   trackId: 'hw' | 'net',
   completions: readonly LessonCompletion[],
@@ -131,6 +151,7 @@ import type {
   LeaderboardPeriod,
   NetDeviceConfig,
   NetDeviceId,
+  NetLinkId,
   NetworkLabState,
   PcBuildState,
   PcPartId,
@@ -163,10 +184,11 @@ const VALID_VIEWS: readonly ViewId[] = [
 export { PC_HINTS, PC_SLOT_TO_PART } from '../domain/rules/pcBuild';
 export { NET_DEVICE_NAMES } from '../domain/rules/network';
 export const LOCAL_TEST_DUEL_ID = 'local-test-duel';
+const ALL_QUIZ_IDS = ALL_QUIZ_QUESTIONS.map((q) => q.id);
 
 export const CABLE_COLORS: Record<CableType, string> = {
   eth: '#22d3ee',
-  fiber: '#22d3ee',
+  fiber: '#34d399',
   coax: '#a3add1',
 };
 
@@ -450,10 +472,13 @@ export interface StreakByteStore {
   // Network Build lab
   selectNetworkDevice: (device: NetDeviceId | null) => void;
   placeNetworkDevice: (spot: NetDeviceId, draggedDevice?: NetDeviceId) => boolean;
+  selectNetworkCable: (cable: CableType | null) => void;
+  wireNetworkLink: (linkId: NetLinkId, draggedCable?: CableType) => boolean;
   openNetworkConfig: (device: NetDeviceId) => void;
   closeNetworkConfig: () => void;
   saveNetworkConfig: (config: NetDeviceConfig) => boolean;
   triggerNetworkHint: () => void;
+  runNetworkPing: () => boolean;
   completeNetworkBuild: () => void;
 
   // Quiz
@@ -684,6 +709,8 @@ export const useStreakByteStore = create<StreakByteStore>()(
           nextBonus,
           current.xpSpent,
         );
+        const nextStreak = recordActivity(current.streak, today);
+        const streakChanged = nextStreak !== current.streak;
         const levelUp = maybeLevelUp(prevXp, nextXp, current.profileSettings.soundEffects);
         if (!levelUp) {
           playSfx('combo', { enabled: current.profileSettings.soundEffects, combo: 4 });
@@ -692,8 +719,17 @@ export const useStreakByteStore = create<StreakByteStore>()(
         set({
           dailyActivity: next,
           labBonusXp: nextBonus,
+          streak: nextStreak,
           ...(levelUp ? { levelUpEvent: levelUp } : {}),
         });
+        if (streakChanged) {
+          void persistOrQueue(
+            get,
+            set,
+            { type: 'save-streak', payload: nextStreak },
+            () => services.progress.saveStreak(nextStreak),
+          );
+        }
         void persistOrQueue(
           get,
           set,
@@ -976,7 +1012,10 @@ export const useStreakByteStore = create<StreakByteStore>()(
           return;
         }
         const prev = get().activeDuel;
-        set({ activeDuel: room });
+        set((state) => ({
+          activeDuel: room,
+          ...(room?.status === 'active' ? { chat: { ...state.chat, open: false } } : {}),
+        }));
         if (room && room.status === 'finished' && (!prev || prev.status !== 'finished')) {
           const authId = get().authUser?.id || 'local-guest';
           if (room.winnerId) {
@@ -987,13 +1026,25 @@ export const useStreakByteStore = create<StreakByteStore>()(
           if (room.id !== LOCAL_TEST_DUEL_ID) {
             const playerScore = room.hostId === authId ? room.hostScore : room.guestScore;
             if (playerScore !== null || room.winnerId === authId) {
-              const prevDaily = ensureDailyActivity(get().dailyActivity, localDayString());
+              const today = localDayString();
+              const prevDaily = ensureDailyActivity(get().dailyActivity, today);
+              const prevStreak = get().streak;
+              const nextStreak = recordActivity(prevStreak, today);
               set({
                 dailyActivity: {
                   ...prevDaily,
                   arenaDuelsFinished: prevDaily.arenaDuelsFinished + 1,
                 },
+                streak: nextStreak,
               });
+              if (nextStreak !== prevStreak) {
+                void persistOrQueue(
+                  get,
+                  set,
+                  { type: 'save-streak', payload: nextStreak },
+                  () => services.progress.saveStreak(nextStreak),
+                );
+              }
             }
             void get().loadUserData();
           }
@@ -1009,9 +1060,12 @@ export const useStreakByteStore = create<StreakByteStore>()(
           track,
           ARENA_SCENARIOS,
           DUEL_QUESTION_COUNT,
+          Math.random,
+          ALL_QUIZ_IDS,
         );
-        set({
+        set((state) => ({
           opponentProgress: null,
+          chat: { ...state.chat, open: false },
           activeDuel: {
             id: LOCAL_TEST_DUEL_ID,
             code: 'TEST1V',
@@ -1039,7 +1093,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
             shieldAwarded: false,
             shieldConsumed: false,
           },
-        });
+        }));
       },
 
       refreshClassroomDuels: async () => {
@@ -1066,6 +1120,8 @@ export const useStreakByteStore = create<StreakByteStore>()(
             track,
             ARENA_SCENARIOS,
             DUEL_QUESTION_COUNT,
+            Math.random,
+            ALL_QUIZ_IDS,
           );
           const room = await services.duel.createDuel({
             track,
@@ -1269,11 +1325,19 @@ export const useStreakByteStore = create<StreakByteStore>()(
             get().navigate('curriculum');
             return;
           }
-          // Hash sync can fire twice for one navigation; never restart a quiz in progress.
-          if (get().quiz?.lessonKey !== key) {
-            set({ view: 'quiz', quiz: startQuiz(key, bank) });
+          // Opening a quiz draws a new set. Hash sync can fire twice for one navigation,
+          // so never restart the quiz that is already on screen.
+          if (get().view !== 'quiz' || get().quiz?.lessonKey !== key) {
+            set((state) => ({
+              view: 'quiz',
+              quiz: startQuiz(key, bank),
+              chat: { ...state.chat, open: false },
+            }));
           } else {
-            set({ view: 'quiz' });
+            set((state) => ({
+              view: 'quiz',
+              chat: { ...state.chat, open: false },
+            }));
           }
           return;
         }
@@ -1282,6 +1346,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
           view: parsed.view,
           activeLab: parsed.lab ?? state.activeLab,
           labTimedOut: parsed.view === 'lesson' ? state.labTimedOut : false,
+          ...(parsed.view === 'lesson' ? { chat: { ...state.chat, open: false } } : {}),
           arenaTab:
             parsed.view === 'practice'
               ? 'practice'
@@ -1355,19 +1420,21 @@ export const useStreakByteStore = create<StreakByteStore>()(
       startSessionFromModal: () => {
         const { target, mode, length } = get().setupModal;
         const durationSec = (length === '10' ? 10 : 5) * 60;
-        set(
+        set((state) =>
           target === 'network'
             ? {
                 net: createInitialNetState(),
                 labSessionMode: mode,
                 lessonSeconds: mode === 'timed' ? durationSec : 0,
                 labTimedOut: false,
+                chat: { ...state.chat, open: false },
               }
             : {
                 pc: createInitialPcState(),
                 labSessionMode: mode,
                 lessonSeconds: mode === 'timed' ? durationSec : 0,
                 labTimedOut: false,
+                chat: { ...state.chat, open: false },
               },
         );
         get().closeSetup();
@@ -1527,12 +1594,37 @@ export const useStreakByteStore = create<StreakByteStore>()(
         return placed;
       },
 
+      selectNetworkCable: (cable) =>
+        set((state) => ({ net: selectCable(state.net, cable) })),
+
+      wireNetworkLink: (linkId, draggedCable) => {
+        if (get().labTimedOut) return false;
+        const { state, wired } = wireLink(get().net, linkId, draggedCable);
+        set({
+          net: state,
+          lastMistake: wired ? null : buildLabMistake('net', state.message),
+        });
+        playSfx(wired ? 'snap' : 'error', { enabled: get().profileSettings.soundEffects });
+        return wired;
+      },
+
       openNetworkConfig: (device) => {
-        if (device === 'hub') {
+        if (device === 'router') {
           set((state) => ({
             net: {
               ...state.net,
-              message: 'The hub needs no IP setup. It repeats traffic across ports.',
+              message:
+                'Router gateway is pre-set to 192.168.1.1 (/24). Click Workstation PC or Laptop to configure its IPv4 address.',
+            },
+          }));
+          return;
+        }
+        if (device === 'switch') {
+          set((state) => ({
+            net: {
+              ...state.net,
+              message:
+                '8-Port L2 Switch forwards Ethernet frames between LAN ports automatically — no IP setup needed.',
             },
           }));
           return;
@@ -1586,6 +1678,20 @@ export const useStreakByteStore = create<StreakByteStore>()(
         }
       },
 
+      runNetworkPing: () => {
+        if (get().labTimedOut) return false;
+        const { state, passed } = runPingCheck(get().net);
+        set({
+          net: state,
+          lastMistake: passed ? null : buildLabMistake('net', state.message),
+        });
+        playSfx(passed ? 'ping' : 'error', { enabled: get().profileSettings.soundEffects });
+        if (!passed) {
+          get().showToast('Finish placing, cabling, and configuring IPs before testing.');
+        }
+        return passed;
+      },
+
       completeNetworkBuild: () => {
         const current = get();
         if (current.labTimedOut) return;
@@ -1597,7 +1703,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
             lastMistake: buildLabMistake('net', message),
           });
           playSfx('error', { enabled: current.profileSettings.soundEffects });
-          get().showToast('Configure both PC and Laptop before testing.');
+          get().showToast('Build and configure the full office LAN before finishing.');
           return;
         }
         const today = localDayString();
@@ -1804,7 +1910,14 @@ export const useStreakByteStore = create<StreakByteStore>()(
           profileSettings: { ...state.profileSettings, ...patch },
         })),
 
-      setChatOpen: (open) =>
+      setChatOpen: (open) => {
+        if (open) {
+          const reason = getStudyBuddyLockReason(get());
+          if (reason) {
+            get().showToast(reason);
+            return;
+          }
+        }
         set((state) => {
           if (open && !state.chat.hasOpened) {
             return {
@@ -1817,17 +1930,35 @@ export const useStreakByteStore = create<StreakByteStore>()(
             };
           }
           return { chat: { ...state.chat, open } };
-        }),
+        });
+      },
 
       sendChatMessage: (raw) => {
         const text = raw.trim();
         if (!text) return;
 
+        const reason = getStudyBuddyLockReason(get());
+        if (reason) {
+          get().showToast(reason);
+          return;
+        }
+
         const today = localDayString();
         const prevDaily = ensureDailyActivity(get().dailyActivity, today);
+        const prevStreak = get().streak;
+        const nextStreak = recordActivity(prevStreak, today);
         set({
           dailyActivity: { ...prevDaily, studyBuddyMessages: prevDaily.studyBuddyMessages + 1 },
+          streak: nextStreak,
         });
+        if (nextStreak !== prevStreak) {
+          void persistOrQueue(
+            get,
+            set,
+            { type: 'save-streak', payload: nextStreak },
+            () => services.progress.saveStreak(nextStreak),
+          );
+        }
 
         const appendBot = (reply: string) =>
           set((state) => ({
@@ -1848,11 +1979,13 @@ export const useStreakByteStore = create<StreakByteStore>()(
           state.learnKey ??
           state.quiz?.lessonKey ??
           (state.view === 'lesson' ? (state.activeLab === 'net' ? 'net-lab' : 'hw-lab') : undefined);
+        const inActiveQuiz = state.view === 'quiz' && Boolean(state.quiz) && !state.quiz?.submitted;
 
         const reply = services.studyBuddy.reply(text, {
           history,
           currentLesson,
           recentMistake: state.lastMistake?.summary,
+          inActiveQuiz,
           apiKey: state.profileSettings.geminiApiKey || undefined,
         });
 

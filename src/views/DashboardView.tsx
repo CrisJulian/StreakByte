@@ -2,10 +2,9 @@ import { CornerBrackets, IsometricCubeSvg } from '../components/ByteMascotSvg';
 import { Icon } from '../components/Icon';
 import { WelcomeMascot } from '../components/WelcomeMascot';
 import { getTrackProgress, LESSON_XP_BY_KEY, lessonLabel, TRACKS } from '../data/curriculum';
-import { formatXp, initialsFor } from '../data/leaderboard';
+import { formatXp } from '../data/leaderboard';
 import { deriveDailyQuests, ensureDailyActivity } from '../domain/rules/dailyQuests';
 import { lessonKeyFor } from '../domain/rules/lessonProgress';
-import { deriveAchievements } from '../domain/rules/progressViews';
 import {
   calculateTotalXp,
   calculateWeeklyXp,
@@ -122,8 +121,6 @@ export function DashboardView() {
   const xpSpent = useStreakByteStore((s) => s.xpSpent);
   const dailyActivity = useStreakByteStore((s) => s.dailyActivity);
   const leaderboard = useStreakByteStore((s) => s.leaderboard);
-  const arenaStats = useStreakByteStore((s) => s.arenaStats);
-  const classrooms = useStreakByteStore((s) => s.classrooms);
   const authUser = useStreakByteStore((s) => s.authUser);
   const isGuest = useStreakByteStore((s) => s.isGuest);
   const selectedTracks = useStreakByteStore((s) => s.profileSettings.selectedTracks);
@@ -165,24 +162,7 @@ export function DashboardView() {
     },
     'w',
   );
-  const previewRows = ranked.slice(0, 5);
   const me = ranked.find((r) => r.isYou) ?? ranked[0];
-  const achievements = deriveAchievements({
-    completions,
-    streak,
-    totalXp,
-    hwTotal: TRACKS.hw.lessons.length,
-    netTotal: TRACKS.net.lessons.length,
-    leaderboardRank: me?.rank ?? null,
-    arenaStats,
-    classroomCount: classrooms.length,
-    today,
-  });
-  const unlockedCount = achievements.filter((a) => a.unlocked).length;
-  const previewAchievements = [
-    ...achievements.filter((a) => a.unlocked),
-    ...achievements.filter((a) => !a.unlocked),
-  ].slice(0, 8);
   const dailyQuests = deriveDailyQuests(ensureDailyActivity(dailyActivity, today));
   const completedQuestsCount = dailyQuests.filter((q) => q.completed).length;
 
@@ -206,531 +186,357 @@ export function DashboardView() {
       ? 'You’re leading the board this week. Keep your streak going!'
       : 'Complete your first lesson to earn XP and start your streak.';
 
-  const missionCode = String(safeIdx + 1).padStart(2, '0');
-  const trackModeLabel = selectedTracks.map((id) => TRACKS[id].heading.replace(' Basics', '').toUpperCase()).join(' + ');
+  const trackModeLabel = selectedTracks.map((id) => TRACKS[id].heading.replace(' Basics', '')).join(' + ');
 
   return (
-    <div className="w-full bg-panel">
-      {/* Hero Poster Banner */}
-      <div className="sb-enter border-b border-line pt-4 bg-panel overflow-hidden">
-        <div className="flex justify-between px-5.5 pb-1.5" aria-hidden="true">
-          <span className="w-1.5 h-1.5 bg-cyan inline-block" />
-          <span className="w-1.5 h-1.5 bg-cyan inline-block" />
-        </div>
-        <div className="flex items-center gap-4 px-5.5 pb-3 max-[760px]:px-3.5 max-[760px]:gap-2.5">
-          <WelcomeMascot />
-          <h1 className="sb-hero-mega m-0 min-w-0 text-ink max-[760px]:text-[24px]">
-            Welcome back, <span className="text-cyan">{firstName}</span>
-          </h1>
-        </div>
-        <div className="border-t border-line px-5.5 max-[760px]:px-3.5 py-2.5 flex justify-between items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
+    <div className="w-full min-h-full bg-bg">
+      <div className="max-w-[1320px] mx-auto px-6 py-7 max-[760px]:px-4 max-[760px]:py-5 grid gap-7">
+        {/* Tier 1: Operate-mode Greeting Header */}
+        <header className="sb-enter flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4 min-w-0">
+            <WelcomeMascot />
+            <div className="min-w-0">
+              <h1 className="m-0 font-disp text-[38px] max-[760px]:text-[26px] leading-[1.1] tracking-[-0.025em] text-ink">
+                Welcome back, <span className="text-cyan">{firstName}</span>
+              </h1>
+              <p className="m-0 mt-1.5 text-[16px] max-[760px]:text-[14.5px] text-muted">{heroSubtitle}</p>
+            </div>
+          </div>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-line bg-panel text-[12.5px] text-muted">
             <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
-            <span>TRAINING MODE · {trackModeLabel}</span>
+            <span>
+              Track mode: <strong className="text-ink font-semibold">{trackModeLabel}</strong>
+            </span>
           </div>
-          <span className="text-[10.5px] text-muted tracking-[0.04em]">{heroSubtitle}</span>
+        </header>
+
+        {/* Tier 2: Primary Focal Point — Next Lesson Hero */}
+        <div className="grid grid-cols-[1.35fr_1fr] max-[1024px]:grid-cols-1 border border-line border-t-2 border-t-cyan bg-panel">
+          <section
+            aria-label="Continue learning"
+            className="p-7 max-[760px]:p-5 border-r border-line max-[1024px]:border-r-0 max-[1024px]:border-b flex flex-col justify-between gap-6"
+          >
+            <div>
+              <div className="flex items-center gap-2 flex-wrap mb-4">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-panel2 border border-line text-[12px] font-semibold text-ink">
+                  <Icon name={activeTrackId === 'net' ? 'net' : 'cpu'} className="w-3.5 h-3.5 text-cyan" />
+                  {activeTrack.heading}
+                </span>
+                <span className="num inline-flex items-center px-2.5 py-1 bg-you text-cyan text-[12px] font-bold">
+                  +{nextLesson.xp} XP
+                </span>
+                <span className="num inline-flex items-center gap-1.5 px-2.5 py-1 border border-line bg-panel text-[12px] font-medium text-muted">
+                  <Icon name="clock" className="w-3.5 h-3.5" />
+                  {nextLesson.minutes} min
+                </span>
+              </div>
+
+              <h2 className="m-0 font-disp text-[32px] max-[760px]:text-[24px] leading-[1.12] tracking-[-0.025em] text-ink text-balance">
+                {nextLessonTitle}
+              </h2>
+              <p className="m-0 mt-2.5 text-[14.5px] leading-[1.55] text-muted max-w-[52ch]">
+                {nextLesson.subtitle}
+              </p>
+
+              <div className="mt-6">
+                <div className="flex justify-between items-baseline gap-2 mb-2">
+                  <span className="text-[13px] font-medium text-muted">
+                    Track progress · {activeProgress.doneCount} of {activeProgress.total} lessons
+                  </span>
+                  <span className="num text-[14px] font-bold text-ink">{trackPct}%</span>
+                </div>
+                <div
+                  className="grid grid-cols-10 gap-1"
+                  role="progressbar"
+                  aria-label="Track progress"
+                  aria-valuenow={trackPct}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  {Array.from({ length: 10 }, (_, idx) => (
+                    <i
+                      key={idx}
+                      className={`block h-2 ${
+                        idx < Math.round((trackPct / 100) * 10) ? 'bg-cyan' : 'bg-panel3'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => navigate(`learn/${nextLessonKey}`)}
+                className="sb-cut inline-flex items-center justify-center gap-2.5 min-h-12 px-6 border border-cyan bg-cyan text-cyan-ink font-head font-bold text-[14px] cursor-pointer transition-colors hover:brightness-110"
+              >
+                <Icon name="play" className="w-4 h-4" />
+                Start lesson
+              </button>
+            </div>
+          </section>
+
+          <div className="grid grid-rows-[1fr_auto] bg-panel">
+            <div className="relative sb-blueprint-dots min-h-[220px] p-5 flex flex-col justify-between">
+              <CornerBrackets />
+              <div className="w-full flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted">
+                  <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
+                  {activeTrackId === 'net' ? 'Office LAN Topology' : 'ATX Motherboard'}
+                </span>
+              </div>
+              <div className="flex-1 w-full grid place-items-center py-3 px-1">
+                <MissionSchematic trackId={activeTrackId} />
+              </div>
+            </div>
+
+            <div className="border-t border-line px-5 py-4 bg-[var(--dark-card)] text-white grid gap-2.5">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <IsometricCubeSvg size={30} />
+                  <div>
+                    <div className="text-[11px] font-medium text-white/65">Next level</div>
+                    <div className="font-head text-[14px] font-bold leading-tight">
+                      Level {level.level + 1} · {nextLevelInfo.title}
+                    </div>
+                  </div>
+                </div>
+                <span className="num text-[12px] font-semibold text-white/85">
+                  {formatXp(level.currentLevelXp)} / {formatXp(level.nextLevelXp)} XP
+                </span>
+              </div>
+              <div className="grid grid-cols-10 gap-1" aria-hidden="true">
+                {Array.from({ length: 10 }, (_, idx) => (
+                  <i
+                    key={idx}
+                    className={`block h-2 ${idx < levelSegmentsFilled ? 'bg-cyan' : 'bg-white/15'}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* 3-Column Hero Matrix */}
-      <div className="grid grid-cols-[1.15fr_1fr_0.95fr] max-[1024px]:grid-cols-1 border-b border-line">
-        {/* Col 1: Active Mission */}
-        <section
-          aria-label="Continue learning"
-          className="p-6 max-[760px]:p-4 border-r border-line max-[1024px]:border-r-0 max-[1024px]:border-b flex flex-col justify-between gap-4"
-        >
-          <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
-              MISSION {missionCode} · {activeTrack.heading}
+        {/* Tier 3: Mission Map */}
+        <section aria-label="Tracks" className="bg-panel border border-line p-6 max-[760px]:p-4">
+          <div className="flex justify-between items-start gap-4 flex-wrap mb-5">
+            <div>
+              <h2 id="tracks-heading" className="m-0 font-disp text-[22px] leading-tight tracking-[-0.02em] text-ink">
+                Mission map
+              </h2>
+              <div className="flex items-center gap-4 flex-wrap mt-2">
+                {selectedTracks.map((id) => {
+                  const t = TRACKS[id];
+                  const prog = getTrackProgress(id, completions);
+                  const isActive = id === activeTrackId;
+                  return (
+                    <h3
+                      key={id}
+                      className={`m-0 text-[13px] font-semibold inline-flex items-center gap-1.5 ${
+                        isActive ? 'text-ink' : 'text-muted'
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 inline-block ${isActive ? 'bg-cyan' : 'bg-muted'}`}
+                        aria-hidden="true"
+                      />
+                      {t.heading} ({prog.doneCount}/{prog.total})
+                    </h3>
+                  );
+                })}
+              </div>
             </div>
-            <h2 className="m-0 mt-1.5 mb-2.5 sb-section-title text-[28px] text-balance">
-              {nextLessonTitle}
-            </h2>
-            <p className="m-0 mb-4 text-muted text-[12px] max-w-[40ch]">{nextLesson.subtitle}</p>
 
-            <div className="flex gap-2 flex-wrap mb-4">
-              <span className="inline-flex items-center px-2.5 py-1 bg-[var(--dark-card)] text-white text-[10px] font-bold uppercase tracking-[0.06em]">
-                +{nextLesson.xp} XP
-              </span>
-              <span className="inline-flex items-center px-2.5 py-1 border border-line bg-panel text-[10px] font-bold uppercase tracking-[0.06em] text-ink">
-                {nextLesson.minutes} min
-              </span>
-            </div>
-
-            <div className="flex justify-between text-[10.5px] font-bold uppercase tracking-[0.05em] mb-1.5">
-              <span className="text-muted">Track progress</span>
-              <span className="num text-ink">{trackPct}%</span>
-            </div>
-            <div
-              className="grid grid-cols-10 gap-0.5 mb-1.5"
-              role="progressbar"
-              aria-label="Track progress"
-              aria-valuenow={trackPct}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              {Array.from({ length: 10 }, (_, idx) => (
-                <i
-                  key={idx}
-                  className={`block h-2 ${idx < Math.round((trackPct / 100) * 10) ? 'bg-cyan' : 'bg-panel3'
-                    }`}
-                />
-              ))}
-            </div>
-            <p className="m-0 text-muted text-[11px]">
-              {activeProgress.doneCount} of {activeProgress.total} lessons complete in{' '}
-              {activeTrack.heading}
-            </p>
+            {selectedTracks.length > 1 && (
+              <div role="group" aria-label="Mission track selector" className="inline-flex border border-line bg-panel">
+                {selectedTracks.map((id, idx) => {
+                  const isActive = id === activeTrackId;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      aria-pressed={isActive}
+                      onClick={() => setTrack(id)}
+                      className={`px-3.5 py-2 text-[13px] font-semibold border-0 cursor-pointer transition-colors ${
+                        idx > 0 ? 'border-l border-line' : ''
+                      } ${isActive ? 'bg-cyan text-cyan-ink' : 'bg-panel text-ink hover:bg-panel2'}`}
+                    >
+                      {id === 'hw' ? 'Hardware' : 'Networking'}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          <div className="flex flex-wrap gap-2.5 pt-1">
-            <button
-              type="button"
-              onClick={() => navigate(`learn/${nextLessonKey}`)}
-              className="sb-cut inline-flex items-center justify-center gap-2 min-h-11 px-5 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-colors hover:brightness-110"
-            >
-              <Icon name="play" className="w-4 h-4" />
-              Start lesson
-            </button>
+          <div
+            className={`grid gap-3 ${
+              activeTrack.lessons.length === 6
+                ? 'grid-cols-6 max-[1180px]:grid-cols-3 max-[600px]:grid-cols-2'
+                : 'grid-cols-5 max-[1180px]:grid-cols-3 max-[600px]:grid-cols-2'
+            }`}
+          >
+            {activeTrack.lessons.map((lesson, idx) => {
+              const derived = activeProgress.lessons[idx];
+              const key = lessonKeyFor(activeTrackId, idx);
+              const isDone = derived.status === 'done';
+              const isCur = derived.status === 'cur';
+              const isLock = derived.status === 'lock';
+              const isBoss = lesson.kind === 'final';
+              const num = String(idx + 1).padStart(2, '0');
+
+              const cardStyle =
+                isBoss && !isLock && !isCur
+                  ? 'border-line bg-[var(--dark-card)] text-white'
+                  : isCur
+                    ? 'border-cyan bg-cyan text-cyan-ink'
+                    : isLock
+                      ? 'border-line/70 bg-panel2/60 text-muted'
+                      : 'border-line bg-panel text-ink';
+
+              return (
+                <article key={lesson.title} className={`border p-4 flex flex-col min-h-[168px] ${cardStyle}`}>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="num text-[12px] font-bold opacity-75">{num}</span>
+                    <span aria-hidden="true" className="inline-flex items-center">
+                      {isDone ? (
+                        <Icon name="check" className="w-4 h-4 text-green" strokeWidth={2.5} />
+                      ) : isCur ? (
+                        <Icon name="play" className="w-4 h-4 text-cyan-ink" />
+                      ) : isLock ? (
+                        <Icon name="lock" className="w-3.5 h-3.5 text-muted" />
+                      ) : isBoss ? (
+                        <Icon name="trophy" className="w-4 h-4 text-cyan" />
+                      ) : (
+                        <Icon name="book" className="w-3.5 h-3.5 text-muted" />
+                      )}
+                    </span>
+                  </div>
+
+                  <h4 className="m-0 mb-1.5 font-head text-[14.5px] font-bold leading-snug">
+                    {isBoss ? `Boss: ${lesson.title.replace(/^Final Lesson:\s*/i, '')}` : lesson.title}
+                  </h4>
+                  <div className="num text-[12px] opacity-80 mb-4">
+                    {isBoss ? 'Lab' : `+${lesson.xp} XP`} · {lesson.minutes} min
+                  </div>
+
+                  <div className="mt-auto">
+                    {isLock ? (
+                      <span className="sb-cut-sm inline-flex items-center px-3 py-1.5 bg-panel2 text-muted text-[12px] font-semibold">
+                        Locked
+                      </span>
+                    ) : isBoss ? (
+                      <button
+                        type="button"
+                        onClick={() => openSetup(activeTrack.defaultTarget, lesson.title)}
+                        className="sb-cut-sm inline-flex items-center px-3.5 py-1.5 border-0 bg-cyan text-cyan-ink text-[12px] font-semibold cursor-pointer hover:brightness-110"
+                      >
+                        Boss Lab
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => navigate(`learn/${key}`)}
+                        className={`sb-cut-sm inline-flex items-center px-3.5 py-1.5 border-0 text-[12px] font-semibold cursor-pointer ${
+                          isCur
+                            ? 'bg-[var(--dark-card)] text-white hover:opacity-90'
+                            : 'bg-panel2 text-ink hover:bg-panel3'
+                        }`}
+                      >
+                        {isDone ? 'Cleared' : 'Play now'}
+                      </button>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
 
-        {/* Col 2: Mission Schematic */}
-        <button
-          type="button"
-          onClick={() => navigate(`learn/${nextLessonKey}`)}
-          aria-label={`Inspect ${nextLessonTitle} schematic in lesson`}
-          className="relative sb-blueprint-dots border-0 border-r border-line max-[1024px]:border-r-0 max-[1024px]:border-b min-h-[276px] p-4 flex flex-col justify-between text-left cursor-pointer transition-colors hover:bg-panel3/40 group"
-        >
-          <CornerBrackets />
-          <div className="w-full flex justify-between items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
-              <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
-              FIG {missionCode} // {activeTrackId === 'net' ? 'LAN SPEC' : 'BOARD SPEC'}
-            </span>
-            <span className="px-1.5 py-0.5 border border-line bg-panel text-[9px] font-bold uppercase tracking-[0.06em]">
-              {activeTrackId === 'net' ? 'IPv4' : 'ATX'}
+        {/* Tier 4: Daily Quests */}
+        <section aria-label="Daily quests" className="bg-panel border border-line p-6 max-[760px]:p-4">
+          <div className="flex items-end justify-between gap-3 flex-wrap mb-5">
+            <div>
+              <h2 className="m-0 font-disp text-[22px] leading-tight tracking-[-0.02em] text-ink">
+                Daily quests
+              </h2>
+              <p className="m-0 mt-1 text-[13px] text-muted">
+                Resets daily · complete goals to claim bonus XP
+              </p>
+            </div>
+            <span className="num text-[13px] font-bold text-ink">
+              {completedQuestsCount} / {dailyQuests.length} done
             </span>
           </div>
-          <div className="flex-1 w-full grid place-items-center py-3 px-1">
-            <MissionSchematic trackId={activeTrackId} />
-          </div>
-          <div className="w-full flex justify-between items-center gap-2 text-[9.5px] uppercase tracking-[0.06em] text-muted">
-            <span>
-              {activeTrackId === 'net'
-                ? '4 NODES · GATEWAY & LAN LINKS'
-                : '5 KEY ZONES · SOCKETS, SLOTS & PORTS'}
-            </span>
-            <span className="font-bold group-hover:text-cyan transition-colors">OPEN LESSON ↗</span>
-          </div>
-        </button>
 
-        {/* Col 3: Next Reward Dark HUD + XP Level Progress */}
-        <div className="grid grid-rows-[1fr_auto]">
-          <div className="relative bg-[var(--dark-card)] text-white p-5 flex flex-col items-center justify-center text-center gap-2.5 min-h-[200px]">
-            <CornerBrackets light />
-            <IsometricCubeSvg size={54} />
-            <div className="text-[9.5px] font-bold uppercase tracking-[0.11em] text-white/60">
-              NEXT REWARD
-            </div>
-            <div className="text-[11px] font-bold uppercase tracking-[0.08em]">
-              LEVEL {level.level + 1} · {nextLevelInfo.title}
-            </div>
-          </div>
-          <div className="border-t border-line p-4 bg-panel grid gap-2">
-            <div className="flex justify-between text-[10px] font-bold uppercase tracking-[0.06em]">
-              <span className="text-muted">XP TO LEVEL {level.level + 1}</span>
-              <span className="num text-ink">
-                {formatXp(level.currentLevelXp)} / {formatXp(level.nextLevelXp)}
-              </span>
-            </div>
-            <div className="grid grid-cols-10 gap-[3px]" aria-hidden="true">
-              {Array.from({ length: 10 }, (_, idx) => (
-                <i
-                  key={idx}
-                  className={`block h-2.5 ${idx < levelSegmentsFilled ? 'bg-cyan' : 'bg-panel3'}`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Mission Map / Selected Tracks */}
-      <section aria-label="Tracks" className="p-6 max-[760px]:p-4 border-b border-line">
-        <div className="flex justify-between items-end gap-4 flex-wrap mb-4">
-          <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
-              MISSION MAP
-            </div>
-            <h2 id="tracks-heading" className="m-0 mt-1 sb-section-title text-[23px]">
-              Clear the chain
-            </h2>
-            <div className="flex items-center gap-3 flex-wrap mt-1.5">
-              {selectedTracks.map((id) => {
-                const t = TRACKS[id];
-                const prog = getTrackProgress(id, completions);
-                const isActive = id === activeTrackId;
-                return (
-                  <h3
-                    key={id}
-                    className={`m-0 text-[11px] font-bold uppercase tracking-[0.06em] inline-flex items-center gap-1.5 ${isActive ? 'text-ink' : 'text-muted'
-                      }`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 inline-block ${isActive ? 'bg-cyan' : 'bg-muted'}`}
-                      aria-hidden="true"
-                    />
-                    {t.heading} ({prog.doneCount}/{prog.total})
-                  </h3>
-                );
-              })}
-            </div>
-          </div>
-
-          {selectedTracks.length > 1 && (
-            <div role="group" aria-label="Mission track selector" className="inline-flex border border-ink bg-panel">
-              {selectedTracks.map((id, idx) => {
-                const isActive = id === activeTrackId;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    aria-pressed={isActive}
-                    onClick={() => setTrack(id)}
-                    className={`px-3.5 py-2 text-[10px] font-bold uppercase tracking-[0.08em] border-0 cursor-pointer transition-colors ${idx > 0 ? 'border-l border-ink' : ''
-                      } ${isActive ? 'bg-cyan text-cyan-ink' : 'bg-panel text-ink hover:bg-panel2'}`}
-                  >
-                    {id === 'hw' ? 'Hardware' : 'Networking'}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div
-          className={`grid border border-line ${activeTrack.lessons.length === 6
-            ? 'grid-cols-6 max-[1024px]:grid-cols-3 max-[600px]:grid-cols-2'
-            : 'grid-cols-5 max-[1024px]:grid-cols-3 max-[600px]:grid-cols-2'
-            }`}
-        >
-          {activeTrack.lessons.map((lesson, idx) => {
-            const derived = activeProgress.lessons[idx];
-            const key = lessonKeyFor(activeTrackId, idx);
-            const isDone = derived.status === 'done';
-            const isCur = derived.status === 'cur';
-            const isLock = derived.status === 'lock';
-            const isBoss = lesson.kind === 'final';
-            const num = String(idx + 1).padStart(2, '0');
-
-            const cardBg = isBoss && !isLock && !isCur
-              ? 'bg-[var(--dark-card)] text-white'
-              : isCur
-                ? 'bg-cyan text-cyan-ink'
-                : isLock
-                  ? 'bg-panel3 text-muted'
-                  : 'bg-panel text-ink';
-
-            return (
-              <article
-                key={lesson.title}
-                className={`p-4 border-r border-b border-line last:border-r-0 flex flex-col min-h-[182px] ${cardBg}`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <span
-                    className={`font-disp text-[26px] leading-none ${isDone
-                      ? 'text-muted/60'
-                      : isBoss && !isCur
-                        ? 'text-cyan'
-                        : isLock
-                          ? 'text-muted/70'
-                          : ''
-                      }`}
-                  >
-                    {num}
-                  </span>
-                  <span aria-hidden="true" className="text-xs font-bold">
-                    {isDone ? '✓' : isCur ? '▶' : isBoss ? '★' : '🔒'}
-                  </span>
-                </div>
-
-                <h4 className="m-0 mb-1.5 font-head text-[14.5px] font-bold leading-snug">
-                  {isBoss ? `Boss: ${lesson.title.replace(/^Final Lesson:\s*/i, '')}` : lesson.title}
-                </h4>
-                <div className="text-[10px] uppercase tracking-[0.04em] opacity-75 mb-4">
-                  {isBoss ? 'LAB' : `+${lesson.xp} XP`} · {lesson.minutes} MIN
-                </div>
-
-                <div className="mt-auto">
-                  {isLock ? (
-                    <span className="sb-cut-sm inline-flex items-center px-2.5 py-1 bg-panel2 text-muted text-[10px] font-bold uppercase tracking-[0.06em]">
-                      Locked
+          <div className="grid grid-cols-4 max-[1024px]:grid-cols-2 max-[600px]:grid-cols-1 gap-3">
+            {dailyQuests.map((q) => {
+              const pct = q.target > 0 ? Math.round((q.progress / q.target) * 100) : 0;
+              const actionLabel =
+                q.id === 'daily-quiz'
+                  ? 'Go to lessons'
+                  : q.id === 'daily-lab'
+                    ? 'Open lab'
+                    : q.id === 'daily-arena'
+                      ? 'Enter Arena'
+                      : 'Ask BYTE';
+              return (
+                <article key={q.id} className="p-4 border border-line bg-bg/40 flex flex-col gap-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="m-0 font-head text-[15px] font-bold leading-snug text-ink">{q.title}</h3>
+                    <span className="num shrink-0 px-2 py-0.5 bg-you text-cyan text-[12px] font-bold">
+                      +{q.xpReward} XP
                     </span>
-                  ) : isBoss ? (
+                  </div>
+
+                  <p className="m-0 text-[13px] leading-[1.45] text-muted flex-1">{q.description}</p>
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1.5 bg-panel3 overflow-hidden">
+                      <i
+                        className="sb-bar-fill block h-full"
+                        style={{
+                          width: `${pct}%`,
+                          background: q.claimed
+                            ? 'var(--green)'
+                            : q.completed
+                              ? 'var(--cyan)'
+                              : 'var(--muted)',
+                        }}
+                      />
+                    </div>
+                    <small className="num text-[12px] text-muted font-semibold">
+                      {q.progress} / {q.target}
+                    </small>
+                  </div>
+
+                  {q.claimed ? (
+                    <span className="mt-1 inline-flex items-center justify-center gap-1.5 min-h-10 px-3 border border-green bg-green/12 text-green font-semibold text-[12.5px]">
+                      <Icon name="check" className="w-3.5 h-3.5" strokeWidth={2.5} />
+                      Claimed
+                    </span>
+                  ) : q.completed ? (
                     <button
                       type="button"
-                      onClick={() => openSetup(activeTrack.defaultTarget, lesson.title)}
-                      className="sb-cut-sm inline-flex items-center px-3 py-1.5 border-0 bg-cyan text-cyan-ink text-[10px] font-bold uppercase tracking-[0.06em] cursor-pointer hover:brightness-110"
+                      onClick={() => claimDailyQuest(q.id)}
+                      className="sb-cut mt-1 w-full inline-flex items-center justify-center gap-1.5 min-h-10 px-3 border border-cyan bg-cyan text-cyan-ink font-semibold text-[12.5px] cursor-pointer hover:brightness-110 transition-colors"
                     >
-                      Boss Lab
+                      Claim +{q.xpReward} XP
                     </button>
                   ) : (
                     <button
                       type="button"
-                      onClick={() => navigate(`learn/${key}`)}
-                      className="sb-cut-sm inline-flex items-center px-3 py-1.5 border-0 bg-[var(--dark-card)] text-white text-[10px] font-bold uppercase tracking-[0.06em] cursor-pointer hover:opacity-90"
+                      onClick={() => triggerQuestAction(q.id)}
+                      className="mt-1 w-full inline-flex items-center justify-center min-h-10 px-3 border border-line bg-panel text-ink font-semibold text-[12.5px] cursor-pointer hover:border-ink hover:bg-panel2 transition-colors"
                     >
-                      {isDone ? 'Cleared' : 'Play now'}
+                      {actionLabel}
                     </button>
                   )}
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Daily Quests */}
-      <section aria-label="Daily quests" className="p-6 max-[760px]:p-4 border-b border-line">
-        <div className="flex items-end justify-between gap-3 flex-wrap mb-4">
-          <div>
-            <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
-              DAILY QUESTS · RESETS DAILY
-            </div>
-            <h2 className="m-0 mt-1 sb-section-title text-[23px]">
-              Collect today’s XP
-            </h2>
+                </article>
+              );
+            })}
           </div>
-          <span className="num text-[10.5px] font-bold uppercase tracking-[0.06em] text-muted">
-            {completedQuestsCount} of {dailyQuests.length} done
-          </span>
-        </div>
-
-        <div className="grid grid-cols-4 max-[1024px]:grid-cols-2 max-[600px]:grid-cols-1 border border-line">
-          {dailyQuests.map((q, idx) => {
-            const pct = q.target > 0 ? Math.round((q.progress / q.target) * 100) : 0;
-            const actionLabel =
-              q.id === 'daily-quiz'
-                ? 'Go to lessons'
-                : q.id === 'daily-lab'
-                  ? 'Open lab'
-                  : q.id === 'daily-arena'
-                    ? 'Enter Arena'
-                    : 'Ask BYTE';
-            return (
-              <article
-                key={q.id}
-                className="p-4 border-r border-line last:border-r-0 max-[1024px]:border-b max-[1024px]:[&:nth-child(even)]:border-r-0 max-[600px]:border-r-0 flex flex-col gap-2.5 bg-panel"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
-                    QUEST 0{idx + 1}
-                  </span>
-                  <span className="num px-2 py-0.5 bg-you text-cyan text-[10px] font-bold uppercase tracking-[0.05em]">
-                    +{q.xpReward} XP
-                  </span>
-                </div>
-
-                <h3 className="m-0 font-head text-[15px] font-bold leading-snug">{q.title}</h3>
-                <p className="m-0 text-[11px] text-muted flex-1">{q.description}</p>
-
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-panel3 overflow-hidden">
-                    <i
-                      className="sb-bar-fill block h-full"
-                      style={{
-                        width: `${pct}%`,
-                        background: q.claimed
-                          ? 'var(--green)'
-                          : q.completed
-                            ? 'var(--cyan)'
-                            : 'var(--muted)',
-                      }}
-                    />
-                  </div>
-                  <small className="num text-[10px] text-muted font-bold">
-                    {q.progress} / {q.target}
-                  </small>
-                </div>
-
-                {q.claimed ? (
-                  <span className="mt-1 inline-flex items-center justify-center gap-1.5 min-h-9 px-3 border border-green bg-green/12 text-green font-bold text-[10.5px] uppercase tracking-[0.06em]">
-                    <Icon name="check" className="w-3.5 h-3.5" strokeWidth={2.5} />
-                    Claimed
-                  </span>
-                ) : q.completed ? (
-                  <button
-                    type="button"
-                    onClick={() => claimDailyQuest(q.id)}
-                    className="sb-cut mt-1 w-full inline-flex items-center justify-center gap-1.5 min-h-10 px-3 border border-cyan bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 transition-colors"
-                  >
-                    Claim +{q.xpReward} XP
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => triggerQuestAction(q.id)}
-                    className="mt-1 w-full inline-flex items-center justify-center min-h-10 px-3 border border-line bg-panel text-ink font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer hover:border-ink hover:bg-panel2 transition-colors"
-                  >
-                    {actionLabel}
-                  </button>
-                )}
-              </article>
-            );
-          })}
-        </div>
-
-        <aside className="p-4 border-x border-b border-line bg-[var(--dark-card)] text-white flex items-center justify-between gap-4 flex-wrap">
-          <div className="min-w-0 flex-1 grid gap-1.5">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="text-[10px] font-bold uppercase tracking-[0.09em] text-white/60">
-                DAILY PROGRESS · {completedQuestsCount === dailyQuests.length ? 'ALL CLEAR' : 'IN PROGRESS'}
-              </span>
-              <span className="text-[11px] text-white/75">
-                Complete all {dailyQuests.length} daily goals ({completedQuestsCount} of {dailyQuests.length}).
-              </span>
-            </div>
-            <div
-              className="grid gap-1 max-w-[360px]"
-              style={{ gridTemplateColumns: `repeat(${dailyQuests.length}, minmax(0, 1fr))` }}
-              aria-hidden="true"
-            >
-              {dailyQuests.map((q) => (
-                <i
-                  key={q.id}
-                  className={`block h-2 ${q.completed ? 'bg-cyan' : 'bg-white/20'}`}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={() => {
-                setArenaTab('duel');
-                navigate('arena');
-              }}
-              className="sb-cut-sm inline-flex items-center justify-center min-h-9 px-3.5 border border-cyan bg-cyan text-cyan-ink font-bold text-[10px] uppercase tracking-[0.06em] cursor-pointer hover:brightness-110 transition-colors"
-            >
-              Enter 1v1 Arena ▶
-            </button>
-            <button
-              type="button"
-              onClick={() => setChatOpen(true)}
-              className="sb-cut-sm inline-flex items-center justify-center min-h-9 px-3.5 border border-[var(--dark-line)] bg-transparent text-white font-bold text-[10px] uppercase tracking-[0.06em] cursor-pointer hover:border-white transition-colors"
-            >
-              Ask BYTE-01 ▶
-            </button>
-          </div>
-        </aside>
-      </section>
-
-      {/* Bottom 2-Column Split: Class League & Trophy Wall */}
-      <div className="grid grid-cols-2 max-[1024px]:grid-cols-1">
-        <aside aria-label="Leaderboard" className="p-6 max-[760px]:p-4 border-r border-line max-[1024px]:border-r-0 max-[1024px]:border-b flex flex-col">
-          <div className="flex justify-between items-end gap-3 mb-4">
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
-                CLASS LEAGUE · {isGuest ? 'LOCAL PROGRESS' : 'THIS WEEK'}
-              </div>
-              <h2 className="m-0 mt-1 sb-section-title text-[23px]">
-                Leaderboard
-              </h2>
-            </div>
-            <a
-              href="#leaderboard"
-              onClick={(e) => {
-                e.preventDefault();
-                navigate('leaderboard');
-              }}
-              className="inline-flex items-center justify-center min-h-8 px-3 border border-line bg-panel text-ink font-bold text-[10px] uppercase tracking-[0.06em] no-underline hover:border-ink hover:bg-panel2 transition-colors"
-            >
-              View full leaderboard
-            </a>
-          </div>
-
-          <ol className="border border-line">
-            {previewRows.map((row) => (
-              <li
-                key={row.userId}
-                aria-current={row.isYou ? 'true' : undefined}
-                className={`grid grid-cols-[24px_30px_minmax(0,1fr)_auto_auto] gap-2.5 items-center px-3.5 py-2.5 border-b border-line last:border-b-0 ${row.isYou ? 'bg-you font-bold' : 'bg-panel'
-                  }`}
-              >
-                <span className="num text-muted text-xs text-center font-bold">{row.rank}</span>
-                {row.avatarUrl ? (
-                  <img
-                    src={row.avatarUrl}
-                    alt=""
-                    referrerPolicy="no-referrer"
-                    className="w-[30px] h-[30px] object-cover border border-line"
-                  />
-                ) : (
-                  <span
-                    className={`grid place-items-center w-[30px] h-[30px] font-bold text-[11px] ${row.isYou ? 'bg-cyan text-cyan-ink' : 'bg-panel2 text-ink border border-line'
-                      }`}
-                  >
-                    {initialsFor(row.name)}
-                  </span>
-                )}
-                <span className="font-head font-bold text-[13px] truncate">
-                  {row.isYou ? `${row.name} (you)` : row.name}
-                </span>
-                <span className="text-[10px] uppercase tracking-[0.05em] text-muted max-[600px]:hidden">
-                  {row.streakDays} streak
-                </span>
-                <b className="font-disp text-[14px] num">{formatXp(row.xp)}</b>
-              </li>
-            ))}
-          </ol>
-        </aside>
-
-        <section aria-label="Achievements" className="p-6 max-[760px]:p-4 flex flex-col">
-          <div className="flex justify-between items-end gap-3 mb-4">
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.09em] text-muted">
-                BADGES · {unlockedCount} OF {achievements.length} UNLOCKED
-              </div>
-              <h2 className="m-0 mt-1 sb-section-title text-[23px]">
-                Trophy wall
-              </h2>
-            </div>
-            <a
-              href="#achievements"
-              onClick={(e) => {
-                e.preventDefault();
-                navigate('achievements');
-              }}
-              className="inline-flex items-center justify-center min-h-8 px-3 border border-line bg-panel text-ink font-bold text-[10px] uppercase tracking-[0.06em] no-underline hover:border-ink hover:bg-panel2 transition-colors"
-            >
-              View all achievements
-            </a>
-          </div>
-
-          <ul className="grid grid-cols-4 max-[600px]:grid-cols-2 border border-line">
-            {previewAchievements.map((ach, idx) => (
-              <li
-                key={ach.id}
-                className={`p-3.5 text-center flex flex-col items-center gap-1.5 border-r border-b border-line ${idx % 4 === 3 ? 'min-[601px]:border-r-0' : ''
-                  } ${idx >= 4 ? 'min-[601px]:border-b-0' : ''} ${ach.unlocked ? 'bg-panel text-ink' : 'bg-panel2 text-muted'
-                  }`}
-              >
-                <div
-                  className={`grid place-items-center w-7 h-7 ${ach.unlocked
-                    ? 'bg-cyan text-cyan-ink'
-                    : 'border border-line bg-panel text-muted'
-                    }`}
-                >
-                  <Icon name={ach.icon} className="w-4 h-4" />
-                </div>
-                <span className="font-head text-[11.5px] font-bold leading-tight">{ach.title}</span>
-                <small className="text-[9px] uppercase tracking-[0.06em] text-muted">
-                  {ach.unlocked ? 'Unlocked' : ach.progressText ?? ach.statusText}
-                </small>
-              </li>
-            ))}
-          </ul>
         </section>
       </div>
     </div>

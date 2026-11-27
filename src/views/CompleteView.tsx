@@ -100,9 +100,9 @@ export function CompleteView() {
           </p>
 
           <ul className="border border-line mt-4 mb-5">
-            {completion.review.map(([topic, detail]) => (
+            {completion.review.map(([topic, detail], idx) => (
               <li
-                key={topic}
+                key={`${topic}-${idx}`}
                 className="grid grid-cols-[12px_minmax(0,1fr)_auto_auto] gap-3 items-center px-3.5 py-3 border-b border-line last:border-b-0"
               >
                 <i className="w-2 h-2 bg-cyan block" />

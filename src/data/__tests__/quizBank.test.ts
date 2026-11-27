@@ -25,6 +25,12 @@ describe('quiz bank', () => {
     }
   });
 
+  it('never repeats a prompt inside one lesson', () => {
+    for (const qs of Object.values(QUIZ_BANK)) {
+      expect(new Set(qs.map((q) => q.prompt.toLowerCase())).size).toBe(qs.length);
+    }
+  });
+
   it('question ids are unique and match their lesson key', () => {
     const ids = all.map(({ q }) => q.id);
     expect(new Set(ids).size).toBe(ids.length);

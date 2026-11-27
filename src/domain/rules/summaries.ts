@@ -1,3 +1,4 @@
+import { DEFAULT_PASS_MARK } from './lessonProgress';
 import type { CompletionSummary, NetworkLabState, PcBuildState } from '../../types/streakbyte';
 import { scoreNetworkBuild } from './network';
 import { installedPcPartsCount, scorePcBuild, TOTAL_PC_PARTS } from './pcBuild';
@@ -41,17 +42,21 @@ export function summarizeNetworkBuild(
   nextOverride?: LabNextMission,
 ): CompletionSummary {
   const { accuracyPct } = scoreNetworkBuild(net);
+  const issueReview: [string, string][] =
+    net.issues.length > 0
+      ? net.issues.map((topic) => [topic, 'Reviewed during troubleshooting'])
+      : [
+          ['WAN vs LAN cabling', 'Fiber/Coax on WAN and Cat6 Ethernet across the LAN switch'],
+          ['IPv4 & subnetting', 'Unique 192.168.1.x hosts sharing 255.255.255.0 & 192.168.1.1'],
+        ];
   return {
     title: `Nice build, ${learnerName}!`,
-    subtitle: 'Your PC and laptop reached the router and passed the connection check.',
+    subtitle: 'You built the office LAN, wired WAN and Cat6 links, and passed ping verification.',
     xp: '+150',
     accuracy: `${accuracyPct}%`,
-    partsLabel: 'Devices',
-    partsValue: '2 / 2',
-    review: [
-      ['IP address basics', 'Each host needs a unique address on 192.168.1.0/24'],
-      ['Subnet masks', '255.255.255.0 keeps both devices on the same LAN'],
-    ],
+    partsLabel: 'Links',
+    partsValue: '4 / 4',
+    review: issueReview,
     next: nextOverride?.next ?? ['Subnet masks', 'Split one network into parts', '6 min · +120 XP'],
     nextRoute: nextOverride?.nextRoute ?? 'learn/net-3',
   };
@@ -70,7 +75,7 @@ export interface QuizSummaryInput {
 
 function passNote(input: QuizSummaryInput): string {
   if (input.passed === undefined) return '';
-  const mark = input.passMark ?? 3;
+  const mark = input.passMark ?? DEFAULT_PASS_MARK;
   return input.passed
     ? ' Lesson complete!'
     : ` You need ${mark} correct to complete this lesson. Review the topics below and try again.`;
