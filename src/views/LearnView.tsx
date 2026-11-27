@@ -4,10 +4,18 @@ import { Icon } from '../components/Icon';
 import { getTrackProgress, lessonLabel, TRACKS } from '../data/curriculum';
 import { LESSON_CONTENT } from '../data/lessons';
 import type { LessonBlock, LessonBullet, LessonImage } from '../data/lessons/types';
-import { DEFAULT_PASS_MARK, getCompletedSectionPrefix, lessonKeyFor } from '../domain/rules/lessonProgress';
+import {
+  DEFAULT_PASS_MARK,
+  getCompletedSectionPrefix,
+  lessonKeyFor,
+} from '../domain/rules/lessonProgress';
 import { parseLessonKey, QUIZ_LENGTH } from '../domain/rules/quiz';
 import { useStreakByteStore } from '../store/useStreakByteStore';
 import type { TrackId } from '../types/streakbyte';
+
+function sentenceCase(text: string): string {
+  return text.length > 1 ? text[0].toUpperCase() + text.slice(1).toLowerCase() : text;
+}
 
 function LessonFigure({
   image,
@@ -29,14 +37,15 @@ function LessonFigure({
             src={src}
             alt={image.alt}
             loading="lazy"
-            className={`w-full ${
-              compact ? 'max-h-[220px]' : 'max-h-[300px]'
-            } object-contain block bg-panel`}
+            className={`w-full ${compact ? 'max-h-[220px]' : 'max-h-[300px]'
+              } object-contain block bg-panel`}
           />
         </div>
-        <figcaption className="text-[12.5px] leading-snug text-ink/85">
+        <figcaption className="font-sans font-normal text-[14px] leading-[1.65] text-ink/85">
           {image.caption}
-          {image.credit ? <span className="block mt-0.5 text-[11px] text-muted">{image.credit}</span> : null}
+          {image.credit ? (
+            <span className="block mt-0.5 text-[14px] text-muted">{image.credit}</span>
+          ) : null}
         </figcaption>
       </figure>
     );
@@ -47,12 +56,12 @@ function LessonFigure({
       <div
         role="img"
         aria-label={`Picture coming soon: ${image.alt}`}
-        className="relative sb-blueprint-dots grid place-items-center min-h-[160px] p-4 border border-dashed border-line text-muted text-[12px] uppercase tracking-[0.05em] text-center"
+        className="relative sb-blueprint-dots grid place-items-center min-h-[160px] p-4 border border-dashed border-line text-muted font-sans text-[14px] text-center"
       >
         <CornerBrackets />
         Picture coming soon
       </div>
-      <figcaption className="text-[12.5px] leading-snug text-ink/85">
+      <figcaption className="font-sans font-normal text-[14px] leading-[1.65] text-ink/85">
         {image.caption}
       </figcaption>
     </figure>
@@ -84,19 +93,19 @@ function LessonBlockView({
   const textBody = (
     <div className="min-w-0 grid gap-4">
       {block.heading && (
-        <h3 className="m-0 font-head text-[18px] font-bold leading-snug text-ink">
+        <h3 className="m-0 font-disp font-extrabold text-[22px] leading-snug tracking-[-0.015em] text-ink">
           {block.heading}
         </h3>
       )}
 
       {block.paragraphs?.map((p, idx) => (
-        <p key={idx} className="m-0 text-[15px] leading-[1.7] text-ink/90">
+        <p key={idx} className="m-0 font-sans font-normal text-[16px] leading-[1.65] text-ink/90">
           {p}
         </p>
       ))}
 
       {block.bullets && block.bullets.length > 0 && (
-        <ul className="grid gap-2 m-0 pl-5 list-disc text-[14.5px] leading-[1.65] text-ink/90">
+        <ul className="grid gap-2 m-0 pl-5 list-disc font-sans font-normal text-[16px] leading-[1.65] text-ink/90">
           {block.bullets.map((b, idx) => (
             <li key={idx}>{renderBullet(b)}</li>
           ))}
@@ -104,7 +113,7 @@ function LessonBlockView({
       )}
 
       {block.ordered && block.ordered.length > 0 && (
-        <ol className="grid gap-2.5 m-0 pl-5 list-decimal text-[14.5px] leading-[1.65] text-ink/90">
+        <ol className="grid gap-2.5 m-0 pl-5 list-decimal font-sans font-normal text-[16px] leading-[1.65] text-ink/90">
           {block.ordered.map((step, idx) => (
             <li key={idx} className="pl-1">
               {step}
@@ -115,14 +124,14 @@ function LessonBlockView({
 
       {block.table && (
         <div className="overflow-x-auto border border-line bg-panel2/30">
-          <table className="w-full border-collapse text-left text-[13.5px]">
+          <table className="w-full border-collapse text-left font-sans text-[15px] leading-[1.65]">
             <thead>
               <tr className="bg-panel2 border-b border-line">
                 {block.table.headers.map((header) => (
                   <th
                     key={header}
                     scope="col"
-                    className="px-3.5 py-2.5 font-head text-[11.5px] font-bold uppercase tracking-[0.05em] text-muted whitespace-nowrap"
+                    className="px-3.5 py-2.5 font-sans font-semibold text-[15px] text-ink whitespace-nowrap"
                   >
                     {header}
                   </th>
@@ -135,9 +144,8 @@ function LessonBlockView({
                   {row.map((cell, cIdx) => (
                     <td
                       key={cIdx}
-                      className={`px-3.5 py-2.5 align-top leading-snug ${
-                        cIdx === 0 ? 'font-semibold text-ink' : 'text-ink/85'
-                      }`}
+                      className={`px-3.5 py-2.5 align-top font-sans font-normal text-[15px] leading-[1.65] ${cIdx === 0 ? 'text-ink' : 'text-ink/90'
+                        }`}
                     >
                       {cell}
                     </td>
@@ -161,16 +169,14 @@ function LessonBlockView({
       className="grid grid-cols-1 min-[860px]:grid-cols-12 gap-7 items-start"
     >
       <div
-        className={`min-w-0 min-[860px]:col-span-7 ${
-          imageSide === 'left' ? 'min-[860px]:order-2' : 'min-[860px]:order-1'
-        }`}
+        className={`min-w-0 min-[860px]:col-span-7 ${imageSide === 'left' ? 'min-[860px]:order-2' : 'min-[860px]:order-1'
+          }`}
       >
         {textBody}
       </div>
       <div
-        className={`min-w-0 min-[860px]:col-span-5 ${
-          imageSide === 'left' ? 'min-[860px]:order-1' : 'min-[860px]:order-2'
-        } grid ${images.length >= 3 ? 'grid-cols-2 max-[520px]:grid-cols-1 gap-3' : 'grid-cols-1 gap-4'}`}
+        className={`min-w-0 min-[860px]:col-span-5 ${imageSide === 'left' ? 'min-[860px]:order-1' : 'min-[860px]:order-2'
+          } grid ${images.length >= 3 ? 'grid-cols-2 max-[520px]:grid-cols-1 gap-3' : 'grid-cols-1 gap-4'}`}
       >
         {images.map((image) => (
           <LessonFigure key={image.file} image={image} trackId={trackId} compact={multiImages} />
@@ -277,6 +283,7 @@ export function LearnView() {
   if (!parsed || !track || !lesson || !content || !learnKey || !trackProgress) return null;
 
   const trackId = track.id;
+  const trackLabel = sentenceCase(track.heading);
   const label = lessonLabel(lesson, index);
   const isFinal = lesson.kind === 'final';
   const isSummaryStep = clampedStepIdx === content.sections.length;
@@ -311,10 +318,10 @@ export function LearnView() {
   const nextLessonMeta =
     index + 1 < track.lessons.length
       ? {
-          key: lessonKeyFor(trackId, index + 1),
-          label: lessonLabel(track.lessons[index + 1], index + 1),
-          locked: trackProgress.lessons[index + 1]?.status === 'lock',
-        }
+        key: lessonKeyFor(trackId, index + 1),
+        label: lessonLabel(track.lessons[index + 1], index + 1),
+        locked: trackProgress.lessons[index + 1]?.status === 'lock',
+      }
       : null;
 
   const prevStepLabel =
@@ -335,7 +342,7 @@ export function LearnView() {
   return (
     <article
       aria-labelledby="learn-title"
-      className="w-full bg-panel grid grid-cols-1 min-[1000px]:grid-cols-[minmax(0,1fr)_340px] items-stretch min-h-[calc(100dvh-56px)]"
+      className="w-full bg-panel grid grid-cols-1 min-[1000px]:grid-cols-[minmax(0,1fr)_360px] items-stretch min-h-[calc(100dvh-56px)]"
     >
       {/* Left / Middle reading workspace */}
       <div className="min-w-0 flex flex-col relative">
@@ -347,19 +354,19 @@ export function LearnView() {
                 e.preventDefault();
                 navigate('curriculum');
               }}
-              className="inline-flex items-center gap-1.5 min-h-9 px-3 border border-line bg-panel text-ink font-semibold text-[12px] no-underline hover:border-ink hover:bg-panel2 transition-colors"
+              className="inline-flex items-center gap-1.5 min-h-9 px-3 border border-line bg-panel text-ink font-sans font-medium text-[14px] no-underline hover:border-ink hover:bg-panel2 transition-colors"
             >
               <Icon name="back" className="w-3.5 h-3.5" />
               Back to lessons
             </a>
             <div className="min-w-0">
-              <p className="m-0 flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.09em] text-muted">
+              <p className="m-0 flex items-center gap-1.5 font-sans font-semibold text-[14px] text-muted">
                 <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
-                {track.heading}
+                {trackLabel}
               </p>
               <h1
                 id="learn-title"
-                className="m-0 mt-0.5 font-disp text-[22px] max-[760px]:text-[19px] leading-tight tracking-[-0.02em] text-ink"
+                className="m-0 mt-0.5 font-disp font-extrabold text-[32px] max-[760px]:text-[24px] leading-[1.2] tracking-[-0.015em] text-ink"
               >
                 {label}
               </h1>
@@ -367,7 +374,7 @@ export function LearnView() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="num px-2.5 py-1 border border-line bg-panel text-[11px] font-bold text-muted">
+            <span className="num px-2.5 py-1 border border-line bg-panel text-[14px] text-muted">
               {clampedStepIdx + 1} / {totalSteps}
             </span>
             <button
@@ -375,10 +382,10 @@ export function LearnView() {
               aria-expanded={outlineOpen}
               aria-controls="course-outline-sidebar"
               onClick={() => setOutlineOpen((v) => !v)}
-              className="min-[1000px]:hidden inline-flex items-center gap-1.5 min-h-9 px-3 border border-line bg-panel text-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer hover:border-ink"
+              className="min-[1000px]:hidden inline-flex items-center gap-1.5 min-h-9 px-3 border border-line bg-panel text-ink font-sans font-medium text-[14px] cursor-pointer hover:border-ink"
             >
               <Icon name="book" className="w-3.5 h-3.5" />
-              Course Outline
+              Course outline
             </button>
           </div>
         </header>
@@ -386,18 +393,20 @@ export function LearnView() {
         {/* Active Section Body */}
         <div className="flex-1 relative px-10 max-[1100px]:px-6 max-[760px]:px-4 py-8 max-[760px]:py-6">
           {activeSection ? (
-            <section aria-labelledby="section-heading" className="max-w-[960px] mx-auto">
+            <section key={clampedStepIdx} aria-labelledby="section-heading" className="max-w-[960px] mx-auto">
               <h2
                 id="section-heading"
-                className="m-0 font-disp text-[30px] max-[760px]:text-[24px] font-bold leading-[1.15] tracking-[-0.02em] text-ink"
+                className="m-0 font-disp font-extrabold text-[44px] max-[760px]:text-[32px] leading-[1.15] tracking-[-0.015em] text-ink"
               >
-                <span className="num text-cyan mr-2.5">{activeSection.number}</span>
+                <span className="num text-[44px] max-[760px]:text-[32px] text-cyan mr-3">
+                  {activeSection.number}
+                </span>
                 {activeSection.title}
               </h2>
 
               {clampedStepIdx === 0 && (
-                <p className="mt-3 mb-0 px-4 py-2.5 border-l-2 border-cyan bg-panel2/50 text-[14.5px] leading-[1.6] text-ink/90 max-w-[78ch]">
-                  <b className="text-ink font-bold">Goal:</b> {content.goal}
+                <p className="mt-3 mb-0 px-4 py-2.5 border-l-2 border-cyan bg-panel2/50 font-sans font-normal text-[16px] leading-[1.65] text-ink/90 max-w-[78ch]">
+                  <b className="text-ink font-semibold">Goal:</b> {content.goal}
                 </p>
               )}
 
@@ -423,12 +432,12 @@ export function LearnView() {
           ) : (
             <section aria-labelledby="section-heading" className="max-w-[960px] mx-auto grid gap-7">
               <div>
-                <p className="m-0 text-[11px] font-bold uppercase tracking-[0.09em] text-cyan">
+                <p className="m-0 font-sans font-semibold text-[14px] text-cyan">
                   Lesson recap
                 </p>
                 <h2
                   id="section-heading"
-                  className="m-0 mt-1 font-disp text-[30px] max-[760px]:text-[24px] font-bold leading-[1.15] tracking-[-0.02em] text-ink"
+                  className="m-0 mt-1 font-disp font-extrabold text-[44px] max-[760px]:text-[32px] leading-[1.15] tracking-[-0.015em] text-ink"
                 >
                   Summary &amp; review
                 </h2>
@@ -436,8 +445,10 @@ export function LearnView() {
 
               <div className="grid grid-cols-2 max-[760px]:grid-cols-1 border border-line">
                 <div className="p-6 max-[760px]:p-4 border-r border-line max-[760px]:border-r-0 max-[760px]:border-b bg-panel">
-                  <h3 className="m-0 mb-3 font-disp text-[19px] font-bold text-ink">Key points</h3>
-                  <ul className="grid gap-2.5 m-0 pl-5 list-disc text-[14.5px] leading-[1.6] text-ink">
+                  <h3 className="m-0 mb-3 font-disp font-extrabold text-[22px] tracking-[-0.015em] text-ink">
+                    Key points
+                  </h3>
+                  <ul className="grid gap-2.5 m-0 pl-5 list-disc font-sans font-normal text-[16px] leading-[1.65] text-ink">
                     {content.keyPoints.map((point) => (
                       <li key={point}>{point}</li>
                     ))}
@@ -445,10 +456,10 @@ export function LearnView() {
                 </div>
 
                 <div className="p-6 max-[760px]:p-4 bg-panel2/60">
-                  <h3 className="m-0 mb-3 font-disp text-[19px] font-bold text-ink">
+                  <h3 className="m-0 mb-3 font-disp font-extrabold text-[22px] tracking-[-0.015em] text-ink">
                     Common mistakes
                   </h3>
-                  <ul className="grid gap-2.5 m-0 pl-5 list-disc text-[14.5px] leading-[1.6] text-muted">
+                  <ul className="grid gap-2.5 m-0 pl-5 list-disc font-sans font-normal text-[16px] leading-[1.65] text-muted">
                     {content.commonMistakes.map((mistake) => (
                       <li key={mistake}>{mistake}</li>
                     ))}
@@ -457,10 +468,10 @@ export function LearnView() {
               </div>
 
               <div className="pt-5 border-t border-line">
-                <h3 className="m-0 mb-3 text-[12px] font-bold text-muted uppercase tracking-[0.08em]">
+                <h3 className="m-0 mb-3 font-disp font-extrabold text-[22px] tracking-[-0.015em] text-ink">
                   References
                 </h3>
-                <ol className="grid gap-2 text-[14px] leading-relaxed m-0 pl-5 list-decimal">
+                <ol className="grid gap-2 font-sans font-normal text-[15px] leading-[1.65] m-0 pl-5 list-decimal">
                   {content.references.map((ref) => (
                     <li key={ref.url}>
                       <a
@@ -488,7 +499,7 @@ export function LearnView() {
               type="button"
               disabled={clampedStepIdx === 0}
               onClick={() => selectStep(clampedStepIdx - 1)}
-              className="inline-flex items-center gap-2 min-h-10 px-4 border border-line bg-panel text-ink font-semibold text-[12.5px] cursor-pointer hover:border-ink hover:bg-panel2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center gap-2 min-h-10 px-4 border border-line bg-panel text-ink font-sans font-medium text-[15px] cursor-pointer hover:border-ink hover:bg-panel2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <Icon name="back" className="w-3.5 h-3.5" />
               {prevStepLabel ? `Previous: ${prevStepLabel}` : 'Previous'}
@@ -497,7 +508,7 @@ export function LearnView() {
             {nextStepLabel ? (
               <div className="flex items-center gap-3 flex-wrap">
                 {!isCurrentStepCompleted && (
-                  <span className="text-[11.5px] text-muted">
+                  <span className="font-sans text-[14px] text-muted">
                     Scroll to the bottom to unlock next
                   </span>
                 )}
@@ -505,7 +516,7 @@ export function LearnView() {
                   type="button"
                   disabled={!isCurrentStepCompleted}
                   onClick={() => selectStep(clampedStepIdx + 1)}
-                  className="sb-cut-sm inline-flex items-center gap-2 min-h-10 px-4 border border-cyan bg-cyan/15 text-cyan font-bold text-[12.5px] cursor-pointer hover:bg-cyan/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="sb-cut-sm inline-flex items-center gap-2 min-h-10 px-4 border border-cyan bg-cyan/15 text-cyan font-sans font-medium text-[15px] cursor-pointer hover:bg-cyan/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   <span>Next: {nextStepLabel}</span>
                   <Icon name="back" className="w-3.5 h-3.5 rotate-180" />
@@ -515,7 +526,7 @@ export function LearnView() {
               <button
                 type="button"
                 onClick={() => jumpToLessonStep(nextLessonMeta.key, 0)}
-                className="sb-cut-sm inline-flex items-center gap-2 min-h-10 px-4 border border-line bg-panel text-ink font-semibold text-[12.5px] cursor-pointer hover:border-ink hover:bg-panel2 transition-colors"
+                className="sb-cut-sm inline-flex items-center gap-2 min-h-10 px-4 border border-line bg-panel text-ink font-sans font-medium text-[15px] cursor-pointer hover:border-ink hover:bg-panel2 transition-colors"
               >
                 <span>Next lesson: {nextLessonMeta.label}</span>
                 <Icon name="back" className="w-3.5 h-3.5 rotate-180" />
@@ -525,7 +536,7 @@ export function LearnView() {
         </footer>
       </div>
 
-      {/* Right Sidebar: Course Outline & Resources */}
+      {/* Right Sidebar: Course outline & Resources */}
       {outlineOpen && (
         <div
           aria-hidden="true"
@@ -537,11 +548,10 @@ export function LearnView() {
       <aside
         id="course-outline-sidebar"
         aria-label="Course outline"
-        className={`${
-          outlineOpen
-            ? 'fixed right-0 top-[56px] bottom-0 z-50 w-[320px] max-w-[90vw] flex'
-            : 'hidden min-[1000px]:flex'
-        } min-[1000px]:sticky min-[1000px]:top-[56px] min-[1000px]:h-[calc(100dvh-56px)] flex-col border-l border-line bg-panel2`}
+        className={`${outlineOpen
+          ? 'fixed right-0 top-[56px] bottom-0 z-50 w-[340px] max-w-[90vw] flex'
+          : 'hidden min-[1000px]:flex'
+          } min-[1000px]:sticky min-[1000px]:top-[56px] min-[1000px]:h-[calc(100dvh-56px)] flex-col border-l border-line bg-panel2`}
       >
         {/* Top Tabs */}
         <div className="flex items-center border-b border-line bg-panel">
@@ -553,13 +563,12 @@ export function LearnView() {
               aria-selected={sidebarTab === 'outline'}
               aria-controls="panel-outline"
               onClick={() => setSidebarTab('outline')}
-              className={`min-h-11 px-3 flex items-center justify-center gap-1.5 border-0 border-b-2 font-bold text-[11.5px] uppercase tracking-[0.06em] cursor-pointer transition-colors ${
-                sidebarTab === 'outline'
-                  ? 'border-cyan text-ink bg-panel2/60'
-                  : 'border-transparent text-muted hover:text-ink bg-transparent'
-              }`}
+              className={`min-h-11 px-3 flex items-center justify-center gap-1.5 border-0 border-b-2 font-sans font-medium text-[15px] cursor-pointer transition-colors ${sidebarTab === 'outline'
+                ? 'border-cyan text-ink bg-panel2/60'
+                : 'border-transparent text-muted hover:text-ink bg-transparent'
+                }`}
             >
-              Course Outline
+              Course outline
             </button>
             <button
               type="button"
@@ -568,11 +577,10 @@ export function LearnView() {
               aria-selected={sidebarTab === 'resources'}
               aria-controls="panel-resources"
               onClick={() => setSidebarTab('resources')}
-              className={`min-h-11 px-3 flex items-center justify-center gap-1.5 border-0 border-b-2 font-bold text-[11.5px] uppercase tracking-[0.06em] cursor-pointer transition-colors ${
-                sidebarTab === 'resources'
-                  ? 'border-cyan text-ink bg-panel2/60'
-                  : 'border-transparent text-muted hover:text-ink bg-transparent'
-              }`}
+              className={`min-h-11 px-3 flex items-center justify-center gap-1.5 border-0 border-b-2 font-sans font-medium text-[15px] cursor-pointer transition-colors ${sidebarTab === 'resources'
+                ? 'border-cyan text-ink bg-panel2/60'
+                : 'border-transparent text-muted hover:text-ink bg-transparent'
+                }`}
             >
               Resources
             </button>
@@ -601,14 +609,16 @@ export function LearnView() {
                   onChange={(e) => setOutlineSearch(e.target.value)}
                   placeholder="Search course outline"
                   aria-label="Search course outline"
-                  className="w-full min-h-9 pl-8 pr-3 border border-line bg-bg text-ink text-[12px] placeholder:text-muted focus-visible:outline-none focus-visible:border-cyan"
+                  className="w-full min-h-9 pl-8 pr-3 border border-line bg-bg text-ink font-sans font-normal text-[15px] placeholder:text-muted focus-visible:outline-none focus-visible:border-cyan"
                 />
               </div>
 
               <div className="p-3 border border-line bg-panel">
-                <div className="flex items-center justify-between gap-2 text-[11px] font-bold uppercase tracking-[0.06em]">
-                  <span className="text-ink truncate">{track.heading}</span>
-                  <span className="num text-cyan shrink-0">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-sans font-semibold text-[15px] text-ink truncate">
+                    {trackLabel}
+                  </span>
+                  <span className="num text-[14px] text-cyan shrink-0">
                     {completedCount}/{totalSteps} · {completedPct}%
                   </span>
                 </div>
@@ -636,14 +646,14 @@ export function LearnView() {
 
                   const matchingSections = tContent
                     ? tContent.sections
-                        .map((sec, sIdx) => ({ sec, sIdx }))
-                        .filter(
-                          ({ sec }) =>
-                            !query ||
-                            sec.number.toLowerCase().includes(query) ||
-                            sec.title.toLowerCase().includes(query) ||
-                            tLabel.toLowerCase().includes(query),
-                        )
+                      .map((sec, sIdx) => ({ sec, sIdx }))
+                      .filter(
+                        ({ sec }) =>
+                          !query ||
+                          sec.number.toLowerCase().includes(query) ||
+                          sec.title.toLowerCase().includes(query) ||
+                          tLabel.toLowerCase().includes(query),
+                      )
                     : [];
 
                   const summaryMatches =
@@ -662,9 +672,8 @@ export function LearnView() {
                   return (
                     <div
                       key={tKey}
-                      className={`border ${
-                        isCurrentLesson ? 'border-cyan/60 bg-panel' : 'border-line bg-panel/60'
-                      }`}
+                      className={`border ${isCurrentLesson ? 'border-cyan/60 bg-panel' : 'border-line bg-panel/60'
+                        }`}
                     >
                       <button
                         type="button"
@@ -677,48 +686,45 @@ export function LearnView() {
                             [tKey]: !(prev[tKey] ?? isCurrentLesson),
                           }));
                         }}
-                        className={`w-full px-3 py-2.5 flex items-center justify-between gap-2 text-left border-0 bg-transparent transition-colors ${
-                          isLocked
-                            ? 'text-muted opacity-65 cursor-not-allowed'
-                            : 'text-ink cursor-pointer hover:bg-panel2/60'
-                        }`}
+                        className={`w-full px-3 py-2.5 flex items-center justify-between gap-2 text-left border-0 bg-transparent transition-colors ${isLocked
+                          ? 'text-muted opacity-65 cursor-not-allowed'
+                          : 'text-ink cursor-pointer hover:bg-panel2/60'
+                          }`}
                       >
-                        <span className="flex items-center gap-2 min-w-0">
+                        <span className="flex items-center gap-2.5 min-w-0">
                           <span
-                            className={`w-5 h-5 shrink-0 grid place-items-center text-[10px] font-bold ${
-                              isDone
-                                ? 'bg-green text-green-ink'
-                                : isLocked
-                                  ? 'bg-panel3 text-muted'
-                                  : isCurrentLesson
-                                    ? 'bg-cyan text-cyan-ink'
-                                    : 'border border-line text-muted'
-                            }`}
+                            className={`w-6 h-6 shrink-0 grid place-items-center text-[14px] ${isDone
+                              ? 'bg-green text-green-ink'
+                              : isLocked
+                                ? 'bg-panel3 text-muted'
+                                : isCurrentLesson
+                                  ? 'bg-cyan text-cyan-ink'
+                                  : 'border border-line text-muted'
+                              }`}
                           >
                             {isDone ? (
-                              <Icon name="check" className="w-3 h-3" strokeWidth={2.75} />
+                              <Icon name="check" className="w-3.5 h-3.5" strokeWidth={2.75} />
                             ) : isLocked ? (
-                              <Icon name="lock" className="w-3 h-3" />
+                              <Icon name="lock" className="w-3.5 h-3.5" />
                             ) : (
-                              lIdx + 1
+                              <span className="num text-[14px]">{lIdx + 1}</span>
                             )}
                           </span>
-                          <span className="font-head font-bold text-[12.5px] leading-snug truncate">
+                          <span className="font-head font-semibold text-[16px] leading-snug tracking-[-0.015em] truncate">
                             {tLabel}
                           </span>
                         </span>
                         <span className="flex items-center gap-1.5 shrink-0">
                           {tContent && (
-                            <span className="num text-[10.5px] text-muted">
+                            <span className="num text-[14px] text-muted">
                               {tContent.sections.length + 1}
                             </span>
                           )}
                           {!isLocked && (
                             <Icon
                               name="back"
-                              className={`w-3.5 h-3.5 text-muted transition-transform ${
-                                isExpanded ? '-rotate-90' : 'rotate-180'
-                              }`}
+                              className={`w-3.5 h-3.5 text-muted transition-transform ${isExpanded ? '-rotate-90' : 'rotate-180'
+                                }`}
                             />
                           )}
                         </span>
@@ -739,17 +745,15 @@ export function LearnView() {
                                 />
                                 <span
                                   aria-hidden="true"
-                                  className={`absolute left-[1px] top-2.5 w-3.5 h-3.5 grid place-items-center rounded-full border ${
-                                    isCompleted
-                                      ? `border-green bg-green text-green-ink ${
-                                          isActive ? 'ring-2 ring-cyan ring-offset-1 ring-offset-panel2' : ''
-                                        }`
-                                      : isActive
-                                        ? 'border-cyan bg-cyan text-cyan-ink'
-                                        : isSectionLocked
-                                          ? 'border-line bg-panel3 text-muted'
-                                          : 'border-line bg-panel'
-                                  }`}
+                                  className={`absolute left-[1px] top-3 w-3.5 h-3.5 grid place-items-center rounded-full border ${isCompleted
+                                    ? `border-green bg-green text-green-ink ${isActive ? 'ring-2 ring-cyan ring-offset-1 ring-offset-panel2' : ''
+                                    }`
+                                    : isActive
+                                      ? 'border-cyan bg-cyan text-cyan-ink'
+                                      : isSectionLocked
+                                        ? 'border-line bg-panel3 text-muted'
+                                        : 'border-line bg-panel'
+                                    }`}
                                 >
                                   {isCompleted ? (
                                     <Icon name="check" className="w-2.5 h-2.5" strokeWidth={3} />
@@ -763,15 +767,14 @@ export function LearnView() {
                                   title={isSectionLocked ? 'Finish the previous section first' : undefined}
                                   aria-current={isActive ? 'step' : undefined}
                                   onClick={() => jumpToLessonStep(tKey, sIdx)}
-                                  className={`w-full py-1.5 px-2 my-0.5 text-left text-[12.5px] leading-snug border-0 transition-colors ${
-                                    isSectionLocked
-                                      ? 'bg-transparent text-muted opacity-55 cursor-not-allowed'
-                                      : isActive
-                                        ? 'bg-panel3 text-ink font-bold cursor-pointer'
-                                        : 'bg-transparent text-muted hover:text-ink hover:bg-panel2/60 cursor-pointer'
-                                  }`}
+                                  className={`w-full py-1.5 px-2 my-0.5 text-left font-sans text-[15px] leading-[1.5] border-0 transition-colors ${isSectionLocked
+                                    ? 'bg-transparent text-muted opacity-55 cursor-not-allowed font-normal'
+                                    : isActive
+                                      ? 'bg-panel3 text-ink font-semibold cursor-pointer'
+                                      : 'bg-transparent text-muted hover:text-ink hover:bg-panel2/60 cursor-pointer font-normal'
+                                    }`}
                                 >
-                                  <span className="num mr-1.5 text-cyan">{sec.number}</span>
+                                  <span className="num text-[14px] mr-2 text-cyan">{sec.number}</span>
                                   <span>{sec.title}</span>
                                 </button>
                               </li>
@@ -794,17 +797,15 @@ export function LearnView() {
                                     />
                                     <span
                                       aria-hidden="true"
-                                      className={`absolute left-[1px] top-2.5 w-3.5 h-3.5 grid place-items-center rounded-full border ${
-                                        isCompleted
-                                          ? `border-green bg-green text-green-ink ${
-                                              isActive ? 'ring-2 ring-cyan ring-offset-1 ring-offset-panel2' : ''
-                                            }`
-                                          : isActive
-                                            ? 'border-cyan bg-cyan text-cyan-ink'
-                                            : isSectionLocked
-                                              ? 'border-line bg-panel3 text-muted'
-                                              : 'border-line bg-panel'
-                                      }`}
+                                      className={`absolute left-[1px] top-3 w-3.5 h-3.5 grid place-items-center rounded-full border ${isCompleted
+                                        ? `border-green bg-green text-green-ink ${isActive ? 'ring-2 ring-cyan ring-offset-1 ring-offset-panel2' : ''
+                                        }`
+                                        : isActive
+                                          ? 'border-cyan bg-cyan text-cyan-ink'
+                                          : isSectionLocked
+                                            ? 'border-line bg-panel3 text-muted'
+                                            : 'border-line bg-panel'
+                                        }`}
                                     >
                                       {isCompleted ? (
                                         <Icon name="check" className="w-2.5 h-2.5" strokeWidth={3} />
@@ -818,13 +819,12 @@ export function LearnView() {
                                       title={isSectionLocked ? 'Finish the previous section first' : undefined}
                                       aria-current={isActive ? 'step' : undefined}
                                       onClick={() => jumpToLessonStep(tKey, summaryIdx)}
-                                      className={`w-full py-1.5 px-2 my-0.5 text-left text-[12.5px] leading-snug border-0 transition-colors ${
-                                        isSectionLocked
-                                          ? 'bg-transparent text-muted opacity-55 cursor-not-allowed'
-                                          : isActive
-                                            ? 'bg-panel3 text-ink font-bold cursor-pointer'
-                                            : 'bg-transparent text-muted hover:text-ink hover:bg-panel2/60 cursor-pointer'
-                                      }`}
+                                      className={`w-full py-1.5 px-2 my-0.5 text-left font-sans text-[15px] leading-[1.5] border-0 transition-colors ${isSectionLocked
+                                        ? 'bg-transparent text-muted opacity-55 cursor-not-allowed font-normal'
+                                        : isActive
+                                          ? 'bg-panel3 text-ink font-semibold cursor-pointer'
+                                          : 'bg-transparent text-muted hover:text-ink hover:bg-panel2/60 cursor-pointer font-normal'
+                                        }`}
                                     >
                                       Summary &amp; review
                                     </button>
@@ -843,17 +843,19 @@ export function LearnView() {
           ) : (
             <div role="tabpanel" id="panel-resources" aria-labelledby="tab-resources" className="p-4 grid gap-5">
               <div className="p-3.5 border border-line bg-panel">
-                <h2 className="m-0 text-[11px] font-bold uppercase tracking-[0.08em] text-cyan">
+                <h2 className="m-0 font-head font-semibold text-[16px] tracking-[-0.015em] text-cyan">
                   Lesson goal
                 </h2>
-                <p className="m-0 mt-1.5 text-[13px] leading-relaxed text-ink/90">{content.goal}</p>
+                <p className="m-0 mt-1.5 font-sans font-normal text-[15px] leading-[1.65] text-ink/90">
+                  {content.goal}
+                </p>
               </div>
 
               <div className="p-3.5 border border-line bg-panel">
-                <h2 className="m-0 text-[11px] font-bold uppercase tracking-[0.08em] text-muted">
+                <h2 className="m-0 font-head font-semibold text-[16px] tracking-[-0.015em] text-ink">
                   Key takeaways
                 </h2>
-                <ul className="m-0 mt-2 pl-4 list-disc grid gap-1.5 text-[12.5px] leading-snug text-ink/85">
+                <ul className="m-0 mt-2 pl-4 list-disc grid gap-1.5 font-sans font-normal text-[15px] leading-[1.65] text-ink/85">
                   {content.keyPoints.map((pt) => (
                     <li key={pt}>{pt}</li>
                   ))}
@@ -861,10 +863,10 @@ export function LearnView() {
               </div>
 
               <div>
-                <h2 className="m-0 mb-2.5 text-[11px] font-bold uppercase tracking-[0.08em] text-muted">
+                <h2 className="m-0 mb-2.5 font-head font-semibold text-[16px] tracking-[-0.015em] text-ink">
                   References
                 </h2>
-                <ol className="m-0 pl-4 list-decimal grid gap-2 text-[12.5px] leading-snug">
+                <ol className="m-0 pl-4 list-decimal grid gap-2 font-sans font-normal text-[14px] leading-[1.65]">
                   {content.references.map((ref) => (
                     <li key={ref.url}>
                       <a
@@ -889,7 +891,7 @@ export function LearnView() {
             <button
               type="button"
               onClick={() => navigate('curriculum')}
-              className="sb-cut w-full inline-flex items-center justify-center gap-2 min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[12px] uppercase tracking-[0.05em] cursor-pointer hover:brightness-110 transition-colors"
+              className="sb-cut w-full inline-flex items-center justify-center gap-2 min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-head font-semibold text-[16px] tracking-[-0.015em] cursor-pointer hover:brightness-110 transition-colors"
             >
               <Icon name="play" className="w-3.5 h-3.5" />
               Go to Boss Lab Sandbox ▶
@@ -899,12 +901,14 @@ export function LearnView() {
               <button
                 type="button"
                 onClick={() => navigate(`quiz/${learnKey}`)}
-                className="sb-cut w-full inline-flex items-center justify-center gap-2 min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-bold text-[12.5px] cursor-pointer hover:brightness-110 transition-colors"
+                className="sb-cut w-full inline-flex items-center justify-center gap-2 min-h-11 px-4 border border-cyan bg-cyan text-cyan-ink font-head font-semibold text-[16px] tracking-[-0.015em] cursor-pointer hover:brightness-110 transition-colors"
               >
                 Take the quiz
               </button>
-              <p className="m-0 text-center text-[11px] text-muted">
-                {QUIZ_LENGTH} questions · {DEFAULT_PASS_MARK} of {QUIZ_LENGTH} to pass
+              <p className="m-0 text-center font-sans text-[14px] text-muted">
+                <span className="num text-[14px]">{QUIZ_LENGTH}</span> questions ·{' '}
+                <span className="num text-[14px]">{DEFAULT_PASS_MARK}</span> of{' '}
+                <span className="num text-[14px]">{QUIZ_LENGTH}</span> to pass
               </p>
             </div>
           )}

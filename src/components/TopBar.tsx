@@ -116,8 +116,8 @@ export function TopBar() {
         }`}
       >
         <i className="buddy-logo block w-9 h-9 flex-none" aria-hidden="true" />
-        <span className="font-disp text-[14px] tracking-[0.02em] uppercase max-[760px]:hidden">
-          STREAK<span className="text-cyan">BYTE</span>
+        <span className="font-disp font-bold text-[15px] tracking-[-0.015em] max-[760px]:hidden">
+          Streak<span className="text-cyan">Byte</span>
         </span>
       </a>
 
@@ -138,9 +138,9 @@ export function TopBar() {
                 e.preventDefault();
                 navigate(tab.id);
               }}
-              className={`relative flex items-center gap-2 px-3.5 max-[1100px]:px-3 max-[760px]:flex-1 max-[760px]:flex-col max-[760px]:justify-center max-[760px]:gap-0.5 max-[760px]:px-1 max-[760px]:border-r max-[760px]:border-line max-[760px]:last:border-r-0 text-[11px] max-[760px]:text-[9.5px] uppercase tracking-[0.07em] no-underline whitespace-nowrap transition-colors ${isCurrent
-                  ? 'bg-panel3 text-ink font-bold max-[760px]:shadow-[inset_0_3px_0_var(--cyan)]'
-                  : 'text-muted font-semibold hover:text-ink hover:bg-panel2'
+              className={`relative flex items-center gap-2 px-3.5 max-[1100px]:px-3 max-[760px]:flex-1 max-[760px]:flex-col max-[760px]:justify-center max-[760px]:gap-0.5 max-[760px]:px-1 max-[760px]:border-r max-[760px]:border-line max-[760px]:last:border-r-0 font-sans font-medium text-[14px] max-[760px]:text-[11px] no-underline whitespace-nowrap transition-colors ${isCurrent
+                  ? 'bg-panel3 text-ink max-[760px]:shadow-[inset_0_3px_0_var(--cyan)]'
+                  : 'text-muted hover:text-ink hover:bg-panel2'
                 } ${lockedOut ? 'opacity-45 cursor-not-allowed' : ''}`}
             >
               <Icon
@@ -157,18 +157,18 @@ export function TopBar() {
         {!isOnline ? (
           <span
             role="status"
-            className="inline-flex items-center gap-1.5 min-h-8 px-2.5 py-1 border border-amber bg-amber/10 text-amber text-[10.5px] font-bold uppercase tracking-[0.05em] whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 min-h-8 px-2.5 py-1 border border-amber bg-amber/10 text-amber font-sans font-medium text-[13px] whitespace-nowrap"
           >
-            Offline{canShowSyncCount ? ` · ${pendingSyncCount} queued` : ''}
+            Offline{canShowSyncCount ? <> · <span className="num text-[13px]">{pendingSyncCount}</span> queued</> : ''}
           </span>
         ) : canShowSyncCount ? (
           <button
             type="button"
             disabled={isSyncing}
             onClick={() => void flushSyncQueue()}
-            className="inline-flex items-center gap-1.5 min-h-8 px-2.5 py-1 border border-cyan bg-cyan/10 text-cyan text-[10.5px] font-bold uppercase tracking-[0.05em] whitespace-nowrap cursor-pointer hover:bg-cyan hover:text-cyan-ink disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 min-h-8 px-2.5 py-1 border border-cyan bg-cyan/10 text-cyan font-sans font-medium text-[13px] whitespace-nowrap cursor-pointer hover:bg-cyan hover:text-cyan-ink disabled:opacity-60"
           >
-            {isSyncing ? 'Syncing…' : `Sync (${pendingSyncCount})`}
+            {isSyncing ? 'Syncing…' : <>Sync (<span className="num text-[13px]">{pendingSyncCount}</span>)</>}
           </button>
         ) : null}
 
@@ -182,12 +182,12 @@ export function TopBar() {
             aria-controls="streak-popover"
             aria-label={streakLabel}
             title={streakLabel}
-            className={`inline-flex items-center gap-1.5 min-h-9 px-2.5 py-1.5 border bg-panel font-bold text-[11px] uppercase tracking-[0.05em] text-ink whitespace-nowrap cursor-pointer transition-colors hover:bg-panel2 ${streakOpen ? 'border-cyan' : restorable ? 'border-amber' : 'border-transparent hover:border-line'
+            className={`inline-flex items-center gap-1.5 min-h-9 px-2.5 py-1.5 border bg-panel font-sans font-medium text-[14px] text-ink whitespace-nowrap cursor-pointer transition-colors hover:bg-panel2 ${streakOpen ? 'border-cyan' : restorable ? 'border-amber' : 'border-transparent hover:border-line'
               }`}
           >
             <span className="w-1.5 h-1.5 bg-cyan inline-block flex-none" aria-hidden="true" />
-            <span className="max-[1180px]:hidden">STREAK</span>
-            <span className="num">{streakDays}</span>
+            <span className="max-[1180px]:hidden">Streak</span>
+            <span className="num text-[14px]">{streakDays}</span>
             {restorable && (
               <span className="w-1.5 h-1.5 bg-amber" aria-hidden="true" />
             )}
@@ -201,8 +201,8 @@ export function TopBar() {
               className="sb-pop absolute right-0 top-[calc(100%+8px)] z-50 w-[320px] max-w-[calc(100vw-24px)] max-[760px]:fixed max-[760px]:left-3 max-[760px]:right-3 max-[760px]:top-[64px] max-[760px]:w-auto bg-panel border border-ink p-4 shadow-[6px_6px_0_rgba(20,20,20,0.18)]"
             >
               <div className="flex justify-between items-center gap-3">
-                <h2 className="m-0 font-head text-base font-bold">{streakLabel}</h2>
-                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] bg-cyan/12 text-cyan">
+                <h2 className="m-0 font-head font-bold text-base">{streakLabel}</h2>
+                <span className="px-2 py-0.5 font-sans font-medium text-[12px] bg-cyan/12 text-cyan">
                   {restorable ? 'Restorable' : streakDays > 0 ? 'Active' : 'Start'}
                 </span>
               </div>
@@ -211,25 +211,25 @@ export function TopBar() {
                 todayIndex={weekStrip.todayIndex}
                 ariaLabel={weekStrip.ariaLabel}
               />
-              <p className="m-0 text-muted text-[11.5px]">{streakCopy}</p>
+              <p className="m-0 text-muted text-[13px]">{streakCopy}</p>
               <div className="mt-3 pt-3 border-t border-line grid gap-2">
-                <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.04em]">
+                <div className="flex items-center justify-between font-sans font-medium text-[13px]">
                   <span className="text-muted">Streak restores</span>
-                  <span className="num text-ink">
-                    {streak.restoresLeft} / {MAX_STREAK_RESTORES} held
+                  <span className="text-ink">
+                    <span className="num text-[14px]">{streak.restoresLeft} / {MAX_STREAK_RESTORES}</span> held
                   </span>
                 </div>
                 {restorable && (
                   <button
                     type="button"
                     onClick={() => void restoreCurrentStreak()}
-                    className="sb-cut-sm w-full inline-flex items-center justify-center min-h-9 px-4 border-0 bg-amber text-amber-ink font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-all hover:brightness-110"
+                    className="sb-cut-sm w-full inline-flex items-center justify-center min-h-9 px-4 border-0 bg-amber text-amber-ink font-sans font-medium text-[13px] cursor-pointer transition-all hover:brightness-110"
                   >
-                    Restore streak ({streak.restoresLeft} left)
+                    Restore streak (<span className="num text-[13px]">{streak.restoresLeft}</span> left)
                   </button>
                 )}
                 {inRestoreWindow && !restorable && (
-                  <p className="m-0 text-[11px] text-amber font-semibold">
+                  <p className="m-0 text-[13px] text-amber font-semibold">
                     Your {streak.current}-day streak broke — buy a restore below to save it!
                   </p>
                 )}
@@ -237,11 +237,11 @@ export function TopBar() {
                   type="button"
                   disabled={!canAffordRestore}
                   onClick={() => void buyStreakRestore()}
-                  className="w-full inline-flex items-center justify-center min-h-9 px-3 border border-line bg-panel2 text-ink font-bold text-[10.5px] uppercase tracking-[0.05em] cursor-pointer transition-colors hover:border-ink disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full inline-flex items-center justify-center min-h-9 px-3 border border-line bg-panel2 text-ink font-sans font-medium text-[13px] cursor-pointer transition-colors hover:border-ink disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {atMaxRestores
                     ? 'Max restores held'
-                    : `Buy restore · ${STREAK_RESTORE_COST_XP} XP`}
+                    : <>Buy restore · <span className="num text-[13px] ml-1">{STREAK_RESTORE_COST_XP}</span>&nbsp;XP</>}
                 </button>
               </div>
             </section>
@@ -249,10 +249,10 @@ export function TopBar() {
         </div>
 
         <div
-          className="inline-flex items-center gap-1.5 min-h-9 px-2 py-1.5 font-bold text-[11px] uppercase tracking-[0.05em] text-ink whitespace-nowrap flex-none"
+          className="inline-flex items-center gap-1.5 min-h-9 px-2 py-1.5 font-sans font-medium text-[14px] text-ink whitespace-nowrap flex-none"
           title="Total XP"
         >
-          <span className="num">{formatXp(totalXp)}</span>
+          <span className="num text-[14px]">{formatXp(totalXp)}</span>
           <span className="max-[1180px]:hidden">XP</span>
         </div>
 
@@ -274,7 +274,7 @@ export function TopBar() {
             e.preventDefault();
             navigate('profile');
           }}
-          className={`sb-cut-sm inline-flex items-center justify-center min-w-[96px] h-9 px-4 bg-cyan text-cyan-ink font-bold text-[11px] uppercase tracking-[0.06em] flex-none no-underline whitespace-nowrap transition-colors hover:brightness-110 ${
+          className={`sb-cut-sm inline-flex items-center justify-center min-w-[96px] h-9 px-4 bg-cyan text-cyan-ink font-sans font-medium text-[14px] flex-none no-underline whitespace-nowrap transition-colors hover:brightness-110 ${
             isInActiveDuel ? 'opacity-45 cursor-not-allowed' : ''
           }`}
         >

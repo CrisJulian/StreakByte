@@ -14,7 +14,7 @@ function open(key: string) {
 
 function mockScrolledToBottom(container: HTMLElement) {
   const sentinel = container.querySelector('[data-testid="section-end"]') as HTMLElement;
-  vi.spyOn(sentinel, 'getBoundingClientRect').mockReturnValue({
+  const spy = vi.spyOn(sentinel, 'getBoundingClientRect').mockReturnValue({
     x: 0,
     y: 400,
     top: 400,
@@ -28,6 +28,7 @@ function mockScrolledToBottom(container: HTMLElement) {
   act(() => {
     fireEvent.scroll(window);
   });
+  spy.mockRestore();
 }
 
 describe('Learn page', () => {

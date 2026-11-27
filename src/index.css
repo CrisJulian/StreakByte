@@ -20,10 +20,10 @@
   --color-you: var(--you);
   --color-dark-card: var(--dark-card);
   --color-dark-line: var(--dark-line);
-  --font-disp: "Outfit", system-ui, sans-serif;
-  --font-head: "Outfit", system-ui, sans-serif;
-  --font-sans: "DM Sans", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-disp: "Schibsted Grotesk", system-ui, sans-serif;
+  --font-head: "Schibsted Grotesk", system-ui, sans-serif;
+  --font-sans: "Source Sans 3", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
 :root {
@@ -53,10 +53,10 @@
   --dimm-bg: #18214a;
   --dimm-stroke: #3a4690;
   --dimm-chip: #0b1020;
-  --disp: "Outfit", system-ui, sans-serif;
-  --head: "Outfit", system-ui, sans-serif;
-  --sans: "DM Sans", system-ui, sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --disp: "Schibsted Grotesk", system-ui, sans-serif;
+  --head: "Schibsted Grotesk", system-ui, sans-serif;
+  --sans: "Source Sans 3", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   scrollbar-color: var(--line) transparent;
   caret-color: var(--cyan);
@@ -111,7 +111,7 @@
     min-height: 100dvh;
     background: var(--bg);
     color: var(--text);
-    font: 400 14px/1.5 var(--sans);
+    font: 400 15px/1.65 var(--sans);
     -webkit-font-smoothing: antialiased;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -155,27 +155,22 @@
 
 .num {
   font-family: var(--mono);
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
-}
-
-.font-disp {
-  font-weight: 800;
 }
 
 .sb-page-title {
   font-family: var(--font-disp);
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: -0.03em;
-  line-height: 1.02;
+  letter-spacing: -0.015em;
+  line-height: 1.08;
 }
 
 .sb-section-title {
   font-family: var(--font-disp);
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  line-height: 1.08;
+  letter-spacing: -0.015em;
+  line-height: 1.12;
 }
 
 .sb-cut {
