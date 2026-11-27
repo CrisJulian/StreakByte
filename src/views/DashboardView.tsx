@@ -2,10 +2,9 @@ import { CornerBrackets, IsometricCubeSvg } from '../components/ByteMascotSvg';
 import { Icon } from '../components/Icon';
 import { WelcomeMascot } from '../components/WelcomeMascot';
 import { getTrackProgress, LESSON_XP_BY_KEY, lessonLabel, TRACKS } from '../data/curriculum';
-import { formatXp, initialsFor } from '../data/leaderboard';
+import { formatXp } from '../data/leaderboard';
 import { deriveDailyQuests, ensureDailyActivity } from '../domain/rules/dailyQuests';
 import { lessonKeyFor } from '../domain/rules/lessonProgress';
-import { deriveAchievements } from '../domain/rules/progressViews';
 import {
   calculateTotalXp,
   calculateWeeklyXp,
@@ -122,8 +121,6 @@ export function DashboardView() {
   const xpSpent = useStreakByteStore((s) => s.xpSpent);
   const dailyActivity = useStreakByteStore((s) => s.dailyActivity);
   const leaderboard = useStreakByteStore((s) => s.leaderboard);
-  const arenaStats = useStreakByteStore((s) => s.arenaStats);
-  const classrooms = useStreakByteStore((s) => s.classrooms);
   const authUser = useStreakByteStore((s) => s.authUser);
   const isGuest = useStreakByteStore((s) => s.isGuest);
   const selectedTracks = useStreakByteStore((s) => s.profileSettings.selectedTracks);
@@ -165,24 +162,7 @@ export function DashboardView() {
     },
     'w',
   );
-  const previewRows = ranked.slice(0, 5);
   const me = ranked.find((r) => r.isYou) ?? ranked[0];
-  const achievements = deriveAchievements({
-    completions,
-    streak,
-    totalXp,
-    hwTotal: TRACKS.hw.lessons.length,
-    netTotal: TRACKS.net.lessons.length,
-    leaderboardRank: me?.rank ?? null,
-    arenaStats,
-    classroomCount: classrooms.length,
-    today,
-  });
-  const unlockedCount = achievements.filter((a) => a.unlocked).length;
-  const previewAchievements = [
-    ...achievements.filter((a) => a.unlocked),
-    ...achievements.filter((a) => !a.unlocked),
-  ].slice(0, 8);
   const dailyQuests = deriveDailyQuests(ensureDailyActivity(dailyActivity, today));
   const completedQuestsCount = dailyQuests.filter((q) => q.completed).length;
 
@@ -206,7 +186,6 @@ export function DashboardView() {
       ? 'You’re leading the board this week. Keep your streak going!'
       : 'Complete your first lesson to earn XP and start your streak.';
 
-  const missionCode = String(safeIdx + 1).padStart(2, '0');
   const trackModeLabel = selectedTracks.map((id) => TRACKS[id].heading.replace(' Basics', '')).join(' + ');
 
   return (
@@ -301,13 +280,10 @@ export function DashboardView() {
           <div className="grid grid-rows-[1fr_auto] bg-panel">
             <div className="relative sb-blueprint-dots min-h-[220px] p-5 flex flex-col justify-between">
               <CornerBrackets />
-              <div className="w-full flex justify-between items-center gap-2">
-                <span className="num inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted">
+              <div className="w-full flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted">
                   <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
-                  FIG {missionCode} · {activeTrackId === 'net' ? 'LAN Topology' : 'ATX Layout'}
-                </span>
-                <span className="num px-2 py-0.5 border border-line bg-panel text-[11px] font-semibold text-ink">
-                  {activeTrackId === 'net' ? 'IPv4' : 'ATX'}
+                  {activeTrackId === 'net' ? 'Office LAN Topology' : 'ATX Motherboard'}
                 </span>
               </div>
               <div className="flex-1 w-full grid place-items-center py-3 px-1">
@@ -600,115 +576,6 @@ export function DashboardView() {
             </div>
           </aside>
         </section>
-
-        {/* Tier 5: Bottom 2-Column Split — Leaderboard & Trophy Wall */}
-        <div className="grid grid-cols-2 max-[1024px]:grid-cols-1 gap-7">
-          <aside aria-label="Leaderboard" className="bg-panel border border-line p-6 max-[760px]:p-4 flex flex-col">
-            <div className="flex justify-between items-end gap-3 mb-4 flex-wrap">
-              <div>
-                <h2 className="m-0 font-disp text-[20px] leading-tight tracking-[-0.02em] text-ink">
-                  Leaderboard
-                </h2>
-                <p className="m-0 mt-0.5 text-[13px] text-muted">
-                  {isGuest ? 'Local progress' : 'Class league · this week'}
-                </p>
-              </div>
-              <a
-                href="#leaderboard"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate('leaderboard');
-                }}
-                className="inline-flex items-center justify-center min-h-8 px-3 border border-line bg-panel text-ink font-semibold text-[12.5px] no-underline hover:border-ink hover:bg-panel2 transition-colors"
-              >
-                View full leaderboard
-              </a>
-            </div>
-
-            <ol className="border border-line">
-              {previewRows.map((row) => (
-                <li
-                  key={row.userId}
-                  aria-current={row.isYou ? 'true' : undefined}
-                  className={`grid grid-cols-[24px_30px_minmax(0,1fr)_auto_auto] gap-2.5 items-center px-3.5 py-2.5 border-b border-line last:border-b-0 ${
-                    row.isYou ? 'bg-you border-l-2 border-l-cyan font-semibold' : 'bg-panel'
-                  }`}
-                >
-                  <span className="num text-muted text-[12.5px] text-center font-bold">{row.rank}</span>
-                  {row.avatarUrl ? (
-                    <img
-                      src={row.avatarUrl}
-                      alt=""
-                      referrerPolicy="no-referrer"
-                      className="w-[30px] h-[30px] object-cover border border-line"
-                    />
-                  ) : (
-                    <span
-                      className={`grid place-items-center w-[30px] h-[30px] font-bold text-[11px] ${
-                        row.isYou ? 'bg-cyan text-cyan-ink' : 'bg-panel2 text-ink border border-line'
-                      }`}
-                    >
-                      {initialsFor(row.name)}
-                    </span>
-                  )}
-                  <span className="font-head font-semibold text-[14px] truncate">
-                    {row.isYou ? `${row.name} (you)` : row.name}
-                  </span>
-                  <span className="text-[12px] text-muted max-[600px]:hidden">
-                    {row.streakDays} streak
-                  </span>
-                  <b className="num font-bold text-[14px]">{formatXp(row.xp)}</b>
-                </li>
-              ))}
-            </ol>
-          </aside>
-
-          <section aria-label="Achievements" className="bg-panel border border-line p-6 max-[760px]:p-4 flex flex-col">
-            <div className="flex justify-between items-end gap-3 mb-4 flex-wrap">
-              <div>
-                <h2 className="m-0 font-disp text-[20px] leading-tight tracking-[-0.02em] text-ink">
-                  Trophy wall
-                </h2>
-                <p className="m-0 mt-0.5 text-[13px] text-muted">
-                  {unlockedCount} of {achievements.length} badges unlocked
-                </p>
-              </div>
-              <a
-                href="#achievements"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate('achievements');
-                }}
-                className="inline-flex items-center justify-center min-h-8 px-3 border border-line bg-panel text-ink font-semibold text-[12.5px] no-underline hover:border-ink hover:bg-panel2 transition-colors"
-              >
-                View all achievements
-              </a>
-            </div>
-
-            <ul className="grid grid-cols-4 max-[600px]:grid-cols-2 gap-2.5">
-              {previewAchievements.map((ach) => (
-                <li
-                  key={ach.id}
-                  className={`p-3.5 text-center flex flex-col items-center gap-1.5 border ${
-                    ach.unlocked ? 'border-line bg-panel text-ink' : 'border-line/70 bg-panel2/60 text-muted'
-                  }`}
-                >
-                  <div
-                    className={`grid place-items-center w-8 h-8 ${
-                      ach.unlocked ? 'bg-cyan text-cyan-ink' : 'border border-line bg-panel text-muted'
-                    }`}
-                  >
-                    <Icon name={ach.icon} className="w-4 h-4" />
-                  </div>
-                  <span className="font-head text-[12.5px] font-bold leading-tight">{ach.title}</span>
-                  <small className="text-[11px] text-muted">
-                    {ach.unlocked ? 'Unlocked' : ach.progressText ?? ach.statusText}
-                  </small>
-                </li>
-              ))}
-            </ul>
-          </section>
-        </div>
       </div>
     </div>
   );

@@ -10,7 +10,6 @@ export function LoginView() {
   const navigate = useStreakByteStore((s) => s.navigate);
   const showToast = useStreakByteStore((s) => s.showToast);
   const setAuthUser = useStreakByteStore((s) => s.setAuthUser);
-  const loginAsGuest = useStreakByteStore((s) => s.loginAsGuest);
 
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
@@ -70,69 +69,53 @@ export function LoginView() {
   };
 
   return (
-    <div className="w-full max-w-[920px] bg-panel border border-line grid grid-cols-[1fr_1.08fr] max-[820px]:grid-cols-1">
-      <div className="relative bg-[var(--dark-card)] text-white p-8 flex flex-col justify-between gap-6 border-r border-line max-[820px]:border-r-0 max-[820px]:border-b">
-        <CornerBrackets light />
-        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.09em] text-cyan">
-          <span className="w-1.5 h-1.5 bg-cyan inline-block" aria-hidden="true" />
-          <span>STREAKBYTE // TRAINING TERMINAL</span>
-        </div>
-        <div className="grid place-items-center py-4">
-          <img
-            src="/buddy-logo.png"
-            alt="BYTE, the StreakByte mascot"
-            className="w-40 h-40 object-contain"
-          />
-        </div>
-        <div>
-          <div className="font-disp text-[30px] leading-[1.04] uppercase tracking-[-0.02em] mb-2">
-            BUILD HARDWARE.
-            <br />
-            MASTER NETWORKS.
+    <section
+      aria-labelledby="login-heading"
+      className="relative w-full max-w-[460px] bg-panel border border-line p-8 max-[560px]:p-5 flex flex-col gap-4"
+    >
+      <CornerBrackets />
+
+      <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3 min-w-0">
+          <div
+            role="tablist"
+            aria-label="Account mode"
+            className="inline-flex self-start border border-ink bg-panel"
+          >
+            {(['login', 'signup'] as const).map((m, idx) => (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={mode === m}
+                onClick={() => {
+                  setMode(m);
+                  setError(null);
+                }}
+                className={`min-h-9 px-4 border-0 font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer transition-colors ${idx > 0 ? 'border-l border-ink' : ''
+                  } ${mode === m
+                    ? 'bg-cyan text-cyan-ink'
+                    : 'bg-panel text-ink hover:bg-panel2'
+                  }`}
+              >
+                {m === 'login' ? 'Log in' : 'Create account'}
+              </button>
+            ))}
           </div>
-          <p className="m-0 text-xs text-white/70">
-            Daily 5-minute missions, hands-on PC &amp; LAN labs, and live class leagues.
-          </p>
-        </div>
-      </div>
 
-      <section aria-labelledby="login-heading" className="p-8 max-[560px]:p-5 flex flex-col justify-center gap-4">
-        <div
-          role="tablist"
-          aria-label="Account mode"
-          className="inline-flex self-start border border-ink bg-panel"
-        >
-          {(['login', 'signup'] as const).map((m, idx) => (
-            <button
-              key={m}
-              type="button"
-              role="tab"
-              aria-selected={mode === m}
-              onClick={() => {
-                setMode(m);
-                setError(null);
-              }}
-              className={`min-h-9 px-4 border-0 font-bold text-[10.5px] uppercase tracking-[0.06em] cursor-pointer transition-colors ${idx > 0 ? 'border-l border-ink' : ''
-                } ${mode === m
-                  ? 'bg-cyan text-cyan-ink'
-                  : 'bg-panel text-ink hover:bg-panel2'
-                }`}
-            >
-              {m === 'login' ? 'Log in' : 'Create account'}
-            </button>
-          ))}
-        </div>
-
-        <div>
           <h1 id="login-heading" className="m-0 sb-page-title text-[26px]">
             {mode === 'login' ? 'Welcome back' : 'Create your account'}
           </h1>
-          <p className="text-muted mt-1 mb-0 text-xs">
-            {mode === 'login'
-              ? 'Log in to pick up your streak where you left off.'
-              : 'Use your school email to start your first streak.'}
-          </p>
         </div>
+
+        <div className="flex-1 flex items-center justify-center">
+          <img
+            src="/buddy-logo.png"
+            alt="BYTE, the StreakByte mascot"
+            className="w-[92px] h-[92px] max-[480px]:w-[74px] max-[480px]:h-[74px] object-contain"
+          />
+        </div>
+      </div>
 
         <form onSubmit={submit} className="grid gap-3 w-full" noValidate>
           <label className="grid gap-1.5 text-[10px] font-bold uppercase tracking-[0.07em] text-muted">
@@ -247,19 +230,7 @@ export function LoginView() {
             </svg>
             <span>Continue with Google</span>
           </button>
-
-          <button
-            type="button"
-            onClick={() => loginAsGuest()}
-            className="sb-cut w-full min-h-10 border border-[var(--dark-card)] bg-[var(--dark-card)] text-white font-bold text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-opacity hover:opacity-90 flex items-center justify-center gap-2"
-          >
-            <span>Continue as Guest</span>
-            <span className="text-[9.5px] px-1.5 py-0.5 bg-cyan text-cyan-ink font-bold">
-              Dev Mode
-            </span>
-          </button>
         </form>
-      </section>
-    </div>
+    </section>
   );
 }

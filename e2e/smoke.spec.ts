@@ -3,7 +3,24 @@ import { ALL_QUIZ_QUESTIONS } from '../src/data/quizBank';
 
 async function enterAsGuest(page: Page) {
   await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
-  await page.getByRole('button', { name: /Continue as Guest/i }).click();
+  await expect(page.getByRole('button', { name: /Continue as Guest/i })).toHaveCount(0);
+  await page.evaluate(() => {
+    window.localStorage.setItem(
+      'streakbyte-session',
+      JSON.stringify({
+        state: {
+          isGuest: true,
+          authUser: {
+            id: 'local-guest',
+            email: 'guest@streakbyte.local',
+            displayName: 'Guest Learner',
+          },
+        },
+        version: 0,
+      }),
+    );
+  });
+  await page.reload();
   await expect(page.getByRole('heading', { name: 'Welcome back, Guest' })).toBeVisible();
 }
 

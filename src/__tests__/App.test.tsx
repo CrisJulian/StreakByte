@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../App';
@@ -16,13 +16,14 @@ describe('App integration', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    // Login screen appears first when not logged in
+    // Login screen appears first when not logged in (no public Guest Dev Mode button)
     expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeInTheDocument();
-    const guestBtn = screen.getByRole('button', { name: /Continue as Guest/i });
-    expect(guestBtn).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Continue as Guest/i })).not.toBeInTheDocument();
 
-    // Enter app via guest mode
-    await user.click(guestBtn);
+    // Enter app via local guest store action for offline integration test
+    act(() => {
+      useStreakByteStore.getState().loginAsGuest();
+    });
 
     // Initial Dashboard (streak card hidden until top-bar pill is clicked)
     expect(screen.getByRole('heading', { name: 'Welcome back, Guest' })).toBeInTheDocument();
