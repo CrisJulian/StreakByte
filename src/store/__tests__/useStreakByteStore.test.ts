@@ -472,6 +472,8 @@ describe('quiz flow in the store', () => {
         .getState()
         .createDuelRoom({ track: 'hw', wagerXp: 0, classroomId: null });
       expect(ok).toBe(true);
+      expect(createSpy.mock.calls[0][0].questionIds).toHaveLength(8);
+      expect(createSpy.mock.calls[0][0].questionIds.some((id) => id.startsWith('quiz:hw-'))).toBe(true);
       expect(useStreakByteStore.getState().activeDuel?.code).toBe('DUEL99');
 
       await useStreakByteStore.getState().submitDuelResult(2, 9000);
@@ -495,6 +497,8 @@ describe('quiz flow in the store', () => {
       expect(duel?.status).toBe('active');
       expect(duel?.questionIds).toHaveLength(8);
       expect(duel?.questionIds.some((id) => id.startsWith('gen:'))).toBe(true);
+      expect(duel?.questionIds.some((id) => id.startsWith('arena:'))).toBe(true);
+      expect(duel?.questionIds.some((id) => id.startsWith('quiz:'))).toBe(true);
 
       await useStreakByteStore.getState().submitDuelResult(7, 12000);
       expect(useStreakByteStore.getState().activeDuel?.status).toBe('finished');

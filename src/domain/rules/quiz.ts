@@ -5,23 +5,29 @@ export type Rng = () => number;
 /** Questions asked in one attempt. */
 export const QUIZ_LENGTH = 15;
 
-/** Up to `count` different questions from the bank, in random order (Fisher–Yates on a copy). */
-export function pickQuestions(bank: readonly QuizQuestion[], count: number, rng: Rng = Math.random): QuizQuestion[] {
-  const pool = [...bank];
+/** Fisher–Yates shuffle on a shallow copy; leaves the original array untouched. */
+export function shuffleItems<T>(items: readonly T[], rng: Rng = Math.random): T[] {
+  const pool = [...items];
   for (let i = pool.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(rng() * (i + 1));
+    const j = Math.floor(rng() * (i + 1)) % (i + 1);
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  return pool.slice(0, count);
+  return pool;
+}
+
+/** Up to `count` unique items from `items`, in random order. */
+export function pickRandom<T>(items: readonly T[], count: number, rng: Rng = Math.random): T[] {
+  return shuffleItems(items, rng).slice(0, Math.max(0, count));
+}
+
+/** Up to `count` different questions from the bank, in random order. */
+export function pickQuestions(bank: readonly QuizQuestion[], count: number, rng: Rng = Math.random): QuizQuestion[] {
+  return pickRandom(bank, count, rng);
 }
 
 /** Fisher–Yates over the four choices; correctIndex follows the correct answer. */
 export function shuffleChoices(q: QuizQuestion, rng: Rng = Math.random): QuizQuestion {
-  const order = [0, 1, 2, 3];
-  for (let i = order.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(rng() * (i + 1));
-    [order[i], order[j]] = [order[j], order[i]];
-  }
+  const order = shuffleItems([0, 1, 2, 3], rng);
   const choices = order.map((from) => q.choices[from]) as QuizQuestion['choices'];
   const correctIndex = order.indexOf(q.correctIndex) as QuizQuestion['correctIndex'];
   return { ...q, choices, correctIndex };

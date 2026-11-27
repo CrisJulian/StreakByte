@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 import { playSfx } from '../audio/soundEffects';
-import { QUIZ_BANK } from '../data/quizBank';
+import { ALL_QUIZ_QUESTIONS, QUIZ_BANK } from '../data/quizBank';
 import { ARENA_SCENARIOS } from '../data/arenaScenarios';
 import { getTrackProgress, isLessonKeyLocked, LESSON_XP_BY_KEY, lessonLabel, TRACKS } from '../data/curriculum';
 import { LESSON_CONTENT } from '../data/lessons';
@@ -184,6 +184,7 @@ const VALID_VIEWS: readonly ViewId[] = [
 export { PC_HINTS, PC_SLOT_TO_PART } from '../domain/rules/pcBuild';
 export { NET_DEVICE_NAMES } from '../domain/rules/network';
 export const LOCAL_TEST_DUEL_ID = 'local-test-duel';
+const ALL_QUIZ_IDS = ALL_QUIZ_QUESTIONS.map((q) => q.id);
 
 export const CABLE_COLORS: Record<CableType, string> = {
   eth: '#22d3ee',
@@ -1036,6 +1037,8 @@ export const useStreakByteStore = create<StreakByteStore>()(
           track,
           ARENA_SCENARIOS,
           DUEL_QUESTION_COUNT,
+          Math.random,
+          ALL_QUIZ_IDS,
         );
         set((state) => ({
           opponentProgress: null,
@@ -1094,6 +1097,8 @@ export const useStreakByteStore = create<StreakByteStore>()(
             track,
             ARENA_SCENARIOS,
             DUEL_QUESTION_COUNT,
+            Math.random,
+            ALL_QUIZ_IDS,
           );
           const room = await services.duel.createDuel({
             track,

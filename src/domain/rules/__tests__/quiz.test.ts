@@ -8,10 +8,12 @@ import {
   maxCombo,
   nextQuestion,
   parseLessonKey,
+  pickRandom,
   quizXp,
   scoreQuiz,
   selectChoice,
   shuffleChoices,
+  shuffleItems,
   startQuiz,
   pickQuestions,
   QUIZ_LENGTH,
@@ -128,5 +130,24 @@ describe('pickQuestions', () => {
 
   it('returns the whole bank when it is smaller than a quiz', () => {
     expect(pickQuestions(pool.slice(0, 4), QUIZ_LENGTH)).toHaveLength(4);
+  });
+});
+
+describe('shuffleItems and pickRandom', () => {
+  it('shuffles without mutating and stays deterministic for a seeded RNG', () => {
+    const original = [1, 2, 3, 4, 5, 6];
+    const makeRng = () => {
+      let x = 42;
+      return () => ((x = (x * 9301 + 49297) % 233280) / 233280);
+    };
+    const first = shuffleItems(original, makeRng());
+    const second = shuffleItems(original, makeRng());
+    expect(first).toEqual(second);
+    expect([...first].sort((a, b) => a - b)).toEqual(original);
+    expect(original).toEqual([1, 2, 3, 4, 5, 6]);
+
+    const picked = pickRandom(original, 3, makeRng());
+    expect(picked).toHaveLength(3);
+    expect(new Set(picked).size).toBe(3);
   });
 });
