@@ -3,11 +3,15 @@ import type { LessonCompletion, LessonKind } from '../../entities/progress';
 import {
   deriveTrackProgress,
   DEFAULT_PASS_MARK,
+  getCompletedSectionPrefix,
   isLessonComplete,
   isLessonUnlocked,
   isQuizPassed,
   lessonKeyFor,
+  mergeCompletedSections,
+  normalizeCompletedSections,
   recordCompletion,
+  recordSectionCompletion,
 } from '../lessonProgress';
 
 const done = (key: string, correct = 4): LessonCompletion => ({
@@ -118,5 +122,39 @@ describe('deriveTrackProgress', () => {
   it('builds lesson keys the same way the quiz bank does', () => {
     expect(lessonKeyFor('hw', 0)).toBe('hw-1');
     expect(lessonKeyFor('net', 4)).toBe('net-5');
+  });
+});
+
+describe('completed section helpers', () => {
+  it('normalizes arbitrary inputs into valid sorted non-negative indices per lesson key', () => {
+    expect(normalizeCompletedSections(null)).toEqual({});
+    expect(normalizeCompletedSections([1, 2])).toEqual({});
+    expect(
+      normalizeCompletedSections({
+        'hw-1': [2, 0, -1, 1.5, 2, 'x'],
+        'bad_key!': [0],
+        'net-2': [],
+      }),
+    ).toEqual({ 'hw-1': [0, 2] });
+  });
+
+  it('merges completed sections monotonically across devices', () => {
+    expect(mergeCompletedSections({ 'hw-1': [0, 2] }, { 'hw-1': [1, 2], 'net-1': [0] })).toEqual({
+      'hw-1': [0, 1, 2],
+      'net-1': [0],
+    });
+  });
+
+  it('records section completion idempotently and computes consecutive prefix', () => {
+    const first = recordSectionCompletion({}, 'hw-3', 0);
+    expect(first).toEqual({ 'hw-3': [0] });
+    expect(recordSectionCompletion(first, 'hw-3', 0)).toBe(first);
+    expect(recordSectionCompletion(first, 'hw-3', -1)).toBe(first);
+    expect(recordSectionCompletion(first, 'bad', 0)).toBe(first);
+
+    const second = recordSectionCompletion(first, 'hw-3', 2);
+    expect(getCompletedSectionPrefix(second['hw-3'], 5)).toBe(1);
+    const third = recordSectionCompletion(second, 'hw-3', 1);
+    expect(getCompletedSectionPrefix(third['hw-3'], 5)).toBe(3);
   });
 });

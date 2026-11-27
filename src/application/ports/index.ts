@@ -1,5 +1,6 @@
 import type { ProfileSettings } from '../../types/streakbyte';
 import type { LessonCompletion } from '../../domain/entities/progress';
+import type { CompletedSectionsMap } from '../../domain/rules/lessonProgress';
 import type { ArenaStats, DuelProgressEvent, DuelRoom, DuelTrack, DuelWagerMode } from '../../domain/rules/duel';
 import type { StreakState } from '../../domain/rules/streak';
 
@@ -58,6 +59,8 @@ export interface ProgressRepository {
   loadLessonCompletions(): Promise<LessonCompletion[]>;
   /** Idempotent: saving the same lesson twice keeps one record (best score wins). */
   saveLessonCompletion(completion: LessonCompletion): Promise<void>;
+  loadCompletedSections(): Promise<CompletedSectionsMap>;
+  saveCompletedSections(sections: CompletedSectionsMap): Promise<void>;
   loadLeaderboard(period: 'w' | 'a', classroomId?: string | null): Promise<LeaderboardEntry[]>;
   syncLeaderboardEntry(entry: Omit<LeaderboardEntry, 'userId'>): Promise<void>;
   loadMyClassrooms(): Promise<ClassroomSummary[]>;
@@ -98,7 +101,13 @@ export interface ReminderScheduler {
 
 export interface SyncOperation {
   id: string;
-  type: 'save-streak' | 'save-settings' | 'complete-lesson' | 'save-lab-bonus-xp' | 'save-xp-spent';
+  type:
+    | 'save-streak'
+    | 'save-settings'
+    | 'complete-lesson'
+    | 'save-completed-sections'
+    | 'save-lab-bonus-xp'
+    | 'save-xp-spent';
   payload: unknown;
   createdAt: number;
 }

@@ -3,7 +3,12 @@ import type { LessonCompletion } from '../../domain/entities/progress';
 import { generateJoinCode, isValidJoinCode, normalizeJoinCode } from '../../domain/rules/classroom';
 import { createInitialArenaStats } from '../../domain/rules/duel';
 import type { ArenaStats } from '../../domain/rules/duel';
-import { isBetterScore, recordCompletion } from '../../domain/rules/lessonProgress';
+import {
+  isBetterScore,
+  mergeCompletedSections,
+  normalizeCompletedSections,
+  recordCompletion,
+} from '../../domain/rules/lessonProgress';
 import type { StreakState } from '../../domain/rules/streak';
 import type { TrackId } from '../../types/streakbyte';
 import { localProgress, saveLocalXpSpent } from '../local/localProgress';
@@ -296,6 +301,48 @@ export const supabaseProgress: ProgressRepository = {
       { onConflict: 'user_id,lesson_key' },
     );
     if (error) throw new Error(error.message);
+  },
+
+  async loadCompletedSections() {
+    const local = await localProgress.loadCompletedSections();
+    const userId = await getSignedInUserId();
+    if (!userId || !supabase) return local;
+
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('completed_sections')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error || !data) return local;
+
+    const merged = mergeCompletedSections(local, normalizeCompletedSections(data.completed_sections));
+    await localProgress.saveCompletedSections(merged);
+    return merged;
+  },
+
+  async saveCompletedSections(sections) {
+    await localProgress.saveCompletedSections(sections);
+    const localMerged = await localProgress.loadCompletedSections();
+    const userId = await getSignedInUserId();
+    if (!userId || !supabase) return;
+
+    const { data: existing, error: readErr } = await supabase
+      .from('user_profiles')
+      .select('completed_sections')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const merged =
+      existing && !readErr
+        ? mergeCompletedSections(normalizeCompletedSections(existing.completed_sections), localMerged)
+        : localMerged;
+
+    const { error } = await supabase
+      .from('user_profiles')
+      .upsert({ user_id: userId, completed_sections: merged }, { onConflict: 'user_id' });
+    if (error) throw new Error(error.message);
+    await localProgress.saveCompletedSections(merged);
   },
 
   async loadLeaderboard(period, classroomId) {

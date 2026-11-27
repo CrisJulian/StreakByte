@@ -11,7 +11,10 @@ import {
   DEFAULT_PASS_MARK,
   isQuizPassed,
   lessonKeyFor,
+  mergeCompletedSections,
   recordCompletion,
+  recordSectionCompletion,
+  type CompletedSectionsMap,
 } from '../domain/rules/lessonProgress';
 import {
   currentCombo,
@@ -375,6 +378,8 @@ export interface StreakByteStore {
   lastMistake: StudyMistake | null;
   /** Lessons whose quiz was passed. Locks and unlocks are derived from this. */
   completions: LessonCompletion[];
+  /** Per-lesson checked section indices, persisted offline-first and synced across devices. */
+  completedSections: CompletedSectionsMap;
   streak: StreakState;
   labBonusXp: number;
   xpSpent: number;
@@ -488,6 +493,7 @@ export interface StreakByteStore {
 
   // Lesson progress
   loadCompletions: () => Promise<void>;
+  markLessonSectionCompleted: (lessonKey: string, sectionIndex: number) => void;
   recordLessonResult: (lessonKey: string, correct: number, total: number) => void;
 
   // Profile
@@ -558,6 +564,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
       learnKey: null,
       lastMistake: null,
       completions: [],
+      completedSections: {},
       streak: createInitialStreak(),
       labBonusXp: 0,
       xpSpent: 0,
@@ -612,6 +619,8 @@ export const useStreakByteStore = create<StreakByteStore>()(
               await services.progress.saveSettings(op.payload as ProfileSettings);
             } else if (op.type === 'complete-lesson') {
               await services.progress.saveLessonCompletion(op.payload as LessonCompletion);
+            } else if (op.type === 'save-completed-sections') {
+              await services.progress.saveCompletedSections(op.payload as CompletedSectionsMap);
             } else if (op.type === 'save-lab-bonus-xp') {
               await services.progress.saveLabBonusXp(Number(op.payload) || 0);
             } else if (op.type === 'save-xp-spent') {
@@ -620,8 +629,9 @@ export const useStreakByteStore = create<StreakByteStore>()(
           });
           const after = await services.syncQueue.pending().catch(() => []);
           const syncedCount = Math.max(0, before.length - after.length);
+          const hasUserVisibleSync = before.some((op) => op.type !== 'save-completed-sections');
           set({ pendingSyncCount: after.length, isSyncing: false });
-          if (syncedCount > 0) {
+          if (syncedCount > 0 && hasUserVisibleSync) {
             void syncCurrentUserLeaderboard(get)
               .then(() => get().refreshLeaderboard())
               .catch(() => undefined);
@@ -782,6 +792,9 @@ export const useStreakByteStore = create<StreakByteStore>()(
       },
 
       logout: async () => {
+        if (get().isOnline && !get().isGuest && get().authUser) {
+          await get().flushSyncQueue().catch(() => undefined);
+        }
         try {
           await services.auth.signOut();
         } catch {
@@ -795,6 +808,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
           isSyncing: false,
           view: 'login',
           completions: [],
+          completedSections: {},
           streak: createInitialStreak(),
           labBonusXp: 0,
           xpSpent: 0,
@@ -835,6 +849,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
         try {
           const [
             savedCompletions,
+            savedSections,
             savedStreak,
             savedBonusXp,
             savedXpSpent,
@@ -843,6 +858,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
             myClassrooms,
           ] = await Promise.all([
             services.progress.loadLessonCompletions(),
+            services.progress.loadCompletedSections(),
             services.progress.loadStreak(),
             services.progress.loadLabBonusXp(),
             services.progress.loadXpSpent(),
@@ -858,10 +874,12 @@ export const useStreakByteStore = create<StreakByteStore>()(
               (all, c) => recordCompletion(all, c),
               state.completions,
             );
+            const mergedSections = mergeCompletedSections(state.completedSections, savedSections);
 
             if (!currentAuth || isGuest) {
               return {
                 completions: mergedCompletions,
+                completedSections: mergedSections,
                 streak: savedStreak,
                 labBonusXp: savedBonusXp,
                 xpSpent: savedXpSpent,
@@ -893,6 +911,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
 
             return {
               completions: mergedCompletions,
+              completedSections: mergedSections,
               streak: savedStreak,
               labBonusXp: savedBonusXp,
               xpSpent: savedXpSpent,
@@ -1847,17 +1866,34 @@ export const useStreakByteStore = create<StreakByteStore>()(
 
       loadCompletions: async () => {
         try {
-          const saved = await services.progress.loadLessonCompletions();
-          if (saved.length === 0) return;
+          const [saved, savedSections] = await Promise.all([
+            services.progress.loadLessonCompletions(),
+            services.progress.loadCompletedSections(),
+          ]);
+          if (saved.length === 0 && Object.keys(savedSections).length === 0) return;
           set((state) => ({
             completions: saved.reduce(
               (all, c) => recordCompletion(all, c),
               state.completions,
             ),
+            completedSections: mergeCompletedSections(state.completedSections, savedSections),
           }));
         } catch {
           // Progress could not be read (private mode, storage error): start with none.
         }
+      },
+
+      markLessonSectionCompleted: (lessonKey, sectionIndex) => {
+        const current = get().completedSections;
+        const next = recordSectionCompletion(current, lessonKey, sectionIndex);
+        if (next === current) return;
+        set({ completedSections: next });
+        void persistOrQueue(
+          get,
+          set,
+          { type: 'save-completed-sections', payload: next },
+          () => services.progress.saveCompletedSections(next),
+        );
       },
 
       recordLessonResult: (lessonKey, correct, total) => {
@@ -2042,6 +2078,7 @@ export const useStreakByteStore = create<StreakByteStore>()(
           learnKey: null,
           lastMistake: null,
           completions: [],
+          completedSections: {},
           streak: createInitialStreak(),
           labBonusXp: 0,
           xpSpent: 0,

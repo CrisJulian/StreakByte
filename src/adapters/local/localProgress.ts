@@ -1,7 +1,12 @@
 import type { ProgressRepository } from '../../application/ports';
 import type { LessonCompletion } from '../../domain/entities/progress';
 import { createInitialArenaStats } from '../../domain/rules/duel';
-import { recordCompletion } from '../../domain/rules/lessonProgress';
+import {
+  mergeCompletedSections,
+  normalizeCompletedSections,
+  recordCompletion,
+  type CompletedSectionsMap,
+} from '../../domain/rules/lessonProgress';
 import {
   buyRestore,
   canRestore,
@@ -15,10 +20,21 @@ import type { ProfileSettings } from '../../types/streakbyte';
 import { safeLocalStorage } from './storage';
 
 const COMPLETIONS_KEY = 'streakbyte-lesson-completions';
+const COMPLETED_SECTIONS_KEY = 'streakbyte-completed-sections';
 const STREAK_KEY = 'streakbyte-streak';
 const SETTINGS_KEY = 'streakbyte-settings';
 const LAB_BONUS_XP_KEY = 'streakbyte-lab-bonus-xp';
 const XP_SPENT_KEY = 'streakbyte-xp-spent';
+
+function readCompletedSections(): CompletedSectionsMap {
+  const raw = safeLocalStorage.get(COMPLETED_SECTIONS_KEY);
+  if (!raw) return {};
+  try {
+    return normalizeCompletedSections(JSON.parse(raw));
+  } catch {
+    return {};
+  }
+}
 
 export function saveLocalXpSpent(xpSpent: number): void {
   const safe = Math.max(0, Math.floor(xpSpent));
@@ -114,6 +130,13 @@ export const localProgress: ProgressRepository = {
       JSON.stringify(recordCompletion(readCompletions(), completion)),
     );
   },
+  async loadCompletedSections() {
+    return readCompletedSections();
+  },
+  async saveCompletedSections(sections) {
+    const merged = mergeCompletedSections(readCompletedSections(), normalizeCompletedSections(sections));
+    safeLocalStorage.set(COMPLETED_SECTIONS_KEY, JSON.stringify(merged));
+  },
   async loadLeaderboard() {
     return [];
   },
@@ -134,6 +157,7 @@ export const localProgress: ProgressRepository = {
   },
   clearLocalCache() {
     safeLocalStorage.remove(COMPLETIONS_KEY);
+    safeLocalStorage.remove(COMPLETED_SECTIONS_KEY);
     safeLocalStorage.remove(STREAK_KEY);
     safeLocalStorage.remove(SETTINGS_KEY);
     safeLocalStorage.remove(LAB_BONUS_XP_KEY);

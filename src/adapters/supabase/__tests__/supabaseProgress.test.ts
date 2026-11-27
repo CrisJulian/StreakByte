@@ -309,4 +309,56 @@ describe('supabaseProgress adapter', () => {
     );
     await expect(supabaseProgress.loadXpSpent()).resolves.toBe(75);
   });
+
+  it('loads, union-merges, and saves completed_sections across offline and authenticated sessions', async () => {
+    mockGetSession.mockResolvedValueOnce({ data: { session: null } });
+    await supabaseProgress.saveCompletedSections({ 'hw-1': [0] });
+    await expect(supabaseProgress.loadCompletedSections()).resolves.toEqual({ 'hw-1': [0] });
+
+    mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u-1' } } } });
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    let remoteSections: Record<string, number[]> = { 'hw-1': [0, 1], 'net-1': [0] };
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'user_profiles') {
+        return {
+          upsert: (payload: { user_id: string; completed_sections: Record<string, number[]> }, opts: unknown) => {
+            remoteSections = payload.completed_sections;
+            return upsert(payload, opts);
+          },
+          select: () => ({
+            eq: () => ({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: { completed_sections: remoteSections },
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+      return {};
+    });
+
+    const loaded = await supabaseProgress.loadCompletedSections();
+    expect(loaded).toEqual({ 'hw-1': [0, 1], 'net-1': [0] });
+
+    // Saving a new section on this device preserves sections already saved on another device
+    await supabaseProgress.saveCompletedSections({ 'hw-1': [0, 1, 2] });
+    expect(upsert).toHaveBeenCalledWith(
+      { user_id: 'u-1', completed_sections: { 'hw-1': [0, 1, 2], 'net-1': [0] } },
+      { onConflict: 'user_id' },
+    );
+
+    // Graceful fallback when Supabase query fails
+    mockFrom.mockReturnValueOnce({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { message: 'column missing' } }),
+        }),
+      }),
+    });
+    await expect(supabaseProgress.loadCompletedSections()).resolves.toEqual({
+      'hw-1': [0, 1, 2],
+      'net-1': [0],
+    });
+  });
 });

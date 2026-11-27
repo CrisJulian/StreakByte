@@ -763,4 +763,53 @@ describe('quiz flow in the store', () => {
     expect(replySpy).toHaveBeenCalledTimes(1);
     replySpy.mockRestore();
   });
+
+  it('persists checked sections locally, flushes offline queue when online, and flushes before logout', async () => {
+    useStreakByteStore.getState().markLessonSectionCompleted('hw-1', 0);
+    expect(useStreakByteStore.getState().completedSections).toEqual({ 'hw-1': [0] });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    // Hydrates from local storage after a fresh store reset
+    useStreakByteStore.setState({ completedSections: {} });
+    await useStreakByteStore.getState().loadCompletions();
+    expect(useStreakByteStore.getState().completedSections).toEqual({ 'hw-1': [0] });
+
+    // Start clean for signed-in offline queue + pre-logout flush test
+    localStorage.clear();
+    useStreakByteStore.getState().resetAll();
+    useStreakByteStore.getState().setAuthUser({
+      id: 'u-1',
+      email: 'ada@example.com',
+      displayName: 'Ada Lovelace',
+    });
+    useStreakByteStore.getState().setOnlineStatus(false);
+
+    const saveSectionsSpy = vi
+      .spyOn(services.progress, 'saveCompletedSections')
+      .mockResolvedValue();
+    try {
+      useStreakByteStore.getState().markLessonSectionCompleted('hw-1', 0);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(useStreakByteStore.getState().pendingSyncCount).toBe(1);
+
+      useStreakByteStore.getState().setOnlineStatus(true);
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      expect(saveSectionsSpy).toHaveBeenCalledWith({ 'hw-1': [0] });
+      expect(useStreakByteStore.getState().pendingSyncCount).toBe(0);
+
+      // Queue another section offline, then restore network state without auto-flushing before logout()
+      useStreakByteStore.getState().setOnlineStatus(false);
+      useStreakByteStore.getState().markLessonSectionCompleted('hw-1', 1);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(useStreakByteStore.getState().pendingSyncCount).toBe(1);
+
+      useStreakByteStore.setState({ isOnline: true });
+      await useStreakByteStore.getState().logout();
+      expect(saveSectionsSpy).toHaveBeenCalledWith({ 'hw-1': [0, 1] });
+      expect(useStreakByteStore.getState().completedSections).toEqual({});
+      expect(useStreakByteStore.getState().pendingSyncCount).toBe(0);
+    } finally {
+      saveSectionsSpy.mockRestore();
+    }
+  });
 });

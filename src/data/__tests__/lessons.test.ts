@@ -7,7 +7,9 @@ import { QUIZ_BANK } from '../quizBank';
 
 const allKeys = Object.values(TRACKS).flatMap((t) => t.lessons.map((_, i) => `${t.id}-${i + 1}`));
 const allImages = Object.values(LESSON_CONTENT).flatMap((c) =>
-  c.parts.flatMap((p) => p.images.map((image) => ({ key: c.key, image }))),
+  c.sections.flatMap((s) =>
+    s.blocks.flatMap((b) => (b.images ?? []).map((image) => ({ key: c.key, image }))),
+  ),
 );
 const PUBLIC_DIR = join(process.cwd(), 'public', 'lessons');
 
@@ -16,19 +18,18 @@ describe('lesson content', () => {
     expect(Object.keys(LESSON_CONTENT).sort()).toEqual([...allKeys].sort());
   });
 
-  it('every lesson has a goal, key points, common mistakes and at least one reference', () => {
+  it('every lesson has a goal, numbered sections, key points, common mistakes and at least one reference', () => {
     for (const c of Object.values(LESSON_CONTENT)) {
       expect(c.goal.trim().length).toBeGreaterThan(0);
+      expect(c.sections.length).toBeGreaterThan(0);
+      for (const section of c.sections) {
+        expect(section.number).toMatch(/^\d+\.\d+$/);
+        expect(section.title.trim().length).toBeGreaterThan(0);
+        expect(section.blocks.length).toBeGreaterThan(0);
+      }
       expect(c.keyPoints.length).toBeGreaterThan(0);
       expect(c.commonMistakes.length).toBeGreaterThan(0);
       expect(c.references.length).toBeGreaterThan(0);
-      expect(c.parts.length).toBeGreaterThan(0);
-    }
-  });
-
-  it('every lesson has definitions, or a note saying why not', () => {
-    for (const c of Object.values(LESSON_CONTENT)) {
-      expect(c.definitions.length > 0 || !!c.definitionsNote).toBe(true);
     }
   });
 
@@ -41,9 +42,13 @@ describe('lesson content', () => {
     }
   });
 
-  it('Final Lessons have build steps', () => {
-    expect((LESSON_CONTENT['hw-6'].steps ?? []).length).toBeGreaterThan(0);
-    expect((LESSON_CONTENT['net-5'].steps ?? []).length).toBeGreaterThan(0);
+  it('Final Lessons have ordered build steps', () => {
+    expect(
+      LESSON_CONTENT['hw-6'].sections.some((s) => s.blocks.some((b) => (b.ordered ?? []).length > 0)),
+    ).toBe(true);
+    expect(
+      LESSON_CONTENT['net-5'].sections.some((s) => s.blocks.some((b) => (b.ordered ?? []).length > 0)),
+    ).toBe(true);
   });
 
   it('every lesson has a pool larger than one 15-question attempt', () => {

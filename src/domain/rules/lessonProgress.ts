@@ -92,6 +92,76 @@ export function deriveTrackProgress(
   };
 }
 
+export type CompletedSectionsMap = Record<string, number[]>;
+
+const LESSON_KEY_RE = /^[a-z]+-\d+$/;
+
+function sanitizeSectionIndices(raw: unknown): number[] {
+  if (!Array.isArray(raw)) return [];
+  const unique = new Set<number>();
+  for (const val of raw) {
+    if (typeof val === 'number' && Number.isInteger(val) && val >= 0) {
+      unique.add(val);
+    }
+  }
+  return Array.from(unique).sort((a, b) => a - b);
+}
+
+/** Normalizes arbitrary JSON/input into a clean lessonKey -> sorted unique non-negative section indices map. */
+export function normalizeCompletedSections(raw: unknown): CompletedSectionsMap {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const result: CompletedSectionsMap = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (!LESSON_KEY_RE.test(key)) continue;
+    const indices = sanitizeSectionIndices(value);
+    if (indices.length > 0) result[key] = indices;
+  }
+  return result;
+}
+
+/** Monotonic union merge so a section checked on any device is never lost. */
+export function mergeCompletedSections(
+  a: CompletedSectionsMap,
+  b: CompletedSectionsMap,
+): CompletedSectionsMap {
+  const result: CompletedSectionsMap = {};
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const key of keys) {
+    if (!LESSON_KEY_RE.test(key)) continue;
+    const merged = sanitizeSectionIndices([...(a[key] ?? []), ...(b[key] ?? [])]);
+    if (merged.length > 0) result[key] = merged;
+  }
+  return result;
+}
+
+/** Records a completed section index for a lesson (no-op returning same ref if invalid or already recorded). */
+export function recordSectionCompletion(
+  current: CompletedSectionsMap,
+  lessonKey: string,
+  sectionIndex: number,
+): CompletedSectionsMap {
+  if (!LESSON_KEY_RE.test(lessonKey) || !Number.isInteger(sectionIndex) || sectionIndex < 0) {
+    return current;
+  }
+  const existing = current[lessonKey] ?? [];
+  if (existing.includes(sectionIndex)) return current;
+  return {
+    ...current,
+    [lessonKey]: [...existing, sectionIndex].sort((a, b) => a - b),
+  };
+}
+
+/** Counts consecutive section indices starting from 0 present in `completed` up to `totalSteps`. */
+export function getCompletedSectionPrefix(
+  completed: readonly number[] | undefined,
+  totalSteps: number,
+): number {
+  const set = new Set(completed ?? []);
+  let prefix = 0;
+  while (prefix < totalSteps && set.has(prefix)) prefix += 1;
+  return prefix;
+}
+
 export function isLessonUnlocked(
   trackId: string,
   kinds: readonly LessonKind[],
